@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MaliRadar v0.5</title>
+<style>
+:root{--bg:#f4f7f8;--card:#fff;--text:#101828;--muted:#667085;--line:#e4e7ec;--a:#087f72;--soft:#e8f7f4;--g:#087443;--r:#b42318}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--text)}
+.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:78px}header{background:#fff;padding:18px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:8}
+.brand{font-size:25px;font-weight:850}.brand span{color:var(--a)}.sub{font-size:11px;color:var(--muted)}
+.status{margin-top:9px;font-size:11px;color:var(--muted)}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#98a2b3;margin-right:5px}.dot.on{background:#12b76a}
+.search{margin-top:10px;background:#f2f4f7;border-radius:13px;padding:11px}.search input{border:0;outline:0;background:none;width:90%;font-size:15px}
+main{padding:15px}.screen{display:none}.screen.active{display:block}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:15px;margin-bottom:13px;box-shadow:0 2px 8px #1018280a}
+.hero{background:var(--a);color:#fff;border:0}.hero .muted{color:#d1fae5}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.title{font-size:18px;font-weight:800}.muted{font-size:12px;color:var(--muted)}.big{font-size:30px;font-weight:850;margin:5px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{background:#f8fafc;color:var(--text);border-radius:13px;padding:10px}.metric b{display:block;margin-top:3px}.hero .metric{background:#fff1;color:#fff}
+.green{color:var(--g)}.red{color:var(--r)}.stock{padding:13px 0;border-bottom:1px solid var(--line)}.stock:last-child{border:0}
+.badge{font-size:10px;background:var(--soft);color:#06665b;padding:4px 7px;border-radius:20px;font-weight:800}
+.btn{border:0;border-radius:11px;padding:9px 12px;background:var(--a);color:#fff;font-weight:800}.btn.alt{background:var(--soft);color:#05655a}.btn.red{background:#fff1f0;color:var(--r)}
+.form{display:flex;gap:7px;margin-top:10px}.form input,.form select{flex:1;min-width:0;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fff}.notice{font-size:12px;line-height:1.5;color:#475467}
+.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:center;z-index:20}.tabs button{width:25%;max-width:120px;border:0;background:none;padding:11px 2px 9px;color:#667085;font-size:11px}.tabs button.active{color:var(--a);font-weight:850}
+.modal{display:none;position:fixed;inset:0;background:#0008;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#fff;width:100%;max-width:480px;margin:auto;border-radius:22px 22px 0 0;padding:19px;max-height:85vh;overflow:auto}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v0.5</div></div><button class="btn alt" onclick="account()">Account</button></div>
+<div class="status"><span id="dot" class="dot"></span><span id="status">Connecting to MaliRadar backend…</span></div>
+<div class="search">🔎 <input id="q" placeholder="Search stocks..." oninput="search()"></div>
+</header>
+<main>
+<section id="home" class="screen active">
+<div class="card hero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">CLOUD-READY</span></div>
+<div class="grid"><div class="metric"><div>Cash</div><b>KSh <span id="cash">100,000</span></b></div><div class="metric"><div>Total P/L</div><b id="pl">KSh 0</b></div></div></div>
+<div class="card"><div class="row"><div class="title">Radar</div><span class="muted">Demo market data</span></div><div id="radar"></div></div>
+<div class="card"><div class="title">What changed?</div><p class="notice">v0.5 introduces a backend-ready API layer. When deployed, the same app can use server-side accounts, portfolios, alerts and transaction records instead of only local browser storage.</p></div>
+</section>
+<section id="markets" class="screen"><div class="card"><div class="row"><div class="title">Markets</div><span class="muted">Illustrative</span></div><div id="list"></div></div></section>
+<section id="portfolio" class="screen"><div class="card"><div class="row"><div><div class="muted">Portfolio</div><div class="big">KSh <span id="pv">100,000</span></div></div><span id="ppl" class="green">+KSh 0</span></div></div><div class="card"><div class="title">Holdings</div><div id="holdings"></div></div><div class="card"><div class="title">Transactions</div><div id="history"></div></div></section>
+<section id="alerts" class="screen"><div class="card"><div class="title">Alerts</div><div class="form"><select id="as"></select><input id="ap" type="number" placeholder="Target price"><button class="btn" onclick="addAlert()">Add</button></div><div id="alertsList"></div></div><div class="card"><div class="title">Production path</div><p class="notice">Server alerts, authentication and real-time notifications are not activated until the backend is deployed and secured.</p></div></section>
+</main>
+<nav class="tabs"><button class="active" onclick="nav(0,this)">⌂<br>Home</button><button onclick="nav(1,this)">▣<br>Markets</button><button onclick="nav(2,this)">◈<br>Portfolio</button><button onclick="nav(3,this)">♧<br>Alerts</button></nav>
+</div>
+<div id="modal" class="modal"><div class="sheet"><div class="row"><div class="title" id="mt"></div><button class="btn alt" onclick="closeM()">Close</button></div><div id="mb"></div></div></div>
+<script>
+const STOCKS=[["SCOM","Safaricom","Telecom",35.95,-1.24],["KCB","KCB Group","Banking",92.50,-.80],["EQTY","Equity Group","Banking",105,-.94],["EABL","EABL","Manufacturing",286.75,-.52],["COOP","Co-op Bank","Banking",37.15,0],["ABSA","Absa Bank","Banking",33.05,-.45]];
+const KEY="maliradar_v05_state"; let state=load(); let apiOnline=false;
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{cash:100000,hold:{},history:[],alerts:[],watch:["SCOM","KCB","EQTY"]}}catch(e){return{cash:100000,hold:{},history:[],alerts:[],watch:["SCOM","KCB","EQTY"]}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+const $=id=>document.getElementById(id), money=n=>Math.round(n).toLocaleString("en-KE");
+const stock=s=>STOCKS.find(x=>x[0]===s);
+function nav(i,el){document.querySelectorAll(".screen").forEach((x,j)=>x.classList.toggle("active",j===i));document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));(el||document.querySelectorAll(".tabs button")[i]).classList.add("active")}
+function value(){return state.cash+Object.keys(state.hold).reduce((a,s)=>a+state.hold[s]*stock(s)[3],0)}
+function render(){let v=value(),p=v-100000;$("total").textContent=money(v);$("pv").textContent=money(v);$("cash").textContent=money(state.cash);$("pl").textContent=(p>=0?"+":"-")+"KSh "+money(Math.abs(p));$("ppl").textContent=(p>=0?"+":"-")+"KSh "+money(Math.abs(p));$("ppl").className=p>=0?"green":"red";
+$("radar").innerHTML=STOCKS.filter(x=>state.watch.includes(x[0])).map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?"green":"red"}">${x[4]>=0?"▲":"▼"} ${Math.abs(x[4]).toFixed(2)}%</span></div><div class="muted">${x[0]} • ${x[2]}</div></div>`).join("");
+$("list").innerHTML=STOCKS.map(x=>`<div class="stock"><div class="row"><div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div><b>KSh ${x[3].toFixed(2)}</b></div><div class="form"><button class="btn alt" onclick="toggle('${x[0]}')">${state.watch.includes(x[0])?"★ Watching":"☆ Watch"}</button><button class="btn" onclick="buy('${x[0]}')">Paper Buy</button><button class="btn alt" onclick="sell('${x[0]}')">Sell</button></div></div>`).join("");
+$("as").innerHTML=STOCKS.map(x=>`<option value="${x[0]}">${x[0]}</option>`).join(""); renderPortfolio();renderAlerts();}
+function search(){let q=$("q").value.toLowerCase();if(!q)return;nav(1);let f=STOCKS.filter(x=>(x[0]+" "+x[1]).toLowerCase().includes(q));$("list").innerHTML=f.length?f.map(x=>`<div class="stock"><div class="row"><b>${x[1]} (${x[0]})</b><b>KSh ${x[3].toFixed(2)}</b></div><button class="btn" onclick="openStock('${x[0]}')">Open</button></div>`).join(""):"<p class='muted'>No matching stock.</p>"}
+function toggle(s){let i=state.watch.indexOf(s);i<0?state.watch.push(s):state.watch.splice(i,1);save();render()}
+function openStock(s){let x=stock(s);openM(x[1],`<p class="muted">${x[0]} • ${x[2]}</p><div class="big">KSh ${x[3].toFixed(2)}</div><div class="${x[4]>=0?"green":"red"}">${x[4]>=0?"▲":"▼"} ${Math.abs(x[4]).toFixed(2)}%</div><p class="notice">Illustrative price. Production market data will be supplied by an authorized/appropriate source.</p><button class="btn" onclick="buy('${s}')">Paper Buy</button>`)}
+function buy(s){let x=stock(s),q=parseInt(prompt("How many shares?","10"));if(!q||q<1)return;if(x[3]*q>state.cash)return alert("Not enough paper cash.");state.cash-=x[3]*q;state.hold[s]=(state.hold[s]||0)+q;state.history.unshift({type:"BUY",sym:s,q,p:x[3],time:new Date().toLocaleString()});save();closeM();render()}
+function sell(s){let x=stock(s),owned=state.hold[s]||0;if(!owned)return alert("No paper holding.");let q=parseInt(prompt("How many to sell?","1"));if(!q||q<1||q>owned)return;state.cash+=x[3]*q;state.hold[s]-=q;if(!state.hold[s])delete state.hold[s];state.history.unshift({type:"SELL",sym:s,q,p:x[3],time:new Date().toLocaleString()});save();render()}
+function renderPortfolio(){$("holdings").innerHTML=Object.keys(state.hold).length?Object.keys(state.hold).map(s=>{let x=stock(s);return`<div class="stock"><div class="row"><b>${s}</b><span>${state.hold[s]} shares</span></div><div class="muted">KSh ${money(state.hold[s]*x[3])}</div></div>`}).join(""):"<p class='muted'>No holdings.</p>";$("history").innerHTML=state.history.length?state.history.map(h=>`<div class="stock"><div class="row"><b class="${h.type==="BUY"?"red":"green"}">${h.type} ${h.sym}</b><span>${h.q} @ KSh ${h.p.toFixed(2)}</span></div><div class="muted">${h.time}</div></div>`).join(""):"<p class='muted'>No transactions.</p>"}
+function addAlert(){let s=$("as").value,p=parseFloat($("ap").value);if(!p)return alert("Enter target price.");state.alerts.push({s,p});$("ap").value="";save();renderAlerts()}
+function renderAlerts(){$("alertsList").innerHTML=state.alerts.length?state.alerts.map((a,i)=>`<div class="stock"><div class="row"><b>${a.s}</b><span>KSh ${a.p.toFixed(2)}</span></div><button class="btn red" onclick="state.alerts.splice(${i},1);save();renderAlerts()">Delete</button></div>`).join(""):"<p class='muted'>No alerts.</p>"}
+function account(){openM("MaliRadar account",`<p><b>Local demo account</b></p><p class="notice">v0.5 includes a backend API project, but this browser copy falls back to local storage until the server is deployed. Never enter real passwords or financial credentials into this prototype.</p><button class="btn red" onclick="localStorage.removeItem(KEY);location.reload()">Reset local demo</button>`)}
+function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classList.add("show")}function closeM(){$("modal").classList.remove("show")}
+async function ping(){try{let r=await fetch("/api/health");if(r.ok){apiOnline=true;$("dot").classList.add("on");$("status").textContent="Backend connected";}}catch(e){$("status").textContent="Demo mode • backend not deployed"}}
+render();ping();
+</script></body></html>
