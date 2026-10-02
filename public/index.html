@@ -71,3 +71,4 @@ function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classLi
 async function ping(){try{let r=await fetch("/api/health");if(r.ok){apiOnline=true;$("dot").classList.add("on");$("status").textContent="Backend connected";}}catch(e){$("status").textContent="Demo mode • backend not deployed"}}
 render();ping();initDisclaimer();
 </script></body></html>
+                                                                                                                   
