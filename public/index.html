@@ -1,0 +1,296 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v0.9</title><style>
+:root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
+.alert-item{padding:12px 0;border-top:1px solid var(--line)}
+.alert-item:first-child{border-top:0}
+.severity{font-size:9px;letter-spacing:.7px;border:1px solid var(--line);border-radius:20px;padding:4px 7px;color:var(--muted)}
+.severity.watch{color:#ffe08a;border-color:#665629}
+.severity.important{color:#ff9aa5;border-color:#65303a}
+.severity.info{color:var(--a);border-color:#1f6659}
+.alert-trigger{border-color:#5b4b20;box-shadow:0 0 18px #d5ad3530}
+.formline{display:flex;gap:8px;align-items:center;margin-top:9px}
+.formline select,.formline input{flex:1;min-width:0;background:#09151c;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text);outline:0}
+
+.search-wrap{position:relative;z-index:30}
+.search-results-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:#071119;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 45px #0009;overflow:hidden}
+.search-results-panel.show{display:block}
+.search-result{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.search-result:last-child{border-bottom:0}
+.search-result:active{background:#0d2028}
+.search-empty{padding:14px;color:var(--muted)}
+</style></head><body><div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v0.7</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">Connecting to MaliRadar backend…</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
+<section id="home" class="screen active"><div class="card hero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">DEMO DATA</span></div><div class="grid"><div class="metric">Cash<b>KSh <span id="cash">100,000</span></b></div><div class="metric">Total P/L<b id="pl">KSh 0</b></div></div></div><div class="card"><div class="row"><div><b>Market Radar</b></div><span class="muted">Illustrative</span></div><div id="radar"></div></div><div class="card"><b>Market Status</b><p class="notice">MaliRadar currently uses simulated market data. Live data will only appear after a legitimate source is integrated.</p></div></section>
+<section id="markets" class="screen"><div class="card"><div class="row"><b>Markets</b><span class="muted">NSE demo universe</span></div><div class="card">
+  <div class="row"><b>All NSE Securities</b><span id="universeCount" class="muted"></span></div>
+  <div class="actions">
+    <button class="btn alt" onclick="setMarketFilter('all')">All</button>
+    <button class="btn alt" onclick="setMarketFilter('Banking')">Banking</button>
+    <button class="btn alt" onclick="setMarketFilter('Energy')">Energy</button>
+    <button class="btn alt" onclick="setMarketFilter('Agriculture')">Agriculture</button>
+    <button class="btn alt" onclick="setMarketFilter('Insurance')">Insurance</button>
+    <button class="btn alt" onclick="setMarketFilter('Manufacturing')">Manufacturing</button>
+  </div>
+</div><div id="list"></div></div></section>
+<section id="portfolio" class="screen"><div class="card"><div class="muted">Portfolio Value</div><div class="big">KSh <span id="pv">100,000</span></div><div class="chart"><div class="line"></div></div><div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div></div></div><div class="card"><b>Holdings</b><div id="holdings"></div></div><div class="card"><b>Transactions</b><div id="history"></div></div></section>
+<section id="learn" class="screen"><div class="card"><b>🎓 MaliRadar Academy</b><p class="notice">Learn → Practice → Mission → Quiz → XP</p></div><div class="card"><b>Beginner</b><div class="stock"><b>What is a stock?</b><p class="notice">A stock represents ownership in a company. Practice here without real money.</p></div><div class="stock"><b>Why prices move</b><p class="notice">Prices can change as buyers and sellers respond to information and market conditions.</p></div></div><div class="card"><b>Intermediate</b><p class="notice">Candlesticks • Volume • Trends • Moving averages • Dividends • Valuation • Diversification • Risk management</p></div><div class="card"><b>Expert</b><p class="notice">Technical indicators • Financial ratios • Fundamental analysis • Portfolio construction • Strategy testing</p></div></section>
+<section id="alertsScreen" class="screen">
+<div class="card hero">
+  <div class="row"><div><div class="muted">MaliRadar</div><div class="big">⚡ Alert Command Center</div></div><span class="badge">DEMO ENGINE</span></div>
+  <p class="notice">Create conditions that MaliRadar will monitor against the current demo price. Alerts are informational and do not provide guaranteed trading outcomes.</p>
+  <div class="grid">
+    <div class="metric">Active Alerts<b id="activeAlertCount">0</b></div>
+    <div class="metric">Triggered<b id="triggeredAlertCount">0</b></div>
+  </div>
+</div>
+<div class="card">
+  <div class="row"><b>Create Smart Alert</b><span class="muted">Beginner</span></div>
+  <div class="actions">
+    <button class="btn" onclick="createPriceAlert()">＋ Price Target</button>
+    <button class="btn alt" onclick="createMoveAlert()">↕ % Movement</button>
+    <button class="btn alt" onclick="createCrossAlert()">⇄ Crossing</button>
+  </div>
+</div>
+<div class="card">
+  <div class="row"><b>Active Alerts</b><span class="muted">Monitoring</span></div>
+  <div id="alertList"></div>
+</div>
+<div class="card">
+  <div class="row"><b>Alert History</b><span class="muted">Recent</span></div>
+  <div id="alertHistory"></div>
+</div>
+</section><section id="accountScreen" class="screen"><div class="card"><b>👤 MaliRadar Account</b><p class="notice">Local demo profile. Cloud accounts, secure authentication, synced progress and leaderboards are planned.</p></div><div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be added before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button></div><div class="card"><b>Smart Assist</b><p class="notice">Potential automated market-analysis signals will be introduced with clear risk disclosures and simulated-data safeguards.</p></div><button class="btn red" onclick="resetDemo()">Reset local demo</button></section></main>
+<nav class="tabs"><button class="active" onclick="nav('home',this)">⌂<br>Home</button><button onclick="nav('markets',this)">📈<br>Markets</button><button onclick="nav('portfolio',this)">💼<br>Portfolio</button><button onclick="nav('learn',this)">🎓<br>Learn</button><button onclick="nav('accountScreen',this)">👤<br>Account</button></nav></div>
+<div id="modal" class="modal"><div class="sheet"><div class="row"><b id="mt">MaliRadar</b><button class="btn alt" onclick="closeM()">Close</button></div><div id="mb"></div></div></div>
+<script>
+const STOCKS=[["SCOM","Safaricom","Telecom",35.95,-1.24],["KCB","KCB Group","Banking",92.5,-0.8],["EQTY","Equity Group","Banking",105.0,-0.94],["EABL","East African Breweries","Manufacturing",286.75,-0.52],["COOP","Co-operative Bank","Banking",37.15,0],["ABSA","Absa Bank Kenya","Banking",33.05,-0.45],["BAT","BAT Kenya","Manufacturing",null,null],["BOC","BOC Kenya","Manufacturing",null,null],["BRIT","Britam Holdings","Insurance",null,null],["CIC","CIC Insurance Group","Insurance",null,null],["CTUM","Centum Investment","Investment",null,null],["DTK","Diamond Trust Bank","Banking",null,null],["FMLY","Family Bank","Banking",null,null],["HFCK","HF Group","Banking",null,null],["HFCB","HF Development & Investment","Banking",null,null],["IMH","I&M Group","Banking",null,null],["NCBA","NCBA Group","Banking",null,null],["SBIC","Stanbic Holdings","Banking",null,null],["SCBK","Standard Chartered Bank Kenya","Banking",null,null],["NMG","Nation Media Group","Media",null,null],["SCAN","Scangroup","Media",null,null],["KQ","Kenya Airways","Transport",null,null],["KPC","Kenya Pipeline Company","Energy",null,null],["KEGN","KenGen","Energy",null,null],["KPLC","Kenya Power","Energy",null,null],["TOTL","TotalEnergies Marketing Kenya","Energy",null,null],["UMME","Umeme","Energy",null,null],["EGAD","Eaagads","Agriculture",null,null],["KAPC","Kapchorua Tea Kenya","Agriculture",null,null],["KUKZ","Kakuzi","Agriculture",null,null],["LBTY","Limuru Tea","Agriculture",null,null],["LAPR","Limuru Tea","Agriculture",null,null],["SASN","Sasini","Agriculture",null,null],["UNGA","Unga Group","Agriculture",null,null],["FTGH","Flame Tree Group","Manufacturing",null,null],["CARB","Carbacid Investments","Manufacturing",null,null],["CGEN","Car & General","Manufacturing",null,null],["NSE","Nairobi Securities Exchange","Financial Services",null,null],["OCH","Olympia Capital Holdings","Investment",null,null],["PORT","East African Portland Cement","Manufacturing",null,null],["TPSE","TPS Eastern Africa (Serena)","Hotels & Tourism",null,null],["UCHM","Uchumi Supermarkets","Retail",null,null],["XPRS","Express Kenya","Transport",null,null],["LKL","Longhorn Publishers","Publishing",null,null],["NBV","Nairobi Business Ventures","Retail",null,null],["SMER","Sameer Africa","Manufacturing",null,null],["SGL","Standard Group","Media",null,null],["HAFR","Home Afrika","Real Estate",null,null],["KNRE","Kenya Re-Insurance","Insurance",null,null],["SLAM","Sanlam Kenya","Insurance",null,null],["CRWN","Crown Paints Kenya","Manufacturing",null,null],["KURV","Kurv","Exchange Traded / Investment",null,null],["GLD","GLD","Exchange Traded / Investment",null,null],["SMWF","SME/Market Fund","Exchange Traded / Investment",null,null],["AMAC","African Agricultural Holdings","Investment",null,null],["BKG","BK Group","Banking",null,null],["HBE","Homeboyz Entertainment","Media",null,null],["EVRD","Eveready East Africa","Manufacturing",null,null],["ORCH","Orchid","Manufacturing",null,null],["ALP","Alpharama","Agriculture",null,null],["TRFC","TransCentury","Investment",null,null],["JUB","Jubilee Holdings","Insurance",null,null],["LIMT","Limuru Tea","Agriculture",null,null],["WTK","Williamson Tea Kenya","Agriculture",null,null]];
+const KEY="maliradar_v07_state";
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
+  cash:100000,hold:{},history:[],
+  alerts:[],
+  alertHistory:[],
+  watch:["SCOM","KCB","EQTY"]
+};
+const $=id=>document.getElementById(id);
+const stock=s=>STOCKS.find(x=>x[0]===s);
+const money=n=>Math.round(n).toLocaleString("en-KE");
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function nav(id,btn){
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  $(id).classList.add("active");
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  render();
+}
+function alerts(){
+  nav("alertsScreen",null);
+  renderAlerts();
+}
+function render(){
+  let val=state.cash;
+  Object.keys(state.hold).forEach(s=>{let x=stock(s);if(x && x[3]!=null)val+=state.hold[s]*x[3]});
+  $("total").textContent=money(val);
+  $("cash").textContent=money(state.cash);
+  $("pv").textContent=money(val);
+  renderRadar();renderMarkets();renderPortfolio();renderAlerts();
+}
+function renderRadar(){
+  $("radar").innerHTML=STOCKS.slice(0,3).map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</span></div><div class="muted">${x[0]} • ${x[2]} • ${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div></div>`).join("")
+}
+let marketFilter="all";
+function setMarketFilter(f){marketFilter=f;renderMarkets()}
+function marketRows(){
+  let rows=STOCKS.filter(x=>marketFilter==="all"||x[2]===marketFilter);
+  return rows;
+}
+function renderMarkets(){
+  let rows=marketRows();
+  if($("universeCount"))$("universeCount").textContent=`${rows.length} entries`;
+  $("list").innerHTML=rows.map(x=>{
+    let price=x[3]==null?"Price unavailable":"KSh "+x[3].toFixed(2);
+    let move=x[4]==null?"—":((x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%");
+    let cls=x[4]==null?"muted":(x[4]>=0?"green":"red");
+    let trade=x[3]==null?"":"<button class='btn' onclick=\"buy('"+x[0]+"')\">Paper Buy</button><button class='btn red' onclick=\"sell('"+x[0]+"')\">Paper Sell</button>";
+    return `<div class="stock"><div class="row"><div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div><div><b>${price}</b><div class="${cls}">${move}</div></div></div><div class="actions">${trade}<button class="btn alt" onclick="details('${x[0]}')">${state.watch.includes(x[0])?"★ Watching":"☆ Watch"}</button><button class="btn alt" onclick="quickAlert('${x[0]}')">🔔 Alert</button></div></div>`
+  }).join("")||"<p class='muted'>No securities in this filter.</p>"
+}
+function renderPortfolio(){
+  let keys=Object.keys(state.hold);
+  $("holdingCount").textContent=keys.length;
+  $("holdings").innerHTML=keys.length?keys.map(s=>{
+    let x=stock(s);
+    return`<div class="stock"><div class="row"><b>${x[0]} — ${x[1]}</b><span>${state.hold[s]} shares</span></div><div class="muted">Value: KSh ${money(state.hold[s]*x[3])}</div></div>`
+  }).join(""):"<p class='muted'>No paper holdings yet.</p>";
+  $("history").innerHTML=state.history.length?state.history.map(h=>`<div class="stock"><div class="row"><b class="${h.type==="BUY"?"green":"red"}">${h.type} ${h.sym}</b><span>${h.q} @ KSh ${h.p.toFixed(2)}</span></div><div class="muted">${h.time}</div></div>`).join(""):"<p class='muted'>No transactions yet.</p>";
+  $("invested").textContent="KSh "+money(state.history.filter(h=>h.type==="BUY").reduce((a,h)=>a+h.q*h.p,0))
+}
+function universalSearch(){
+  const q=($("q")?.value||"").trim().toLowerCase();
+  if(!q){closeSearchResults();return}
+  const matches=STOCKS.filter(x=>x.join(" ").toLowerCase().includes(q));
+  const box=$("globalSearchResults");
+  if(!box)return;
+  box.innerHTML=matches.length?matches.map(x=>`
+    <div class="search-result" onclick="openSearchStock('${x[0]}')">
+      <div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div>
+      <div style="text-align:right"><b>${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</b><div class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</div></div>
+    </div>`).join(""):`<div class="search-empty">No matching demo asset found.</div>`;
+  box.classList.add("show");
+}
+function openSearchStock(sym){
+  closeSearchResults();
+  $("q").value="";
+  details(sym);
+}
+function closeSearchResults(){
+  const box=$("globalSearchResults");
+  if(box)box.classList.remove("show");
+}
+function focusSearch(){
+  $("q")?.focus();
+}
+document.addEventListener("click",e=>{
+  const wrap=$("globalSearchWrap");
+  if(wrap&&!wrap.contains(e.target))closeSearchResults();
+});
+function buy(s){
+  let x=stock(s),q=parseInt(prompt("How many paper shares?","10"));
+  if(!q||q<1)return;
+  if(x[3]*q>state.cash)return alert("Not enough paper cash.");
+  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash-=x[3]*q;state.hold[s]=(state.hold[s]||0)+q;
+  state.history.unshift({type:"BUY",sym:s,q,p:x[3],time:new Date().toLocaleString()});
+  save();render();alert("Paper Buy confirmed. No real money was used.")
+}
+function sell(s){
+  let x=stock(s),owned=state.hold[s]||0;
+  if(!owned)return alert("No paper holding.");
+  let q=parseInt(prompt("How many paper shares to sell?",String(Math.min(1,owned))));
+  if(!q||q<1||q>owned)return;
+  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash+=x[3]*q;state.hold[s]-=q;if(!state.hold[s])delete state.hold[s];
+  state.history.unshift({type:"SELL",sym:s,q,p:x[3],time:new Date().toLocaleString()});
+  save();render();alert("Paper Sell confirmed. No real money was used.")
+}
+function details(s){
+  let x=stock(s);
+  if(!x)return;
+  if(!state.watch.includes(s))state.watch.push(s);else state.watch=state.watch.filter(v=>v!==s);
+  save();
+  openM(x[1],`<p><b>${x[0]} • ${x[2]}</b></p><div class="big">${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div><div class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</div><div class="chart"><div class="line"></div></div><p class="notice">DEMO DATA. Chart movement is illustrative and is not a live market feed.</p><div class="actions"><button class="btn" onclick="buy('${s}');closeM()">Paper Buy</button><button class="btn red" onclick="sell('${s}');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert('${s}')">🔔 Create Alert</button></div>`);
+  renderMarkets()
+}
+function account(){nav("accountScreen",document.querySelectorAll(".tabs button")[4])}
+function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this prototype does not execute real trades.</p><p class="notice"><b>Demo data:</b> prices and market information may be simulated or illustrative.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
+function closeM(){$("modal").classList.remove("show")}
+function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classList.add("show")}
+function resetDemo(){if(confirm("Reset local demo data?")){localStorage.removeItem(KEY);location.reload()}}
+
+/* ---------- ALERT COMMAND CENTER ---------- */
+function alertStockOptions(selected){
+  return STOCKS.map(x=>`<option value="${x[0]}" ${x[0]===selected?"selected":""}>${x[0]} — ${x[1]}</option>`).join("")
+}
+function alertForm(type, sym){
+  let title=type==="price"?"Price Target Alert":type==="move"?"Percentage Movement Alert":"Crossing Alert";
+  let body="";
+  if(type==="price"){
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><select id="aDir"><option value="above">Rises to / above</option><option value="below">Falls to / below</option></select><input id="aValue" type="number" step="0.01" placeholder="Target price"></div>`
+  }else if(type==="move"){
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><select id="aDir"><option value="up">Moves up by at least</option><option value="down">Moves down by at least</option></select><input id="aValue" type="number" step="0.01" min="0.01" placeholder="%"></div>`
+  }else{
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><input id="aValue" type="number" step="0.01" placeholder="Crossing price"><select id="aDir"><option value="above">Crosses above</option><option value="below">Crosses below</option></select></div>`
+  }
+  openM("🔔 "+title,`<p class="notice">This creates a paper/demo alert. The current prototype checks conditions against its demo price data; it does not connect to a live market feed.</p>${body}<div class="actions"><button class="btn" onclick="saveAlert('${type}')">Create Alert</button><button class="btn alt" onclick="closeM()">Cancel</button></div>`)
+}
+function quickAlert(sym){alertForm("price",sym)}
+function createPriceAlert(){alertForm("price","SCOM")}
+function createMoveAlert(){alertForm("move","SCOM")}
+function createCrossAlert(){alertForm("cross","SCOM")}
+function saveAlert(type){
+  let sym=$("aSym").value,dir=$("aDir").value,value=parseFloat($("aValue").value);
+  if(!value||value<=0)return alert("Enter a valid alert value.");
+  let x=stock(sym);
+  state.alerts.unshift({
+    id:Date.now()+Math.random(),
+    type,sym,dir,value,created:new Date().toLocaleString(),
+    active:true,lastPrice:x[3],triggered:false
+  });
+  save();closeM();renderAlerts();updateAlertCount();
+  alert("Alert created. MaliRadar will monitor this condition in demo mode.")
+}
+function conditionMet(a,x){
+  if(a.type==="price"){
+    return a.dir==="above" ? x[3]>=a.value : x[3]<=a.value;
+  }
+  if(a.type==="cross"){
+    return a.dir==="above" ? x[3]>=a.value : x[3]<=a.value;
+  }
+  if(a.type==="move"){
+    let pct=Math.abs(x[4]);
+    return a.dir==="up" ? x[4]>=a.value : x[4]<=-a.value;
+  }
+  return false;
+}
+function severityFor(a){
+  if(a.type==="price" && Math.abs(a.value-(stock(a.sym)||[,,,0])[3])<1)return "IMPORTANT";
+  if(a.type==="move" && a.value<=3)return "WATCH";
+  return "INFO";
+}
+function checkAlerts(){
+  let changed=false;
+  state.alerts.forEach(a=>{
+    if(!a.active)return;
+    let x=stock(a.sym);if(!x||x[3]==null)return;
+    if(conditionMet(a,x)){
+      a.active=false;a.triggered=true;a.triggeredAt=new Date().toLocaleString();a.triggerPrice=x[3];
+      state.alertHistory.unshift({...a});
+      changed=true;
+      showTriggered(a,x);
+    }
+    a.lastPrice=x[3];
+  });
+  if(changed)save();
+  updateAlertCount();
+  renderAlerts();
+}
+function showTriggered(a,x){
+  let sev=severityFor(a);
+  openM("⚡ ALERT TRIGGERED",`<div class="card alert-trigger"><div class="row"><b>${x[1]} (${x[0]})</b><span class="severity ${sev.toLowerCase()}">${sev}</span></div><p class="notice">Condition: ${alertDescription(a)}</p><div class="big">${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div><p class="notice">${a.triggeredAt}</p><p class="notice">This is an informational demo alert. It is not a buy/sell instruction.</p></div><button class="btn" onclick="closeM()">ACKNOWLEDGE</button>`)
+}
+function alertDescription(a){
+  if(a.type==="price")return `${a.dir==="above"?"Price at or above":"Price at or below"} KSh ${a.value.toFixed(2)}`;
+  if(a.type==="move")return `${a.dir==="up"?"Up":"Down"} by at least ${a.value}%`;
+  return `Price crosses ${a.dir} KSh ${a.value.toFixed(2)}`;
+}
+function renderAlerts(){
+  let active=state.alerts.filter(a=>a.active),hist=state.alertHistory.slice(0,12);
+  if($("activeAlertCount"))$("activeAlertCount").textContent=active.length;
+  if($("triggeredAlertCount"))$("triggeredAlertCount").textContent=state.alertHistory.length;
+  if($("alertList"))$("alertList").innerHTML=active.length?active.map(a=>{
+    let x=stock(a.sym),sev=severityFor(a);
+    return `<div class="alert-item"><div class="row"><div><b>${x[0]} — ${x[1]}</b><div class="muted">${alertDescription(a)}</div></div><span class="severity ${sev.toLowerCase()}">${sev}</span></div><div class="actions"><button class="btn alt" onclick="deleteAlert('${a.id}')">Delete</button></div></div>`
+  }).join(""):"<p class='muted'>No active alerts. Create one above.</p>";
+  if($("alertHistory"))$("alertHistory").innerHTML=hist.length?hist.map(a=>{
+    let x=stock(a.sym);
+    return `<div class="alert-item"><div class="row"><b class="green">⚡ ${x[0]} triggered</b><span>KSh ${(a.triggerPrice||x[3]).toFixed(2)}</span></div><div class="muted">${alertDescription(a)} • ${a.triggeredAt||""}</div></div>`
+  }).join(""):"<p class='muted'>No triggered alerts yet.</p>";
+  updateAlertCount()
+}
+function deleteAlert(id){
+  state.alerts=state.alerts.filter(a=>String(a.id)!==String(id));
+  save();renderAlerts()
+}
+function updateAlertCount(){
+  let n=state.alerts.filter(a=>a.active).length;
+  if($("alertCount"))$("alertCount").textContent=n?`(${n})`:"";
+}
+function migrateV06(){
+  let old=JSON.parse(localStorage.getItem("maliradar_v06_state")||"null");
+  if(!old)return;
+  if(!state.history.length && !Object.keys(state.hold).length && state.cash===100000){
+    state.cash=old.cash??100000;state.hold=old.hold||{};state.history=old.history||[];state.watch=old.watch||state.watch;state.alerts=old.alerts||[];
+    save();
+  }
+}
+async function ping(){try{let r=await fetch("/api/health");if(r.ok){$("dot").classList.add("on");$("status").textContent="Backend connected"}}catch(e){$("status").textContent="Demo mode • backend not deployed"}}
+migrateV06();render();ping();checkAlerts();
+</script></body></html>
