@@ -77,3 +77,5 @@ app.get("/api/alerts/:userId",(req,res)=>{
 app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 
 app.listen(PORT,()=>console.log(`MaliRadar API listening on ${PORT}`));
+const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
+registerMaliRadarMarketDataRoutes(app);
