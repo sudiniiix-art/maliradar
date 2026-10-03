@@ -72,7 +72,8 @@ app.post("/api/alerts",(req,res)=>{
 
 app.get("/api/alerts/:userId",(req,res)=>{
   const db=readDB(); res.json(db.alerts.filter(a=>a.userId===req.params.userId));
-});
+});const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
+registerMaliRadarMarketDataRoutes(app);
 
 app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
 
