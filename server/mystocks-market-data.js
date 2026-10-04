@@ -86,10 +86,18 @@ function normalize(x) {
 
   const price = n(
     x?.price ??
+    x?.localPrice ??
+    x?.currentPrice ??
+    x?.marketPrice ??
+    x?.ltp ??
     x?.lastPrice ??
     x?.last ??
     x?.close ??
     q?.price ??
+    q?.localPrice ??
+    q?.currentPrice ??
+    q?.marketPrice ??
+    q?.ltp ??
     q?.lastPrice ??
     q?.last ??
     q?.close
@@ -125,9 +133,11 @@ function normalize(x) {
         x?.changePct ??
         x?.changePercent ??
         x?.percentChange ??
+        x?.change_percentage ??
         q?.changePct ??
         q?.changePercent ??
-        q?.percentChange
+        q?.percentChange ??
+        q?.change_percentage
       ),
 
     open:
@@ -171,8 +181,10 @@ function normalize(x) {
       x?.asOf ||
       x?.timestamp ||
       x?.updatedAt ||
+      x?.quoteTime ||
       q?.asOf ||
       q?.timestamp ||
+      q?.quoteTime ||
       null,
 
     delayMinutes:
