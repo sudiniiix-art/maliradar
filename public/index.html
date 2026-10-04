@@ -2710,7 +2710,7 @@ button{position:relative;overflow:hidden}
     list.innerHTML=items.length?items.map(s=>{
       const q=getQuote(s),p=q&&q.price!=null?fmt(q):'Price unavailable';
       const name=q&&q.name||s,quality=q&&q.price!=null?'VERIFIED QUOTE':'NO VERIFIED PRICE';
-      return '<div class="mr45-row"><div class="mr45-top"><div><b>'+esc(name)+'</b><div class="muted">'+esc(s)+' • '+esc(q&&q.exchange||ex())+'</div></div><div style="text-align:right"><div class="mr45-price">'+esc(p)+'</div><div class="mr45-change">'+change(q)+'</div></div></div><div class="actions"><span class="mr45-quality">'+quality+'</span><span class="muted">'+esc(q&&q.delayMinutes||15)+' min delayed</span></div><div class="mr45-actions"><button class="btn alt" onclick="MaliRadarWatch.open(''+esc(s)+'')">Details</button><button class="btn alt" onclick="quickAlert(''+esc(s)+'')">🔔 Alert</button><button class="btn alt" onclick="MaliRadarWatch.remove(''+esc(s)+'')">Remove</button></div></div>';
+      return '<div class="mr45-row"><div class="mr45-top"><div><b>'+esc(name)+'</b><div class="muted">'+esc(s)+' • '+esc(q&&q.exchange||ex())+'</div></div><div style="text-align:right"><div class="mr45-price">'+esc(p)+'</div><div class="mr45-change">'+change(q)+'</div></div></div><div class="actions"><span class="mr45-quality">'+quality+'</span><span class="muted">'+esc(q&&q.delayMinutes||15)+' min delayed</span></div><div class="mr45-actions"><button class="btn alt" onclick="MaliRadarWatch.open(\\'" + esc(s) + "\\')">Details</button><button class="btn alt" onclick="quickAlert(\\'" + esc(s) + "\\')">🔔 Alert</button><button class="btn alt" onclick="MaliRadarWatch.remove(\\'" + esc(s) + "\\')">Remove</button></div></div>';
     }).join(''):'<div class="mr45-empty">Your watchlist is empty. Add a provider-backed company above.</div>';
   }
   function add(sym){
@@ -2739,7 +2739,7 @@ button{position:relative;overflow:hidden}
   }
   function addSelected(){const el=document.getElementById('mr45Symbol');if(el&&el.value)add(el.value)}
   window.MaliRadarWatch={version:'2.0',add,addSelected,remove,open,refresh,render};
-  function boot(){ensureCard();render();setTimeout(refresh,700);setInterval(refresh,60000)}
+  function boot(){ensureCard();render();setTimeout(refresh,700);setInterval(refresh,60000);const market=document.getElementById('markets');if(market&&!window.__mr45Observer){window.__mr45Observer=new MutationObserver(function(){if(!document.getElementById('mr45WatchCard')){setTimeout(function(){ensureCard();render()},0)}});window.__mr45Observer.observe(market,{childList:true})}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,500));else setTimeout(boot,500);
 })();
 </script>
