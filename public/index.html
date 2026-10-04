@@ -389,6 +389,10 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     if(metric==="return")return x.ret.toFixed(2)+"%";
     return x.trades+" trades";
   }
+  function renderPodium(a){
+    const box=document.getElementById("lbPodium"); if(!box)return;
+    box.innerHTML=a.slice(0,3).map((x,i)=>'<div class="lb-podium-card '+(x.local?'you':'')+'"><div class="lb-podium-rank">'+(["🥇","🥈","🥉"][i])+'</div><div class="lb-podium-name">'+x.name+'</div><div class="lb-podium-value">'+value(x)+'</div></div>').join("");
+  }
   function render(){
     const box=document.getElementById("lbRows"),title=document.getElementById("lbTitle");
     if(!box||!title)return;
