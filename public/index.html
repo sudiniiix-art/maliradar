@@ -1251,7 +1251,16 @@ function deleteTrustData(){
     const groups={};
     unavailable.forEach(x=>{const k=x.status||'UNAVAILABLE';groups[k]=(groups[k]||0)+1});
     const groupHtml=Object.entries(groups).map(([k,v])=>'<span class="badge" style="color:#ffe08a;border-color:#665629">'+escCov(k.replaceAll('_',' '))+' • '+v+'</span>').join(' ');
-    const rows=unavailable.map(x=>'<div class="stock"><div class="row"><div><b>'+escCov(x.symbol)+'</b><div class="muted">'+escCov(x.reason||'Provider did not return a verified price')+'</div></div><span class="severity watch">'+escCov(x.status||'UNAVAILABLE')+'</span></div></div>').join('');
+    const rows=unavailable.map(x=>{
+      const status=String(x.status||'UNAVAILABLE');
+      const reason=x.reason||x.availabilityReason||({
+        NOT_FOUND_BY_PROVIDER:'Provider did not resolve this symbol.',
+        NO_VERIFIED_PRICE:'Provider resolved the instrument but returned no usable price.',
+        DETAIL_REQUEST_FAILED:'The provider single-stock verification request failed.'
+      }[status]||'Provider did not return a verified price.');
+      const method=x.method||'NONE';
+      return '<div class="stock"><div class="row"><div><b>'+escCov(x.symbol)+'</b><div class="muted">'+escCov(reason)+'</div><div class="muted" style="margin-top:4px">Verification: '+escCov(method)+'</div></div><span class="severity watch">'+escCov(status.replaceAll('_',' '))+'</span></div></div>';
+    }).join('');
     root.innerHTML='<div class="card"><div class="row"><div><b>Provider Coverage</b><div class="muted">Exact verification status for the current '+escCov(data?.market||marketCov())+' directory</div></div><span class="badge">'+verified.length+'/'+ins.length+' VERIFIED</span></div><div class="grid"><div class="metric">Verified<b class="green">'+verified.length+'</b></div><div class="metric">Unavailable<b class="red">'+unavailable.length+'</b></div><div class="metric">Coverage<b>'+escCov(String(data?.coveragePct??0))+'%</b></div><div class="metric">Provider<b>MyStocks</b></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+groupHtml+'</div><div style="margin-top:12px"><b>Unverified instruments</b></div><div>'+rows+'</div></div>';
   }
   async function runCov(){
