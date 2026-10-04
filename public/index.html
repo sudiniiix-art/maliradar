@@ -1229,6 +1229,11 @@ function deleteTrustData(){
       if(count)count.textContent='Directory: '+providerStocks.length+' provider instruments loaded • 🟡 15-min delayed';
       const status=document.getElementById('status');
       if(status)status.textContent='MaliRadar system online • '+m+' • 15-MIN DELAYED';
+
+      // The provider directory can arrive after the quote engine starts.
+      // Tell the quote engine that the authoritative universe is now ready,
+      // so it refreshes quotes for exactly these instruments.
+      window.dispatchEvent(new CustomEvent('maliRadarDirectoryReady',{detail:{market:m,count:providerStocks.length}}));
     }catch(e){/* Keep the local demo directory if the provider is unavailable. */}
   }
   const oldSet=window.setMaliRegion;
@@ -1438,6 +1443,7 @@ function deleteTrustData(){
   async function load(force){const all=stocks();try{const j=await api('/api/market-data/quotes?market='+encodeURIComponent(market())+'&symbols='+encodeURIComponent(all.map(x=>local(x[0])).join(','))+'&_mr='+Date.now());(j?.quotes||[]).forEach(x=>apply(norm(x,x.symbol)));renderMarkets();renderRadar();window.MaliRadarProviderQuotes=store}catch(e){renderMarkets();renderRadar()}}
   window.maliRadarProviderQuotes=store;window.maliRadarProviderRefreshMarkets=load;window.MaliRadarProviderDetail={open:openDetail};window.details=s=>openDetail(s,'1M');window.renderMarkets=renderMarkets;window.renderRadar=renderRadar;
   const oldSet=window.setMaliRegion;if(oldSet)window.setMaliRegion=function(id){Object.keys(store).forEach(k=>delete store[k]);const r=oldSet.apply(this,arguments);setTimeout(()=>load(true),250);return r};
+  window.addEventListener('maliRadarDirectoryReady',()=>{setTimeout(()=>load(true),50)});
   window.addEventListener('load',()=>{setTimeout(()=>load(false),700);setTimeout(()=>load(true),2200)});
 })();
 </script>
