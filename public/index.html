@@ -1604,50 +1604,38 @@ function deleteTrustData(){
         q=Array.isArray(qj?.quotes)?(qj.quotes.find(x=>String(x?.symbol||'').toUpperCase()===String(s).toUpperCase())||qj.quotes[0]):null;
       }
       if(!q || num26(q?.price)==null) throw new Error('No verified quote returned for '+s);
-      let c={candles:[],status:'UNAVAILABLE',interval:r};
-      let candleError='';
+
+      const price=num26(q?.price), change=num26(q?.changePct);
+      const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>'<button class="btn alt mr25-period" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+p+'\')">'+p+'</button>').join('');
+      const baseHtml='<div class="mr26-wrap"><div class="mr26-chart-card">'+
+        '<div class="mr26-chart-head"><div><b>'+esc26(q?.name||s)+'</b><div class="muted">'+esc26(ex)+' • '+esc26(q?.currency||'')+'</div></div><span class="mr26-badge">🟡 15-MIN DELAYED</span></div>'+
+        '<div style="margin-top:8px;font-size:25px;font-weight:800">'+(price!=null?price.toFixed(2):'—')+' <span class="'+(change!=null&&change<0?'red':'')+'" style="font-size:12px">'+(change!=null?(change>0?'+':'')+change.toFixed(2)+'%':'')+'</span></div>'+
+        '<div class="mr25-toolbar">'+periods+'</div>'+
+        '<div id="mr26-candle-area"><div class="mr27-history-card"><b>Chart loading…</b><div>Verified quote is ready. Historical candles are loading in the background.</div></div></div>'+
+        '<div class="mr26-meta">'+
+        '<div><span>Open</span><b>'+(num26(q?.open)!=null?q.open.toFixed(2):'—')+'</b></div>'+
+        '<div><span>High</span><b>'+(num26(q?.high)!=null?q.high.toFixed(2):'—')+'</b></div>'+
+        '<div><span>Low</span><b>'+(num26(q?.low)!=null?q.low.toFixed(2):'—')+'</b></div>'+
+        '<div><span>Previous close</span><b>'+(num26(q?.previousClose)!=null?q.previousClose.toFixed(2):'—')+'</b></div></div>'+
+        '<div class="card"><b>Data intelligence</b><p class="mr26-note">Source: '+esc26(q?.source||'MyStocks Africa Sandbox')+' • Status: DELAYED • '+esc26(q?.delayMinutes||15)+' minutes • '+esc26(q?.asOf||'Provider timestamp unavailable')+'</p><p class="mr26-note">A delayed quote describes reported market activity. It is not a prediction or trading recommendation.</p></div>'+
+        '<div class="actions"><button class="btn" onclick="buy(\''+esc26(s)+'\');closeM()">Paper Buy</button><button class="btn red" onclick="sell(\''+esc26(s)+'\');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert(\''+esc26(s)+'\')">🔔 Alert</button></div>'+
+        '</div></div>';
+      openM(esc26(title),baseHtml);
+
+      // Historical candles are deliberately non-blocking: the verified quote/detail
+      // screen is already visible while the slower provider history request runs.
       try{
-        c=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(ex)+'&range='+encodeURIComponent(r)+'&_mr26='+Date.now());
-      }catch(candleErr){
-        candleError=String(candleErr?.message||'Historical candles unavailable');
+        const c=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(ex)+'&range='+encodeURIComponent(r)+'&_mr26='+Date.now());
+        const rows=c?.candles||c?.data?.candles||c?.data||[];
+        const area=document.getElementById('mr26-candle-area');
+        if(area){
+          area.innerHTML=chart26(rows,c,r)+'<div class="mr26-note">'+(rows.length?'Chart uses provider candles only. MaliRadar does not invent missing market data.':'Historical chart data is currently unavailable from the provider for this range. The verified stock quote above remains valid.')+'</div><div class="mr27-history-meta">Range: '+esc26(r)+' • Provider interval: '+esc26(c?.interval||((window.MaliRadarV27RangePolicy||{})[r]?.interval)||'provider supplied')+' • Candles returned: '+rows.length+'</div>';
+          setTimeout(()=>bindChart26(area),0);
+        }
+      }catch(e){
+        const area=document.getElementById('mr26-candle-area');
+        if(area) area.innerHTML='<div class="mr27-history-card mr27-warn"><b>Historical chart unavailable</b><div>The verified stock quote remains available. MaliRadar will not invent missing market data.</div></div>';
       }
-      const rows=c?.candles||c?.data?.candles||c?.data||[];
-      const price=num26(q?.price);
-      const change=num26(q?.changePct);
-      const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>`<button class="btn alt mr25-period" onclick="window.MaliRadarMarketPro.open('${esc26(s)}','${p}')">${p}</button>`).join('');
-      const html=`<div class="mr26-wrap">
-        <div class="mr26-chart-card">
-          <div class="mr26-chart-head">
-            <div><b>${esc26(q?.name||s)}</b><div class="muted">${esc26(ex)} • ${esc26(q?.currency||'')}</div></div>
-            <span class="mr26-badge">🟡 15-MIN DELAYED</span>
-          </div>
-          <div style="margin-top:8px;font-size:25px;font-weight:800">${price!=null?price.toFixed(2):'—'} <span class="${change!=null&&change<0?'red':''}" style="font-size:12px">${change!=null?(change>0?'+':'')+change.toFixed(2)+'%':''}</span></div>
-          <div class="mr25-toolbar">${periods}</div>
-          ${chart26(rows,c,r)}
-          <div class="mr26-note">${rows.length?`Chart uses provider candles only. MaliRadar does not invent missing market data.`:`Historical chart data is currently unavailable from the provider for this range. The verified stock quote above remains valid.`}</div>
-          <div class="mr27-history-meta">Range: ${esc26(r)} • Provider interval: ${esc26(c?.interval||((window.MaliRadarV27RangePolicy||{})[r]?.interval)||"provider supplied")} • Candles returned: ${rows.length}</div>
-          ${r==="MAX" && rows.length>0 ? '<div class="mr27-history-card mr27-warn"><b>Maximum provider history available</b><div>The sandbox currently returned a limited weekly history for MAX. Older history was not supplied, so MaliRadar will not fabricate it.</div></div>' : ""}
-          ${r==="1D" && String(c?.status||"").toUpperCase()==="UNAVAILABLE" ? '<div class="mr27-history-card mr27-warn"><b>Intraday data unavailable</b><div>This provider sandbox does not currently supply usable 1D intraday candles.</div></div>' : ""}
-        </div>
-        <div class="mr26-meta">
-          <div><span>Open</span><b>${num26(q?.open)!=null?q.open.toFixed(2):'—'}</b></div>
-          <div><span>High</span><b>${num26(q?.high)!=null?q.high.toFixed(2):'—'}</b></div>
-          <div><span>Low</span><b>${num26(q?.low)!=null?q.low.toFixed(2):'—'}</b></div>
-          <div><span>Previous close</span><b>${num26(q?.previousClose)!=null?q.previousClose.toFixed(2):'—'}</b></div>
-        </div>
-        <div class="card">
-          <b>Data intelligence</b>
-          <p class="mr26-note">Source: ${esc26(q?.source||'MyStocks Africa Sandbox')} • Status: DELAYED • ${esc26(q?.delayMinutes||15)} minutes • ${esc26(q?.asOf||'Provider timestamp unavailable')}</p>
-          <p class="mr26-note">A delayed quote describes reported market activity. It is not a prediction or trading recommendation.</p>
-        </div>
-        <div class="actions">
-          <button class="btn" onclick="buy('${esc26(s)}');closeM()">Paper Buy</button>
-          <button class="btn red" onclick="sell('${esc26(s)}');closeM()">Paper Sell</button>
-          <button class="btn alt" onclick="quickAlert('${esc26(s)}')">🔔 Alert</button>
-        </div>
-      </div>`;
-      openM(esc26(title),html);
-      setTimeout(()=>bindChart26(document.querySelector('.mr26-wrap')),0);
     }catch(e){
       openM(esc26(title),'<div class="notice">Provider market data could not be loaded. MaliRadar will not substitute an old static price.</div><button class="btn" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+esc26(r)+'\')">↻ Try again</button>');
     }
