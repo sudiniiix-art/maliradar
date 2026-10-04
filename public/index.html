@@ -1192,35 +1192,49 @@ function deleteTrustData(){
   function n(v){return typeof v==='number'&&Number.isFinite(v)?v:(v!=null&&v!==''&&!Number.isNaN(Number(v))?Number(v):null)}
   async function loadProvider(){
     try{
-      const r=await fetch('/api/market-data/stocks?market='+encodeURIComponent(market())+'&limit=1000',{headers:{Accept:'application/json'}});
+      const m=market();
+      const r=await fetch('/api/market-data/stocks?market='+encodeURIComponent(m)+'&limit=1000',{headers:{Accept:'application/json'},cache:'no-store'});
       if(!r.ok)return;
       const j=await r.json();
       const rows=Array.isArray(j?.stocks)?j.stocks:(Array.isArray(j)?j:[]);
       if(!rows.length)return;
-      const existing=new Set((MaliRadarStocks()||[]).map(x=>x[0]));
+
+      // Provider directory is authoritative when available. Do not merge stale
+      // hardcoded/demo instruments into a live provider-backed market.
+      const providerStocks=[];
+      const seen=new Set();
       rows.forEach(x=>{
-        const symbol=String(x.symbol||x.ticker||x.code||'').split('.')[0];
-        if(!symbol)return;
+        const qualified=String(x.symbol||x.ticker||x.code||'').trim();
+        const symbol=qualified.split('.')[0];
+        if(!symbol||seen.has(symbol))return;
         const price=n(x.price??x.lastPrice??x.last??x.close);
         const change=n(x.changePct??x.changePercent??x.percentChange);
         const name=x.name||x.companyName||x.company?.name||symbol;
-        const exchange=x.exchange||x.market||market();
-        const row=[symbol,name,exchange,price,change];
-        const old=(MaliRadarStocks()||[]).find(y=>y[0]===symbol);
-        if(old){old[1]=name||old[1];if(price!=null)old[3]=price;if(change!=null)old[4]=change;}
-        else MaliRadarStocks().push(row);
+        const exchange=String(x.exchange||x.market||m).toUpperCase();
+        if(exchange!==m)return;
+        providerStocks.push([symbol,name,exchange,price,change]);
+        seen.add(symbol);
       });
+      if(!providerStocks.length)return;
+
+      // Keep the provider universe as the market directory. This removes old
+      // manually seeded rows while preserving the same STOCKS data structure
+      // used by search, Markets, Radar, portfolio and stock detail screens.
+      const target=MaliRadarStocks();
+      target.splice(0,target.length,...providerStocks);
+
       if(typeof window.renderMarkets==='function')window.renderMarkets();
       if(typeof window.renderRadar==='function')window.renderRadar();
       const count=document.querySelector('.v21-dir-count');
-      if(count)count.textContent='Directory: '+rows.length+' provider instruments loaded • 🟡 15-min delayed';
+      if(count)count.textContent='Directory: '+providerStocks.length+' provider instruments loaded • 🟡 15-min delayed';
       const status=document.getElementById('status');
-      if(status)status.textContent='MaliRadar system online • '+market()+' • 15-MIN DELAYED';
-    }catch(e){/* Keep the v2.1 directory working if provider is unavailable. */}
+      if(status)status.textContent='MaliRadar system online • '+m+' • 15-MIN DELAYED';
+    }catch(e){/* Keep the local demo directory if the provider is unavailable. */}
   }
   const oldSet=window.setMaliRegion;
   if(oldSet)window.setMaliRegion=function(id){oldSet(id);setTimeout(loadProvider,150)};
   window.addEventListener('load',()=>setTimeout(loadProvider,350));
+  window.maliRadarLoadProviderDirectory=loadProvider;
 })();
 </script>
 
