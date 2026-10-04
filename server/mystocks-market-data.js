@@ -444,39 +444,35 @@ function registerMaliRadarMarketDataRoutes(app) {
 
       try {
 
-        const body =
-          await msFetch(
-            '/stocks',
-            {
+        // MyStocks /stocks is cursor-paginated. Fetch provider pages here
+        // so the directory does not silently stop at the first page.
+        const requestedLimit = Math.min(Math.max(Number(req.query.limit || 1000), 1), 1000);
+        const pageSize = Math.min(requestedLimit, 200);
+        const allRows = [];
+        let cursor;
+        let pages = 0;
+        let hasMore = true;
 
-              limit:
-                Math.min(
-                  Number(
-                    req.query.limit ||
-                    200
-                  ),
-                  200
-                ),
+        while (hasMore && allRows.length < requestedLimit && pages < 10) {
+          const body = await msFetch('/stocks', {
+            limit: pageSize,
+            search: req.query.search || undefined,
+            exchange,
+            cursor: cursor || undefined
+          });
 
-              search:
-                req.query.search ||
-                undefined,
+          allRows.push(...list(body));
+          const nextCursor = body?.nextCursor || body?.next_cursor || body?.pagination?.nextCursor || null;
+          hasMore = Boolean(body?.hasMore ?? body?.has_more ?? nextCursor);
+          cursor = nextCursor || undefined;
+          pages += 1;
+          if (!cursor) break;
+        }
 
-              exchange
-            }
-          );
-
-        const rows =
-          list(body)
-            .map(normalize)
-            .filter(
-              x =>
-                !x.exchange ||
-                String(
-                  x.exchange
-                ).toUpperCase() ===
-                exchange
-            );
+        const rows = allRows
+          .slice(0, requestedLimit)
+          .map(normalize)
+          .filter(x => !x.exchange || String(x.exchange).toUpperCase() === exchange);
 
         res.set(
           'Cache-Control',
