@@ -1011,7 +1011,11 @@ function registerMaliRadarMarketDataRoutes(app) {
       const policy = {
 
         '1D': {
-          days: 1,
+          // Intraday history is session-based, not calendar-day based.
+          // A weekend/holiday can have no candles in the last 24 hours.
+          // Request a wider window and select the latest available trading
+          // session below so 1D remains truthful without fabricating data.
+          days: 7,
           interval: '15m'
         },
 
@@ -1103,9 +1107,17 @@ function registerMaliRadarMarketDataRoutes(app) {
                 new Date(b.time)
             );
 
-        if (
-          policy.days != null
-        ) {
+        if (range === '1D') {
+          // Use the most recent trading session returned by the provider.
+          // This handles weekends/holidays while keeping the chart provider-only.
+          if (candles.length) {
+            const latestTime = new Date(candles[candles.length - 1].time);
+            const latestDay = latestTime.toISOString().slice(0, 10);
+            candles = candles.filter(c =>
+              new Date(c.time).toISOString().slice(0, 10) === latestDay
+            );
+          }
+        } else if (policy.days != null) {
 
           const cutoff =
             Date.now() -
