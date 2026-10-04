@@ -710,11 +710,10 @@ function renderMarkets(){
 }
 let portfolioPeriod='1D',portfolioMode='beginner';
 function paperPrice(sym){
-  const x=stock(sym);
   const key=String(sym||'').toUpperCase().split('.')[0];
   const q=window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[key];
   if(q&&Number.isFinite(Number(q.price))) return Number(q.price);
-  return x&&Number.isFinite(Number(x[3]))?Number(x[3]):null;
+  return null;
 }
 function portfolioPositions(){
   const out=[];
@@ -745,7 +744,7 @@ function renderPortfolio(){
   let largest=pos.slice().sort((a,b)=>b.value-a.value)[0];
   $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
   $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
-  $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.x[3].toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
+  $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
   $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>`<div class="stock"><div class="row"><b class="${h.type==='BUY'?'green':'red'}">${h.type} ${h.sym}</b><span>${h.q} @ KSh ${h.p.toFixed(2)}</span></div><div class="muted">${h.time}</div></div>`).join(''):'<p class="muted">No transactions yet.</p>';
   const sectors={}; pos.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
   $('sectorAllocation').innerHTML=Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>`<div class="stock"><div class="row"><b>${sec}</b><span>${value?((v/value)*100).toFixed(1):'0.0'}%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${value?Math.min(100,v/value*100):0}%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh ${money(v)}</div></div>`).join(''):'<p class="muted">Sector allocation appears after you hold paper positions.</p>';
@@ -757,7 +756,7 @@ function togglePortfolioMode(){portfolioMode=portfolioMode==='beginner'?'expert'
 function setPortfolioPeriod(p,btn){portfolioPeriod=p;document.querySelectorAll('.periods button').forEach(b=>b.classList.remove('selected'));if(btn)btn.classList.add('selected');renderPortfolio()}
 function portfolioHistoryValues(){
   let cash=100000,hold={}; const arr=[];
-  state.history.forEach(h=>{if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q} let v=cash;Object.keys(hold).forEach(s=>{let x=stock(s);if(x&&x[3]!=null)v+=hold[s]*x[3]});arr.push({label:h.time||'',value:v})});
+  state.history.forEach(h=>{if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q} let v=cash;Object.keys(hold).forEach(s=>{let p=paperPrice(s);if(p!=null)v+=hold[s]*p});arr.push({label:h.time||'',value:v})});
   return arr;
 }
 function renderPortfolioChart(current){
@@ -1459,6 +1458,7 @@ function deleteTrustData(){
       renderMarkets();
       renderRadar();
       window.MaliRadarProviderQuotes=store;
+      if(typeof renderPortfolio==='function') renderPortfolio();
     }catch(e){
       // Keep already-verified quotes visible if a later chunk fails.
       renderMarkets();
