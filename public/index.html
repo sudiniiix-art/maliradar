@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v3.0</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v4.0</title><style>
 :root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
 .alert-item{padding:12px 0;border-top:1px solid var(--line)}
 .alert-item:first-child{border-top:0}
@@ -522,83 +522,244 @@ renderNews();renderEvents();
 
 <section id="smartAssistView" class="screen" data-tour="assist">
  <div class="sa-hero" data-tour-target="assistHero">
-  <span class="sa-status">🟡 DEMO ANALYSIS ENGINE</span>
+  <span class="sa-status">🟡 PROVIDER-BACKED MARKET SCANNER</span>
   <div class="sa-title">Smart Assist</div>
-  <div class="sa-copy">Automated market analysis for the paper-trading environment. Start with Assist to see the analysis dashboard, then explore potential signals. It cannot know the future or guarantee outcomes.</div>
+  <div class="sa-copy">Scans the selected market using verified delayed provider quotes and historical candles. It ranks observed conditions into probable buy setups, probable sell/risk setups and watch candidates for paper-learning only.</div>
  </div>
+
  <div id="saActivation" class="sa-card" style="margin-top:14px">
-  <div class="eyebrow">OPTIONAL FEATURE</div><h3>Choose your assist level</h3><p class="muted">Activate the paper-trading analysis dashboard after reviewing the safeguard below.</p>
+  <div class="eyebrow">OPTIONAL FEATURE</div>
+  <h3>Choose your assist level</h3>
+  <p class="muted">Activate the whole-market analysis dashboard after reviewing the safeguard below.</p>
   <div class="sa-grid" style="margin-top:10px">
-   <div class="sa-card sa-choice selected" data-level="assist"><h3>🔎 Assist</h3><p>Explains market conditions and monitored factors.</p></div>
-   <div class="sa-card sa-choice" data-level="signal"><h3>⚡ Signal</h3><p>Demonstrates potential signals with reasons and uncertainty.</p></div>
-   <div class="sa-card sa-choice" data-level="auto"><h3>🤖 Auto-Assist</h3><p>Paper-only automatic preparation after simulated conditions.</p></div>
+   <div class="sa-card sa-choice selected" data-level="assist"><h3>🔎 Assist</h3><p>Explains observed market conditions across the whole market.</p></div>
+   <div class="sa-card sa-choice" data-level="signal"><h3>⚡ Signal</h3><p>Ranks probable setups for paper-learning, not real-money instructions.</p></div>
+   <div class="sa-card sa-choice" data-level="auto"><h3>🤖 Auto-Assist</h3><p>Prepares paper-only actions from the ranked scan.</p></div>
   </div>
-  <div class="sa-disclaimer" style="margin-top:13px"><strong>⚠️ Smart Assist Disclaimer</strong><br>Smart Assist may be inaccurate, incomplete, or wrong and cannot reliably predict future prices. It is not a financial adviser. Markets can move unexpectedly. You remain responsible for your decisions and losses.
-   <div class="sa-controls"><button class="sa-btn primary" id="saActivateBtn">I UNDERSTAND & ACTIVATE</button></div>
+  <div class="sa-disclaimer" style="margin-top:12px">
+   <b>Educational safeguard:</b> Smart Assist is not a financial adviser and does not know the future. “Probable buy/sell setup” means the current provider-backed conditions match MaliRadar's rules; it is <b>not a probability of profit</b> and is not a guarantee or trade instruction. Data may be delayed or unavailable.
   </div>
+  <div class="sa-controls"><button class="sa-btn primary" id="saActivateBtn">I UNDERSTAND & ACTIVATE</button></div>
  </div>
+
  <div id="saWorkspace" style="display:none;margin-top:14px">
   <div class="sa-grid">
-   <div class="sa-card"><div class="eyebrow">ASSET</div><h3>SCOM • Safaricom</h3><p>Verified MyStocks Africa data when available • 15 min delayed.</p></div>
-   <div class="sa-card"><div class="eyebrow">TIMEFRAME</div><div class="sa-controls" id="saTimeframes"><button class="sa-btn primary">1D</button><button class="sa-btn">1W</button><button class="sa-btn">1M</button><button class="sa-btn">3M</button></div></div>
-   <div class="sa-card"><div class="eyebrow">MODE</div><h3 id="saMode">Assist</h3><p id="saModeCopy">Condition explanation mode.</p></div>
+   <div class="sa-card"><div class="eyebrow">MARKET</div><h3 id="saMarket">—</h3><p id="saMarketMeta">Waiting for verified provider directory.</p></div>
+   <div class="sa-card"><div class="eyebrow">TIMEFRAME</div><div class="sa-controls" id="saTimeframes">
+    <button class="sa-btn primary">1D</button><button class="sa-btn">1W</button><button class="sa-btn">1M</button><button class="sa-btn">3M</button>
+   </div></div>
+   <div class="sa-card"><div class="eyebrow">MODE</div><h3 id="saMode">Assist</h3><p id="saModeCopy">Whole-market condition explanation mode.</p></div>
   </div>
+
   <div class="sa-signal" style="margin-top:14px">
-   <div class="eyebrow">PROVIDER-BACKED ANALYSIS</div><h3 id="saSignalTitle">LOADING MARKET CONDITIONS…</h3>
-   <p id="saSignalCopy" class="muted">Analysis uses verified provider prices/candles when available. It describes observed conditions; it does not predict or recommend trades.</p>
-   <div id="saReasons"></div>
+   <div class="row"><div><div class="eyebrow">WHOLE-MARKET SCANNER</div><h3 id="saSignalTitle">READY TO SCAN</h3></div><span class="sa-pill" id="saScanStatus">IDLE</span></div>
+   <p id="saSignalCopy" class="muted">Scan every verified security in the selected market. Deep historical analysis is prioritized for the strongest current movers to keep the free app responsive.</p>
    <div class="sa-grid" style="margin-top:12px">
-    <div class="sa-card"><div class="eyebrow">TREND</div><h3 id="saTrend">—</h3><p id="saTrendDetail">Waiting for verified historical candles.</p></div>
-    <div class="sa-card"><div class="eyebrow">MOMENTUM</div><h3 id="saMomentum">—</h3><p id="saMomentumDetail">Waiting for verified historical candles.</p></div>
-    <div class="sa-card"><div class="eyebrow">VERIFIED PRICE</div><h3 id="saPrice">—</h3><p id="saPriceDetail">Waiting for verified provider quote.</p></div>
+    <div class="sa-card"><div class="eyebrow">SCANNED</div><h3 id="saScanned">0</h3><p>Verified market rows checked.</p></div>
+    <div class="sa-card"><div class="eyebrow">BUY SETUPS</div><h3 id="saBuyCount">0</h3><p>Positive setup conditions.</p></div>
+    <div class="sa-card"><div class="eyebrow">SELL / RISK</div><h3 id="saSellCount">0</h3><p>Negative setup conditions.</p></div>
    </div>
-   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD ANALYSIS SNAPSHOT</button></div>
+   <div class="sa-grid" style="margin-top:12px">
+    <div class="sa-card"><div class="eyebrow">WATCH</div><h3 id="saWatchCount">0</h3><p>Mixed or insufficient setup strength.</p></div>
+    <div class="sa-card"><div class="eyebrow">DATA UNAVAILABLE</div><h3 id="saUnavailable">0</h3><p>No verified price returned.</p></div>
+    <div class="sa-card"><div class="eyebrow">SETUP SCORE</div><h3>0–100</h3><p>Rule score, not profit probability.</p></div>
+   </div>
+   <div class="sa-controls">
+    <button class="sa-btn primary" id="saRunBtn">SCAN WHOLE MARKET</button>
+    <button class="sa-btn" id="saRecordBtn">RECORD SCAN SNAPSHOT</button>
+   </div>
   </div>
-  <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Signal History</strong><span class="sa-pill">PROVIDER</span></div><div id="saHistory"></div></div>
+
+  <div class="sa-grid" style="margin-top:14px">
+   <div class="sa-card">
+    <div class="row"><div><div class="eyebrow">PROBABLE BUY SETUPS</div><h3>Top ranked</h3></div><span class="sa-pill">PAPER ONLY</span></div>
+    <div id="saBuyList"><div class="muted" style="padding-top:8px">Run a scan to rank provider-backed setups.</div></div>
+   </div>
+   <div class="sa-card">
+    <div class="row"><div><div class="eyebrow">PROBABLE SELL / RISK SETUPS</div><h3>Top ranked</h3></div><span class="sa-pill">PAPER ONLY</span></div>
+    <div id="saSellList"><div class="muted" style="padding-top:8px">Run a scan to rank provider-backed downside conditions.</div></div>
+   </div>
+  </div>
+
+  <div class="sa-card" style="margin-top:14px">
+   <div class="row"><strong>👀 Watchlist of mixed conditions</strong><span class="sa-pill">OBSERVED</span></div>
+   <div id="saWatchList"><div class="muted" style="padding-top:8px">No scan yet.</div></div>
+  </div>
+
+  <div class="sa-disclaimer" style="margin-top:14px">
+   <b>Important:</b> Smart Assist never claims that a stock will rise or fall. A setup score is a transparent educational ranking based on observed provider data. Missing or weak data stays <b>WATCH</b> or <b>UNAVAILABLE</b>; MaliRadar will not invent prices, candles or news.
+  </div>
+
+  <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Scan History</strong><span class="sa-pill">LOCAL</span></div><div id="saHistory"></div></div>
  </div>
 </section>
 
 <script>
 (function(){
- const levels={assist:["Assist","Condition explanation mode."],signal:["Signal","Potential signal mode. Signals are demonstrations, not instructions."],auto:["Auto-Assist","Paper-only automatic preparation mode."]};
- let level="assist",tf="1D";
+ const levels={
+  assist:["Assist","Whole-market condition explanation mode."],
+  signal:["Signal","Ranks probable setups using observed provider conditions; not instructions."],
+  auto:["Auto-Assist","Paper-only automatic preparation mode."]
+ };
+ let level="assist",tf="1D",lastResults=[];
  let hist=JSON.parse(localStorage.getItem("maliradar_smart_assist_history")||"[]");
- async function analyze(){
-  try{
-   const q=(window.maliRadarProviderQuotes||{})["SCOM"],p=Number(q?.price);
-   if(!Number.isFinite(p))throw new Error("Verified SCOM quote unavailable");
-   const range=tf==="1D"?"1D":tf==="1W"?"1W":tf==="1M"?"1M":"3M";
-   const j=await fetch("/api/market-data/stock/SCOM/candles?market=NSE&range="+range+"&_sa="+Date.now(),{cache:"no-store"}).then(x=>x.json());
-   const rows=(j?.candles||[]).map(c=>({t:new Date(c.time||c.timestamp||c.date).getTime(),p:Number(c.close??c.c??c.price)})).filter(x=>Number.isFinite(x.t)&&Number.isFinite(x.p)).sort((x,y)=>x.t-y.t);
-   if(!rows.length)throw new Error("Verified historical candles unavailable");
-   const first=rows[0].p,last=rows[rows.length-1].p,recent=rows.slice(-Math.min(5,rows.length)),prev=recent[0].p;
-   const change=first?((last-first)/first)*100:0,momentum=prev?((last-prev)/prev)*100:0;
-   const trend=change>0.5?"UPTREND":change<-0.5?"DOWNTREND":"SIDEWAYS";
-   const mom=momentum>0.5?"POSITIVE":momentum<-0.5?"NEGATIVE":"MIXED";
-   document.getElementById("saTrend").textContent=trend;
-   document.getElementById("saTrendDetail").textContent="Observed change across "+rows.length+" candles: "+change.toFixed(2)+"%.";
-   document.getElementById("saMomentum").textContent=mom;
-   document.getElementById("saMomentumDetail").textContent="Recent observed move: "+momentum.toFixed(2)+"%.";
-   document.getElementById("saPrice").textContent="KSh "+p.toFixed(2);
-   document.getElementById("saPriceDetail").textContent="Verified provider quote • "+(q.delayMinutes||15)+" min delayed.";
-   document.getElementById("saSignalTitle").textContent=level==="assist"?"MARKET CONDITIONS: "+trend:level==="signal"?"OBSERVED SETUP: "+trend+" / "+mom:"AUTO-ASSIST: PAPER OBSERVATION";
-   document.getElementById("saSignalCopy").textContent="Observed provider data only. This is descriptive analysis, not a prediction, financial advice, or trade instruction.";
-   document.getElementById("saReasons").innerHTML=["Price: KSh "+p.toFixed(2)+" from verified provider quote.","Trend: "+trend+" over "+range+" candles.","Momentum: "+mom+" from recent observed candles.","Data quality: provider-backed; data may be delayed or unavailable."].map(x=>'<div class="sa-reason">◈ '+x+"</div>").join("");
-  }catch(e){
-   document.getElementById("saSignalTitle").textContent="ANALYSIS UNAVAILABLE";
-   document.getElementById("saSignalCopy").textContent="MaliRadar will not invent prices or historical candles. Try again when verified provider data is available.";
-   document.getElementById("saReasons").innerHTML='<div class="sa-reason">◈ '+String(e.message||e)+'</div>';
-  }
+
+ const esc=x=>String(x==null?"":x).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+ const num=x=>{const n=Number(x);return Number.isFinite(n)?n:null};
+ const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+ const local=s=>String(s||"").toUpperCase().split(".")[0];
+ const marketName=()=>{
+   const qs=Object.values(window.maliRadarProviderQuotes||{});
+   return String(qs.find(q=>q?.exchange)?.exchange||"NSE").toUpperCase();
+ };
+ const rows=()=>{
+   const map=new Map();
+   for(const q of Object.values(window.maliRadarProviderQuotes||{})){
+     const sym=local(q?.localSymbol||q?.symbol);
+     if(!sym||map.has(sym))continue;
+     map.set(sym,q);
+   }
+   return [...map.values()];
+ };
+
+ function history(){
+   const el=document.getElementById("saHistory");
+   if(!el)return;
+   if(!hist.length){el.innerHTML='<div class="muted" style="padding-top:8px">No scan snapshots recorded.</div>';return}
+   el.innerHTML=hist.slice(-10).reverse().map(h=>'<div class="sa-history-row"><span>'+esc(h.time)+'</span><span>'+esc(h.tf)+'</span><span>'+esc(h.market)+' • '+esc(h.buy)+' buy / '+esc(h.sell)+' sell</span><span>'+esc(h.scanned)+' scanned</span></div>').join("");
  }
- function history(){let b=document.getElementById("saHistory");if(!hist.length){b.innerHTML='<div class="muted" style="padding:14px 0">No demo signals recorded yet.</div>';return}b.innerHTML=hist.slice().reverse().map(x=>'<div class="sa-history-row"><span>'+x.time+'</span><span class="sa-pill">'+x.signal+'</span><span>SCOM • '+x.tf+'</span><span>DEMO</span></div>').join("")}
- function setLevel(l){level=l;document.querySelectorAll(".sa-choice").forEach(x=>x.classList.toggle("selected",x.dataset.level===l));document.getElementById("saMode").textContent=levels[l][0];document.getElementById("saModeCopy").textContent=levels[l][1]}
- function run(){analyze()}
+
+ function card(r,type){
+   const q=r.quote||{};
+   const cls=type==="buy"?"green":type==="sell"?"red":"";
+   const action=type==="buy"
+    ?'<button class="sa-btn primary" onclick="buy(\''+esc(r.symbol)+'\')">PAPER BUY</button>'
+    :type==="sell"
+    ?'<button class="sa-btn" onclick="sell(\''+esc(r.symbol)+'\')">PAPER SELL</button>'
+    :"";
+   return '<div class="stock" style="padding:11px 0">'+
+    '<div class="row"><div><b>'+esc(r.symbol)+' • '+esc(q.name||r.symbol)+'</b><div class="muted">'+esc(q.exchange||marketName())+' • '+esc(q.delayMinutes||15)+' min delayed</div></div><strong class="'+cls+'">'+esc(r.label)+'</strong></div>'+
+    '<div class="grid" style="margin-top:8px">'+
+      '<div class="metric">PRICE<b>KSh '+(r.price!=null?r.price.toFixed(2):"—")+'</b></div>'+
+      '<div class="metric">SETUP SCORE<b>'+esc(r.score)+'/100</b></div>'+
+      '<div class="metric">OBSERVED MOVE<b class="'+(r.day>=0?"green":"red")+'">'+(r.day!=null?(r.day>=0?"+":"")+r.day.toFixed(2)+"%":"—")+'</b></div>'+
+      '<div class="metric">TREND / MOMENTUM<b>'+esc(r.trend)+" / "+esc(r.momentum)+'</b></div>'+
+    '</div>'+
+    '<div class="notice" style="margin-top:8px">'+r.reasons.map(x=>'◈ '+esc(x)).join("<br>")+'</div>'+
+    '<div class="actions">'+action+'<button class="sa-btn" onclick="window.MaliRadarMarketPro&&window.MaliRadarMarketPro.open(\''+esc(r.symbol)+'\',\''+esc(tf)+'\')">OPEN STOCK</button></div>'+
+   '</div>';
+ }
+
+ function render(){
+   const buys=lastResults.filter(x=>x.type==="buy").sort((a,b)=>b.score-a.score).slice(0,8);
+   const sells=lastResults.filter(x=>x.type==="sell").sort((a,b)=>a.score-b.score).slice(0,8);
+   const watch=lastResults.filter(x=>x.type==="watch").sort((a,b)=>Math.abs(50-a.score)-Math.abs(50-b.score)).slice(0,10);
+   document.getElementById("saBuyList").innerHTML=buys.length?buys.map(x=>card(x,"buy")).join(""):'<div class="muted" style="padding-top:8px">No probable buy setup met the current rules.</div>';
+   document.getElementById("saSellList").innerHTML=sells.length?sells.map(x=>card(x,"sell")).join(""):'<div class="muted" style="padding-top:8px">No probable sell/risk setup met the current rules.</div>';
+   document.getElementById("saWatchList").innerHTML=watch.length?watch.map(x=>card(x,"watch")).join(""):'<div class="muted" style="padding-top:8px">No watch candidates returned.</div>';
+   const buysN=lastResults.filter(x=>x.type==="buy").length,sellsN=lastResults.filter(x=>x.type==="sell").length;
+   document.getElementById("saScanned").textContent=lastResults.length;
+   document.getElementById("saBuyCount").textContent=buysN;
+   document.getElementById("saSellCount").textContent=sellsN;
+   document.getElementById("saWatchCount").textContent=lastResults.filter(x=>x.type==="watch").length;
+   document.getElementById("saUnavailable").textContent=lastResults.filter(x=>x.unavailable).length;
+   document.getElementById("saSignalTitle").textContent=lastResults.length?"SCAN COMPLETE":"READY TO SCAN";
+ }
+
+ async function candles(sym,range){
+   const market=marketName();
+   try{
+     const j=await fetch("/api/market-data/stock/"+encodeURIComponent(sym)+"/candles?market="+encodeURIComponent(market)+"&range="+encodeURIComponent(range)+"&_sa4="+Date.now(),{cache:"no-store"}).then(x=>x.json());
+     return (j?.candles||[]).map(c=>({t:new Date(c.time||c.timestamp||c.date).getTime(),p:num(c.close??c.c??c.price),v:num(c.volume??c.v)})).filter(x=>Number.isFinite(x.t)&&x.p!=null).sort((a,b)=>a.t-b.t);
+   }catch(e){return []}
+ }
+
+ async function scan(){
+   const all=rows();
+   const market=marketName();
+   document.getElementById("saMarket").textContent=market;
+   document.getElementById("saMarketMeta").textContent=all.length+" provider securities • "+tf+" • delayed data";
+   document.getElementById("saScanStatus").textContent="SCANNING";
+   document.getElementById("saSignalTitle").textContent="SCANNING "+all.length+" SECURITIES…";
+   document.getElementById("saSignalCopy").textContent="Checking every verified quote, then applying historical candles to the strongest current movers. No synthetic data is used.";
+   document.getElementById("saRunBtn").disabled=true;
+
+   const base=all.map(q=>{
+     const price=num(q?.price),day=num(q?.changePct),prev=num(q?.previousClose),high=num(q?.high),low=num(q?.low);
+     const rangePct=price!=null&&high!=null&&low!=null&&price!==0?Math.abs(high-low)/price*100:null;
+     const pos=price!=null&&high!=null&&low!=null&&high!==low?((price-low)/(high-low))*100:null;
+     let score=50+(day!=null?clamp(day*3,-18,18):0);
+     if(pos!=null)score+=clamp((pos-50)*0.18,-9,9);
+     return {symbol:local(q?.localSymbol||q?.symbol),quote:q,price,day,prev,high,low,rangePct,pos,score:Math.round(clamp(score,0,100)),trend:"QUOTE ONLY",momentum:"MIXED",reasons:[
+       day!=null?"Observed day move: "+(day>=0?"+":"")+day.toFixed(2)+"%.":"Daily change unavailable.",
+       pos!=null?"Price position inside reported day range: "+pos.toFixed(0)+"%.":"Day-range position unavailable.",
+       q?.volume!=null?"Provider reported volume is available.":"Volume not supplied by provider."
+     ],unavailable:price==null,type:"watch"};
+   }).filter(x=>x.symbol);
+
+   const candidates=base.filter(x=>x.price!=null).sort((a,b)=>Math.abs((b.day||0))-Math.abs((a.day||0))).slice(0,18);
+   let done=0;
+   for(let i=0;i<candidates.length;i+=4){
+     const chunk=candidates.slice(i,i+4);
+     const data=await Promise.all(chunk.map(x=>candles(x.symbol,tf)));
+     data.forEach((arr,j)=>{
+       const r=chunk[j]; done++;
+       if(!arr.length){r.reasons.push("Historical candles unavailable for this timeframe; classification remains quote-based.");return}
+       const first=arr[0].p,last=arr[arr.length-1].p,recent=arr.slice(-Math.min(5,arr.length)),m0=recent[0]?.p;
+       const trendPct=first?((last-first)/first)*100:0;
+       const momPct=m0?((last-m0)/m0)*100:0;
+       r.trend=trendPct>0.5?"UPTREND":trendPct<-0.5?"DOWNTREND":"SIDEWAYS";
+       r.momentum=momPct>0.5?"POSITIVE":momPct<-0.5?"NEGATIVE":"MIXED";
+       r.score=Math.round(clamp(50+clamp(trendPct*3,-25,25)+clamp(momPct*4,-20,20)+clamp((r.day||0)*2,-10,10),0,100));
+       r.reasons=[
+         "Observed "+tf+" change: "+(trendPct>=0?"+":"")+trendPct.toFixed(2)+"% across "+arr.length+" candles.",
+         "Recent momentum: "+(momPct>=0?"+":"")+momPct.toFixed(2)+"%.",
+         r.day!=null?"Latest reported day move: "+(r.day>=0?"+":"")+r.day.toFixed(2)+"%.":"Daily change unavailable.",
+         "Provider candles only; data may be delayed."
+       ];
+     });
+     document.getElementById("saScanStatus").textContent="HISTORY "+Math.min(i+4,candidates.length)+"/"+candidates.length;
+   }
+
+   base.forEach(r=>{
+     const strongUp=r.score>=65&&r.trend!=="DOWNTREND"&&r.momentum!=="NEGATIVE";
+     const strongDown=r.score<=35&&r.trend!=="UPTREND"&&r.momentum!=="POSITIVE";
+     if(r.unavailable){r.type="watch";r.label="UNAVAILABLE";return}
+     if(strongUp){r.type="buy";r.label="PROBABLE BUY SETUP"}
+     else if(strongDown){r.type="sell";r.label="PROBABLE SELL / RISK"}
+     else {r.type="watch";r.label="WATCH"}
+   });
+   lastResults=base;
+   document.getElementById("saScanStatus").textContent="COMPLETE";
+   document.getElementById("saSignalCopy").textContent="Whole-market scan complete. Setup labels are educational classifications from provider-backed observations, not predictions or financial advice.";
+   document.getElementById("saRunBtn").disabled=false;
+   render();
+   window.MaliRadarSmartScan={version:"4.0",market,range:tf,results:lastResults,scanned:lastResults.length};
+ }
+
+ function setLevel(l){
+   level=l;
+   document.querySelectorAll(".sa-choice").forEach(x=>x.classList.toggle("selected",x.dataset.level===l));
+   document.getElementById("saMode").textContent=levels[l][0];
+   document.getElementById("saModeCopy").textContent=levels[l][1];
+ }
+
  document.querySelectorAll(".sa-choice").forEach(x=>x.addEventListener("click",()=>setLevel(x.dataset.level)));
- document.getElementById("saActivateBtn").addEventListener("click",()=>{document.getElementById("saActivation").style.display="none";document.getElementById("saWorkspace").style.display="block";run();history()});
- document.getElementById("saRunBtn").addEventListener("click",run);
- document.getElementById("saRecordBtn").addEventListener("click",()=>{hist.push({time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),signal:level==="assist"?"ANALYSIS":level==="signal"?"POTENTIAL SIGNAL":"AUTO-ASSIST",tf});localStorage.setItem("maliradar_smart_assist_history",JSON.stringify(hist.slice(-30)));history()});
- document.querySelectorAll("#saTimeframes button").forEach(b=>b.addEventListener("click",()=>{tf=b.textContent.trim();document.querySelectorAll("#saTimeframes button").forEach(x=>x.classList.remove("primary"));b.classList.add("primary")}));
- window.renderSmartAssist=history;
+ document.getElementById("saActivateBtn").addEventListener("click",()=>{document.getElementById("saActivation").style.display="none";document.getElementById("saWorkspace").style.display="block";history();scan()});
+ document.getElementById("saRunBtn").addEventListener("click",scan);
+ document.getElementById("saRecordBtn").addEventListener("click",()=>{
+   const buy=lastResults.filter(x=>x.type==="buy").length,sell=lastResults.filter(x=>x.type==="sell").length;
+   hist.push({time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),tf,market:marketName(),buy,sell,scanned:lastResults.length});
+   hist=hist.slice(-30);localStorage.setItem("maliradar_smart_assist_history",JSON.stringify(hist));history();
+ });
+ document.querySelectorAll("#saTimeframes button").forEach(b=>b.addEventListener("click",()=>{
+   tf=b.textContent.trim();
+   document.querySelectorAll("#saTimeframes button").forEach(x=>x.classList.remove("primary"));
+   b.classList.add("primary");
+   document.getElementById("saScanStatus").textContent="READY";
+   document.getElementById("saSignalTitle").textContent="TIMEFRAME "+tf+" SELECTED";
+ }));
+ history();
 })();
 </script>
 
