@@ -709,17 +709,24 @@ function renderMarkets(){
   }).join("")||"<p class='muted'>No securities in this filter.</p>"
 }
 let portfolioPeriod='1D',portfolioMode='beginner';
+function paperPrice(sym){
+  const x=stock(sym);
+  const key=String(sym||'').toUpperCase().split('.')[0];
+  const q=window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[key];
+  if(q&&Number.isFinite(Number(q.price))) return Number(q.price);
+  return x&&Number.isFinite(Number(x[3]))?Number(x[3]):null;
+}
 function portfolioPositions(){
   const out=[];
   Object.keys(state.hold).forEach(sym=>{
-    const x=stock(sym); const shares=Number(state.hold[sym]||0);
-    if(!x||!shares||x[3]==null)return;
+    const x=stock(sym), shares=Number(state.hold[sym]||0), price=paperPrice(sym);
+    if(!x||!shares||price==null)return;
     let buys=state.history.filter(h=>h.sym===sym&&h.type==='BUY');
-    let sells=state.history.filter(h=>h.sym===sym&&h.type==='SELL');
-    let buyCost=buys.reduce((a,h)=>a+h.q*h.p,0), sellQty=sells.reduce((a,h)=>a+h.q,0);
-    const avg=buyCost/Math.max(1,buys.reduce((a,h)=>a+h.q,0));
-    const cost=shares*avg, value=shares*x[3], pl=value-cost;
-    out.push({sym,x,shares,avg,cost,value,pl,pct:cost?pl/cost*100:0});
+    let buyQty=buys.reduce((a,h)=>a+h.q,0);
+    let buyCost=buys.reduce((a,h)=>a+h.q*h.p,0);
+    const avg=buyCost/Math.max(1,buyQty);
+    const cost=shares*avg, value=shares*price, pl=value-cost;
+    out.push({sym,x,shares,avg,cost,value,pl,pct:cost?pl/cost*100:0,currentPrice:price});
   }); return out;
 }
 function renderPortfolio(){
@@ -791,21 +798,23 @@ document.addEventListener("click",e=>{
   if(wrap&&!wrap.contains(e.target))closeSearchResults();
 });
 function buy(s){
-  let x=stock(s),q=parseInt(prompt("How many paper shares?","10"));
+  let x=stock(s),price=paperPrice(s),q=parseInt(prompt("How many paper shares?","10"));
   if(!q||q<1)return;
-  if(x[3]*q>state.cash)return alert("Not enough paper cash.");
-  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash-=x[3]*q;state.hold[s]=(state.hold[s]||0)+q;
-  state.history.unshift({type:"BUY",sym:s,q,p:x[3],time:new Date().toLocaleString()});
-  save();render();alert("Paper Buy confirmed. No real money was used.")
+  if(price==null)return alert("Verified provider price is not available for this stock yet. MaliRadar will not invent a paper-trade price.");
+  if(price*q>state.cash)return alert("Not enough paper cash.");
+  state.cash-=price*q;state.hold[s]=(state.hold[s]||0)+q;
+  state.history.unshift({type:"BUY",sym:s,q,p:price,time:new Date().toLocaleString()});
+  save();render();alert("Paper Buy confirmed at the latest verified provider price. No real money was used.")
 }
 function sell(s){
-  let x=stock(s),owned=state.hold[s]||0;
+  let x=stock(s),price=paperPrice(s),owned=state.hold[s]||0;
   if(!owned)return alert("No paper holding.");
   let q=parseInt(prompt("How many paper shares to sell?",String(Math.min(1,owned))));
   if(!q||q<1||q>owned)return;
-  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash+=x[3]*q;state.hold[s]-=q;if(!state.hold[s])delete state.hold[s];
-  state.history.unshift({type:"SELL",sym:s,q,p:x[3],time:new Date().toLocaleString()});
-  save();render();alert("Paper Sell confirmed. No real money was used.")
+  if(price==null)return alert("Verified provider price is not available for this stock yet. MaliRadar will not invent a paper-trade price.");
+  state.cash+=price*q;state.hold[s]-=q;if(!state.hold[s])delete state.hold[s];
+  state.history.unshift({type:"SELL",sym:s,q,p:price,time:new Date().toLocaleString()});
+  save();render();alert("Paper Sell confirmed at the latest verified provider price. No real money was used.")
 }
 let detailMode=localStorage.getItem("maliradar_mode")||"beginner";
 let chartPeriod="1M";
