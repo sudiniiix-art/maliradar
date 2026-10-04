@@ -1751,6 +1751,21 @@ function deleteTrustData(){
       }
       if(!q || num26(q?.price)==null) throw new Error('No verified quote returned for '+s);
 
+      // Batch quotes are optimized for the Markets screen and may not carry
+      // the full OHLC snapshot. For Stock Detail, enrich the verified quote
+      // from the single-stock provider endpoint when any key field is missing.
+      const needsDetail = [q?.open,q?.high,q?.low,q?.previousClose,q?.volume]
+        .some(v=>num26(v)==null);
+      if(needsDetail){
+        try{
+          const d=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(ex)+'&_mr26detail='+Date.now());
+          if(d && num26(d?.price)!=null){
+            q=Object.assign({},q,d,{price:num26(d?.price)});
+            if(window.maliRadarProviderQuotes) window.maliRadarProviderQuotes[s]=q;
+          }
+        }catch(e){}
+      }
+
       const price=num26(q?.price), change=num26(q?.changePct);
       const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>'<button class="btn alt mr25-period" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+p+'\')">'+p+'</button>').join('');
       const baseHtml='<div class="mr26-wrap"><div class="mr26-chart-card">'+
