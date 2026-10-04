@@ -778,6 +778,10 @@ function renderPortfolio(){
   let largest=pos.slice().sort((a,b)=>b.value-a.value)[0];
   $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
   $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
+  // Beginner mode keeps the dashboard focused; Expert mode exposes deeper analytics.
+  document.querySelectorAll('#riskCash,#riskConcentration,#riskBest,#riskWorst').forEach(el=>{const card=el.closest('.metric');if(card)card.style.display=portfolioMode==='expert'?'':'none';});
+  const riskCard=document.getElementById('riskSummary')?.closest('.card'); if(riskCard)riskCard.style.display=portfolioMode==='expert'?'':'none';
+  const sectorCard=document.getElementById('sectorAllocation')?.closest('.card'); if(sectorCard)sectorCard.style.display=portfolioMode==='expert'?'':'none';
   // Risk analytics use only verified current position values and the paper cash balance.
   const totalValue=Number(value)||0;
   const cashPct=totalValue>0?(state.cash/totalValue*100):0;
@@ -795,7 +799,11 @@ function renderPortfolio(){
     const note=largest?('Largest position is '+largest.sym+' at '+largestWeight.toFixed(1)+'% of portfolio. Cash is '+cashPct.toFixed(1)+'%.'):('No verified holdings yet.');
     $('riskSummary').textContent='Concentration risk: '+level+'. '+note+' This is an educational portfolio metric, not financial advice.';
   }
-  $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
+  if(portfolioMode==='beginner'){
+    $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))}</div></div></div><div class="intel-note" style="margin-top:8px">${p.pl>=0?'You are currently above your estimated buying cost.':'You are currently below your estimated buying cost.'}</div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
+  }else{
+    $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div><div class="metric">Position Weight<b>${value?((p.value/value)*100).toFixed(1):'0.0'}%</b></div><div class="metric">Cost Basis<b>KSh ${money(p.cost)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
+  }
   $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>{
     const qty=Number(h.q)||0, px=Number(h.p)||0, val=Number(h.value??(qty*px))||0;
     const cls=h.type==='BUY'?'green':'red', sign=h.type==='BUY'?'−':'+';
