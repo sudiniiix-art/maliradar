@@ -698,13 +698,12 @@ renderNews();renderEvents();
    }).filter(x=>x.symbol);
 
    const candidates=base.filter(x=>x.price!=null).sort((a,b)=>Math.abs((b.day||0))-Math.abs((a.day||0))).slice(0,18);
-   let done=0;
    for(let i=0;i<candidates.length;i+=4){
      const chunk=candidates.slice(i,i+4);
      const data=await Promise.all(chunk.map(x=>candles(x.symbol,tf)));
      data.forEach((arr,j)=>{
-       const r=chunk[j]; done++;
-       if(!arr.length){r.reasons.push("Historical candles unavailable for this timeframe; classification remains quote-based.");return}
+       const r=chunk[j];
+       if(!arr.length){r.reasons.push("Historical candles unavailable for this timeframe; score uses verified quote data only.");return}
        const first=arr[0].p,last=arr[arr.length-1].p,recent=arr.slice(-Math.min(5,arr.length)),m0=recent[0]?.p;
        const trendPct=first?((last-first)/first)*100:0;
        const momPct=m0?((last-m0)/m0)*100:0;
@@ -722,11 +721,13 @@ renderNews();renderEvents();
    }
 
    base.forEach(r=>{
-     const strongUp=r.score>=65&&r.trend!=="DOWNTREND"&&r.momentum!=="NEGATIVE";
-     const strongDown=r.score<=35&&r.trend!=="UPTREND"&&r.momentum!=="POSITIVE";
      if(r.unavailable){r.type="watch";r.label="UNAVAILABLE";return}
-     if(strongUp){r.type="buy";r.label="PROBABLE BUY SETUP"}
-     else if(strongDown){r.type="sell";r.label="PROBABLE SELL / RISK"}
+     // Rank the entire verified market instead of hiding most securities behind WATCH.
+     // Thresholds are classifications, not probabilities of profit.
+     if(r.score>=75){r.type="buy";r.label="STRONG BUY SETUP"}
+     else if(r.score>=65){r.type="buy";r.label="BUY SETUP"}
+     else if(r.score<=25){r.type="sell";r.label="STRONG SELL / RISK"}
+     else if(r.score<=44){r.type="sell";r.label="SELL / RISK SETUP"}
      else {r.type="watch";r.label="WATCH"}
    });
    lastResults=base;
@@ -734,7 +735,7 @@ renderNews();renderEvents();
    document.getElementById("saSignalCopy").textContent="Whole-market scan complete. Setup labels are educational classifications from provider-backed observations, not predictions or financial advice.";
    document.getElementById("saRunBtn").disabled=false;
    render();
-   window.MaliRadarSmartScan={version:"4.0",market,range:tf,results:lastResults,scanned:lastResults.length};
+   window.MaliRadarSmartScan={version:"4.1",market,range:tf,results:lastResults,scanned:lastResults.length};
  }
 
  function setLevel(l){
