@@ -1272,7 +1272,7 @@ function deleteTrustData(){
   }
   window.MaliRadarRunCoverage=runCov;
   window.addEventListener('load',()=>setTimeout(()=>{
-    const anchor=document.querySelector('#marketsView')||document.querySelector('[id*="market"]');
+    const anchor=document.querySelector('#markets');
     if(!anchor||document.getElementById('mr27CoveragePanel'))return;
     const box=document.createElement('div');box.id='mr27CoveragePanel';box.innerHTML='<div class="card"><div class="row"><div><b>Provider Coverage Diagnostic</b><div class="muted">Check why listed instruments do not have verified prices.</div></div><button class="btn alt" onclick="window.MaliRadarRunCoverage()">Check</button></div></div>';
     anchor.appendChild(box);
