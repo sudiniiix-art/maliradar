@@ -209,6 +209,25 @@ function normalize(x) {
   };
 }
 
+const detailQuoteCache = new Map();
+
+async function msStockDetail(symbol) {
+  const key = String(symbol || '').toUpperCase();
+  const cached = detailQuoteCache.get(key);
+  if (cached && (Date.now() - cached.time) < 60000) return cached.value;
+
+  const value = normalize(
+    one(
+      await msFetch(
+        '/stocks/' + encodeURIComponent(symbol)
+      )
+    )
+  );
+
+  detailQuoteCache.set(key, { time: Date.now(), value });
+  return value;
+}
+
 async function msFetch(path, params = {}) {
 
   const key =
@@ -618,6 +637,50 @@ function registerMaliRadarMarketDataRoutes(app) {
                 exchange
               })
           );
+
+        // Batch quotes are the fast path. Some provider-listed instruments
+        // can still arrive without a usable price, so verify only those
+        // missing prices through the authoritative single-stock endpoint.
+        const missing = out
+          .map((q, i) => ({ q, i }))
+          .filter(({q}) => q.price == null);
+
+        if (missing.length) {
+          const concurrency = 5;
+          let cursor = 0;
+
+          const worker = async () => {
+            while (cursor < missing.length) {
+              const item = missing[cursor++];
+              try {
+                const detail = await msStockDetail(providerSymbols[item.i]);
+
+                if (detail && detail.price != null) {
+                  out[item.i] = {
+                    ...out[item.i],
+                    ...detail,
+                    symbol: detail.symbol || providerSymbols[item.i],
+                    localSymbol:
+                      (detail.symbol || providerSymbols[item.i]).split('.')[0],
+                    exchange: detail.exchange || exchange,
+                    status: 'DELAYED',
+                    source: 'MyStocks Africa Sandbox'
+                  };
+                }
+              } catch {
+                // Keep the honest UNAVAILABLE result if the provider
+                // cannot verify a price for this instrument.
+              }
+            }
+          };
+
+          await Promise.all(
+            Array.from(
+              {length: Math.min(concurrency, missing.length)},
+              worker
+            )
+          );
+        }
 
         res.set(
           'Cache-Control',
