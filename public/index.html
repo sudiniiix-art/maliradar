@@ -18,6 +18,13 @@
 .search-result:active{background:#0d2028}
 .search-empty{padding:14px;color:var(--muted)}
 
+/* v2.0 Leaderboard Intelligence */
+.lb-podium{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.lb-podium-card{padding:12px 8px;border-radius:14px;text-align:center;background:linear-gradient(145deg,rgba(20,35,48,.9),rgba(8,16,24,.9));border:1px solid rgba(80,220,190,.16)}
+.lb-podium-card.you{border-color:rgba(80,230,195,.55);box-shadow:0 0 18px rgba(80,230,195,.07)}
+.lb-podium-rank{font-size:18px;font-weight:900}.lb-podium-name{font-size:12px;font-weight:800;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lb-podium-value{font-size:11px;color:var(--a);margin-top:4px}
+@media(max-width:720px){.lb-podium-card{padding:10px 5px}}
+
 /* v1.3 Leaderboards */
 .lb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
 .lb-card{background:rgba(10,18,30,.78);border:1px solid rgba(80,220,190,.18);border-radius:16px;padding:14px}
