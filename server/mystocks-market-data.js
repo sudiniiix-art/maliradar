@@ -103,6 +103,34 @@ function normalize(x) {
     q?.close
   );
 
+  const previousClose =
+    n(
+      x?.previousClose ??
+      x?.prevClose ??
+      x?.previous_close ??
+      q?.previousClose ??
+      q?.prevClose
+    );
+
+  // Some provider rows omit changePct. Derive it from the authoritative
+  // delayed price and previous close rather than displaying 0.00%.
+  const reportedChangePct =
+    n(
+      x?.changePct ??
+      x?.changePercent ??
+      x?.percentChange ??
+      x?.change_percentage ??
+      q?.changePct ??
+      q?.changePercent ??
+      q?.percentChange ??
+      q?.change_percentage
+    );
+
+  const changePct =
+    price != null && previousClose != null && previousClose !== 0
+      ? ((price - previousClose) / previousClose) * 100
+      : reportedChangePct;
+
   return {
 
     symbol,
@@ -128,17 +156,7 @@ function normalize(x) {
 
     price,
 
-    changePct:
-      n(
-        x?.changePct ??
-        x?.changePercent ??
-        x?.percentChange ??
-        x?.change_percentage ??
-        q?.changePct ??
-        q?.changePercent ??
-        q?.percentChange ??
-        q?.change_percentage
-      ),
+    changePct,
 
     open:
       n(
@@ -161,14 +179,7 @@ function normalize(x) {
         q?.low
       ),
 
-    previousClose:
-      n(
-        x?.previousClose ??
-        x?.prevClose ??
-        x?.previous_close ??
-        q?.previousClose ??
-        q?.prevClose
-      ),
+    previousClose,
 
     volume:
       n(
