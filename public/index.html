@@ -1,0 +1,1781 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v1.6.1</title><style>
+:root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
+.alert-item{padding:12px 0;border-top:1px solid var(--line)}
+.alert-item:first-child{border-top:0}
+.severity{font-size:9px;letter-spacing:.7px;border:1px solid var(--line);border-radius:20px;padding:4px 7px;color:var(--muted)}
+.severity.watch{color:#ffe08a;border-color:#665629}
+.severity.important{color:#ff9aa5;border-color:#65303a}
+.severity.info{color:var(--a);border-color:#1f6659}
+.alert-trigger{border-color:#5b4b20;box-shadow:0 0 18px #d5ad3530}
+.formline{display:flex;gap:8px;align-items:center;margin-top:9px}
+.formline select,.formline input{flex:1;min-width:0;background:#09151c;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text);outline:0}
+
+.search-wrap{position:relative;z-index:30}
+.search-results-panel{display:none;position:absolute;left:0;right:0;top:calc(100% + 6px);background:#071119;border:1px solid var(--line);border-radius:14px;box-shadow:0 18px 45px #0009;overflow:hidden}
+.search-results-panel.show{display:block}
+.search-result{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.search-result:last-child{border-bottom:0}
+.search-result:active{background:#0d2028}
+.search-empty{padding:14px;color:var(--muted)}
+
+/* v1.3 Leaderboards */
+.lb-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.lb-card{background:rgba(10,18,30,.78);border:1px solid rgba(80,220,190,.18);border-radius:16px;padding:14px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.lb-row:last-child{border-bottom:0}
+.lb-rank{width:30px;text-align:center;font-weight:800}
+.lb-avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:rgba(80,220,190,.12);border:1px solid rgba(80,220,190,.22)}
+.lb-name{flex:1;font-weight:700}
+.lb-stat{text-align:right;font-weight:800}
+.lb-tabs,.lb-filters{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.lb-tabs button,.lb-filters button{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit}
+.lb-tabs button.active,.lb-filters button.active{border-color:rgba(80,220,190,.55);background:rgba(80,220,190,.12)}
+.lb-note{font-size:12px;opacity:.7;margin-top:8px}
+@media(max-width:720px){.lb-grid{grid-template-columns:1fr}}
+
+
+/* v1.4 Market Intelligence */
+.news-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}
+.news-card{background:rgba(10,18,30,.78);border:1px solid rgba(80,220,190,.18);border-radius:16px;padding:14px}
+.news-card h3{margin:6px 0 7px;font-size:16px}.news-meta{font-size:11px;opacity:.68}.news-summary{font-size:13px;line-height:1.5;opacity:.88}
+.news-tags{display:flex;gap:6px;flex-wrap:wrap;margin:9px 0}.news-tag{font-size:10px;padding:5px 8px;border-radius:999px;background:rgba(80,220,190,.09);border:1px solid rgba(80,220,190,.18)}
+.news-filters{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.news-filters button{padding:8px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit}.news-filters button.active{border-color:rgba(80,220,190,.55);background:rgba(80,220,190,.12)}
+.news-badge{display:inline-block;font-size:10px;padding:4px 7px;border-radius:8px;background:rgba(255,190,70,.1);border:1px solid rgba(255,190,70,.2)}
+.event-line{border-left:2px solid rgba(80,220,190,.28);padding:0 0 14px 13px;margin:14px 0}
+@media(max-width:720px){.news-grid{grid-template-columns:1fr}}
+
+
+/* v1.4.2 futuristic news intelligence */
+.news-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.news-card{position:relative;overflow:hidden;min-height:190px;padding:17px;border-radius:18px;background:linear-gradient(145deg,rgba(13,25,40,.94),rgba(7,14,25,.88));border:1px solid rgba(70,220,190,.18);box-shadow:0 0 0 1px rgba(255,255,255,.015) inset,0 10px 35px rgba(0,0,0,.18)}
+.news-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(180deg,rgba(80,230,195,.9),rgba(80,160,255,.05))}
+.news-card:after{content:"";position:absolute;right:-45px;top:-45px;width:120px;height:120px;border-radius:50%;border:1px solid rgba(80,220,190,.08);box-shadow:0 0 35px rgba(80,220,190,.05)}
+.news-kicker{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.news-type{font-size:10px;letter-spacing:1.2px;color:rgba(120,240,210,.9)}
+.news-asset{font-size:10px;padding:4px 8px;border-radius:8px;background:rgba(80,220,190,.08);border:1px solid rgba(80,220,190,.16)}
+.news-card h3{font-size:17px;line-height:1.25;margin:11px 0 8px}
+.news-summary{line-height:1.55}
+.news-open button{border:1px solid rgba(80,220,190,.3);background:rgba(80,220,190,.07);color:inherit;border-radius:9px;padding:7px 10px}
+.event-panel{margin-top:16px;padding:16px;border-radius:18px;background:linear-gradient(180deg,rgba(8,18,30,.96),rgba(5,11,20,.96));border:1px solid rgba(80,220,190,.18);overflow:visible}
+.event-scroll{max-height:none;overflow:visible}
+.event-line{position:relative;margin:0;padding:15px 8px 15px 25px;border-left:1px solid rgba(80,220,190,.35)}
+.event-line:before{content:"";position:absolute;left:-5px;top:20px;width:9px;height:9px;border-radius:50%;background:rgba(80,230,195,.95);box-shadow:0 0 12px rgba(80,230,195,.7)}
+.event-time{font-size:11px;letter-spacing:.8px;color:rgba(130,240,215,.8)}
+.event-title{font-weight:800;margin-top:4px}.event-asset{font-size:11px;opacity:.65;margin-top:3px}
+.news-detail-overlay{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(1,6,12,.78);backdrop-filter:blur(8px)}
+.news-detail{width:min(680px,100%);max-height:88vh;overflow:auto;border-radius:22px;padding:20px;background:linear-gradient(145deg,#0d1d2d,#07101c);border:1px solid rgba(80,230,195,.32);box-shadow:0 0 45px rgba(60,220,190,.12),0 25px 80px rgba(0,0,0,.5);position:relative}
+.news-detail .scan{height:2px;background:linear-gradient(90deg,transparent,rgba(80,230,195,.9),transparent);margin:-2px -2px 18px}
+.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.detail-close{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:inherit;border-radius:10px;padding:7px 11px;font-size:18px}
+.detail-title{font-size:23px;line-height:1.2;margin:9px 0}.detail-section{margin-top:18px;padding:13px;border-radius:14px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)}.detail-label{font-size:10px;letter-spacing:1.2px;color:rgba(120,240,210,.8);margin-bottom:6px}.detail-text{line-height:1.6;font-size:14px}
+@media(max-width:720px){.news-grid{grid-template-columns:1fr}.news-detail{padding:16px}.detail-title{font-size:20px}}
+
+
+.sa-hero{position:relative;overflow:hidden;padding:20px;border-radius:20px;background:linear-gradient(135deg,rgba(8,27,40,.96),rgba(8,14,27,.96));border:1px solid rgba(80,230,195,.25);box-shadow:0 0 40px rgba(50,220,190,.07)}
+.sa-status,.sa-pill{display:inline-block;padding:5px 9px;border-radius:999px;font-size:10px;letter-spacing:.8px;background:rgba(255,190,70,.08);border:1px solid rgba(255,190,70,.2)}
+.sa-title{font-size:25px;margin:10px 0 6px}.sa-copy{line-height:1.55;opacity:.84}
+.sa-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.sa-card{padding:15px;border-radius:17px;background:rgba(9,19,31,.82);border:1px solid rgba(80,220,190,.15)}
+.sa-card h3{margin:5px 0 7px}.sa-card p{font-size:13px;line-height:1.5;opacity:.8}
+.sa-choice{cursor:pointer}.sa-choice.selected{border-color:rgba(80,230,195,.7);background:rgba(80,230,195,.08);box-shadow:0 0 18px rgba(80,230,195,.06)}
+.sa-disclaimer{padding:15px;border-radius:16px;background:rgba(255,190,70,.055);border:1px solid rgba(255,190,70,.22);line-height:1.55;font-size:13px}
+.sa-controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.sa-btn{border:1px solid rgba(80,230,195,.25);background:rgba(80,230,195,.07);color:inherit;border-radius:10px;padding:9px 12px}.sa-btn.primary{background:rgba(80,230,195,.15);border-color:rgba(80,230,195,.5)}
+.sa-signal{padding:18px;border-radius:18px;background:linear-gradient(145deg,rgba(12,27,39,.96),rgba(7,13,24,.96));border:1px solid rgba(80,230,195,.2)}
+.sa-reason{padding:9px 10px;margin-top:7px;border-radius:10px;background:rgba(255,255,255,.025);font-size:12px}
+.sa-history-row{display:grid;grid-template-columns:110px 100px 1fr 80px;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+@media(max-width:720px){.sa-grid{grid-template-columns:1fr}.sa-history-row{grid-template-columns:1fr 1fr}}
+
+/* v1.5.4 secondary-screen layout: remove the global header bulk */
+body.compact-header header{height:54px;padding:8px 12px!important;display:flex;align-items:center}
+body.compact-header header>.row{width:100%}
+body.compact-header header .actions,body.compact-header header .status,body.compact-header #globalSearchWrap{display:none!important}
+body.compact-header header .brand{font-size:20px}
+body.compact-header header .sub{font-size:10px;margin-top:1px}
+body.compact-header main{padding:7px 10px 90px!important}
+body.compact-header .screen{padding-top:0!important;margin-top:0!important}
+body.compact-header #leaderboardView,body.compact-header #newsView,body.compact-header #smartAssistView{padding-top:0!important;margin-top:0!important}
+body.compact-header #leaderboardView .section-head,body.compact-header #newsView .section-head{margin-top:0!important;margin-bottom:7px!important}
+body.compact-header #smartAssistView .sa-hero{margin-top:0!important}
+body.compact-header #smartAssistView #saWorkspace{padding-bottom:18px}
+/* normal screens retain the compact spacing */
+.screen{padding-top:8px!important}
+.section-head{margin-top:0!important}
+
+/* v2.0 Trust Center */
+.trust-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.trust-card{border:1px solid rgba(100,220,180,.22);border-radius:16px;padding:15px;background:rgba(10,18,25,.62);box-shadow:0 0 18px rgba(40,220,170,.05)}
+.trust-card h3{margin:0 0 7px;font-size:15px}
+.trust-card p{margin:0;color:var(--muted,#9aa7b2);font-size:12px;line-height:1.5}
+.trust-status{display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:5px 9px;border-radius:999px;background:rgba(255,190,70,.1);border:1px solid rgba(255,190,70,.25)}
+.trust-list{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.trust-row{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:11px 12px;border-radius:12px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)}
+.trust-row strong{font-size:12px}.trust-row span{font-size:11px;color:var(--muted,#9aa7b2);text-align:right}
+.trust-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.trust-btn{border:1px solid rgba(90,210,180,.28);background:rgba(50,180,150,.08);color:inherit;border-radius:10px;padding:9px 12px;font-size:12px}
+.trust-btn.danger{border-color:rgba(255,90,100,.3);background:rgba(255,70,80,.07)}
+@media(max-width:600px){.trust-grid{grid-template-columns:1fr}}
+
+</style>
+<style>
+.market-status{display:flex;align-items:center;gap:8px;margin:10px 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#09151c}
+.market-status .pulse{width:9px;height:9px;border-radius:50%;background:var(--a);box-shadow:0 0 10px var(--a)}
+.market-status.closed .pulse{background:#ffcc66;box-shadow:0 0 10px #ffcc66}
+.modebar{display:flex;gap:7px;margin:12px 0}
+.modebar button{flex:1}
+.modebar .selected{border-color:var(--a);color:var(--a);box-shadow:0 0 12px #35e0b120}
+.intel-chart{height:210px;border:1px solid #1c4a55;border-radius:15px;background:#061116;position:relative;overflow:hidden;margin:12px 0}
+.intel-chart svg{width:100%;height:100%;display:block}
+.chart-grid{stroke:#17333d;stroke-width:1;opacity:.65}
+.chart-line{fill:none;stroke:#35e0b1;stroke-width:3;filter:drop-shadow(0 0 5px #35e0b1)}
+.chart-fill{fill:url(#chartGlow);opacity:.13}
+.price-dot{fill:#38c8ff;stroke:#071016;stroke-width:3}
+.periods{display:flex;gap:6px;overflow:auto;margin-top:8px}
+.periods button{white-space:nowrap;padding:7px 10px}
+.intel-note{padding:10px;border-left:2px solid var(--c);background:#091a22;border-radius:8px;font-size:12px;line-height:1.45;color:#b8cdd2}
+</style>
+<style id="v161-secondary-screen-fix">
+/* v1.6.1: keep the main container in the normal DOM flow.
+   The previous v1.5.6 rule used display:contents, then targeted the secondary
+   screens as direct children of .app even though they are children of <main>.
+   That made Rank, News and Assist disappear. */
+body.compact-header header{display:none!important;height:0!important;min-height:0!important;padding:0!important;margin:0!important}
+body.compact-header main{display:block!important;padding:0 10px 90px!important;margin:0!important}
+body.compact-header .screen{display:none!important;padding-top:0!important;margin-top:0!important}
+body.compact-header .screen.active{display:block!important}
+body.compact-header #leaderboardView .section-head,body.compact-header #newsView .section-head{margin:0 0 8px!important;padding:8px 0 0!important}
+body.compact-header #smartAssistView .sa-hero{margin:0!important;border-radius:0 0 20px 20px}
+body.compact-header #smartAssistView #saActivation{margin-top:10px!important}
+body.compact-header #smartAssistView #saWorkspace{padding-bottom:30px!important}
+body.compact-header #leaderboardView,body.compact-header #newsView,body.compact-header #smartAssistView{padding-bottom:0!important;min-height:0!important}
+</style>
+<style id="v17-account-css">
+.account-hero{display:flex;gap:12px;align-items:center}.avatar{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#102c34,#0b1820);border:1px solid rgba(53,224,177,.5);font-size:28px;overflow:hidden}.avatar img{width:100%;height:100%;object-fit:cover}.profile-name{font-size:20px;font-weight:900}.pill{display:inline-block;padding:5px 9px;border:1px solid var(--line);border-radius:999px;font-size:11px;color:var(--muted);margin-top:5px}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}.setting-row:last-child{border-bottom:0}.setting-copy b{display:block}.setting-copy span{font-size:12px;color:var(--muted)}.theme-buttons{display:flex;gap:6px;flex-wrap:wrap}.theme-buttons button{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04);color:inherit}.theme-buttons button.active{border-color:var(--a);color:var(--a)}.account-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.account-actions .btn{width:100%}.demo-badge{font-size:10px;color:#ffd36a;border:1px solid #6b5928;border-radius:999px;padding:4px 7px;display:inline-block}.profile-form input{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#071016;color:var(--text);margin:6px 0 10px}.profile-form label{font-size:12px;color:var(--muted)}
+body.light{--bg:#eef4f6;--card:#fff;--line:#cbdde2;--text:#102027;--muted:#587079;background:#eef4f6}body.light .tabs{background:#ffffffee}body.light .search,body.light input{background:#fff!important;color:#102027!important}
+</style><style id="v16-onboarding">
+.tour-overlay{position:fixed;inset:0;background:rgba(2,7,12,.78);backdrop-filter:blur(5px);z-index:5000;display:none;align-items:center;justify-content:center;padding:18px}
+.tour-card{width:min(520px,100%);background:linear-gradient(145deg,rgba(12,24,34,.98),rgba(5,12,18,.98));border:1px solid rgba(56,200,255,.38);box-shadow:0 20px 70px rgba(0,0,0,.55),0 0 28px rgba(56,200,255,.10);border-radius:22px;padding:20px;color:#eef8ff}
+.tour-top{display:flex;justify-content:space-between;align-items:center;gap:12px}.tour-kicker{font-size:11px;letter-spacing:.16em;color:#38c8ff;font-weight:800}.tour-progress{font-size:12px;color:#8fa6b8}.tour-card h2{margin:8px 0 8px;font-size:25px}.tour-card p{line-height:1.55;color:#b9c9d5}.tour-tip{margin:14px 0;padding:13px;border-radius:14px;background:rgba(56,200,255,.06);border:1px solid rgba(56,200,255,.16)}
+.tour-actions{display:flex;gap:9px;margin-top:16px}.tour-actions button{flex:1}.tour-highlight{position:relative!important;z-index:5001!important;box-shadow:0 0 0 3px rgba(56,200,255,.9),0 0 30px rgba(56,200,255,.32)!important;border-radius:16px!important;transition:box-shadow .2s}
+body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
+</style>
+<style id="v18-cloud-foundation">
+.cloud-foundation{margin:14px 0;padding:16px;border:1px solid rgba(0,255,190,.22);border-radius:16px;background:rgba(10,20,28,.72);box-shadow:0 0 24px rgba(0,255,190,.06)}
+.cloud-status{display:flex;align-items:center;gap:8px;font-weight:700}.cloud-dot{width:9px;height:9px;border-radius:50%;background:#ffd34d;box-shadow:0 0 10px #ffd34d}
+.cloud-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.cloud-item{padding:10px;border-radius:12px;background:rgba(255,255,255,.035);font-size:12px}.cloud-item b{display:block;margin-bottom:3px}
+.cloud-note{font-size:11px;opacity:.7;margin-top:10px;line-height:1.4}
+</style>
+<script id="v18-cloud-foundation-script">
+(function(){
+  const KEY='maliradar_cloud_foundation_v18';
+  function cloudState(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
+  function saveCloudState(s){localStorage.setItem(KEY,JSON.stringify(s))}
+  window.maliRadarCloud={
+    status:function(){return cloudState().status||'LOCAL DEMO'},
+    markReady:function(){const s=cloudState();s.status='SERVER READY';saveCloudState(s);renderCloud();},
+    render:renderCloud
+  };
+  function renderCloud(){
+    const el=document.getElementById('cloudFoundationPanel'); if(!el)return;
+    const s=cloudState();
+    el.querySelector('.cloud-state').textContent=s.status||'LOCAL DEMO';
+  }
+  window.addEventListener('DOMContentLoaded',function(){setTimeout(renderCloud,50)});
+})();
+</script>
+
+<style id="v19-region-market-style">
+.region-market-card label{display:block;font-size:12px;opacity:.75;margin:10px 0 6px}.region-select{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,255,190,.22);background:rgba(255,255,255,.04);color:inherit}.market-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.market-choice{padding:10px;border:1px solid rgba(0,255,190,.15);border-radius:12px;background:rgba(255,255,255,.03);cursor:pointer}.market-choice.active{border-color:rgba(0,255,190,.55);box-shadow:0 0 14px rgba(0,255,190,.08)}.market-choice b{display:block}.market-choice span{font-size:11px;opacity:.65}@media(max-width:520px){.market-choice-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head><body><script id="mr-stock-directory-bridge">
+(function(){
+  // Top-level `let STOCKS` is a global lexical binding, not window.STOCKS.
+  // Expose the live array safely so provider modules can see the same directory.
+  window.MaliRadarStocks=function(){
+    try{ if(Array.isArray(STOCKS)) return STOCKS; }catch(e){}
+    return Array.isArray(window.STOCKS)?window.STOCKS:[];
+  };
+})();
+</script>
+<div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v1.6.1</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready • DEMO DATA</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
+<section id="home" class="screen active" data-tour="home"><div class="card hero" data-tour-target="homeHero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">DEMO DATA</span></div><div class="grid"><div class="metric">Cash<b>KSh <span id="cash">100,000</span></b></div><div class="metric">Total P/L<b id="pl">KSh 0</b></div></div></div><div class="card"><div class="row"><div><b>Market Radar</b></div><span class="muted">Illustrative</span></div><div id="radar"></div></div><div class="card"><b>Market Status</b><div id="homeMarketStatus"></div><p class="notice">Market status follows the device clock. Prices in this prototype are DEMO DATA until a legitimate market-data source is integrated.</p></div></section>
+<section id="markets" class="screen" data-tour="markets"><div class="card" data-tour-target="marketsCard"><div class="row"><b>Markets</b><span class="muted">NSE demo universe</span></div><div id="marketStatusBar"></div><div class="card">
+  <div class="row"><b>All NSE Securities</b><span id="universeCount" class="muted"></span></div>
+  <div class="actions">
+    <button class="btn alt" onclick="setMarketFilter('all')">All</button>
+    <button class="btn alt" onclick="setMarketFilter('Banking')">Banking</button>
+    <button class="btn alt" onclick="setMarketFilter('Energy')">Energy</button>
+    <button class="btn alt" onclick="setMarketFilter('Agriculture')">Agriculture</button>
+    <button class="btn alt" onclick="setMarketFilter('Insurance')">Insurance</button>
+    <button class="btn alt" onclick="setMarketFilter('Manufacturing')">Manufacturing</button>
+  </div>
+</div><div id="list"></div></div></section>
+<section id="portfolio" class="screen" data-tour="portfolio">
+<div class="card hero" data-tour-target="portfolioHero"><div class="row"><div><div class="muted">Paper Portfolio</div><div class="big">KSh <span id="pv">100,000</span></div></div><span class="badge">DEMO DATA</span></div>
+<div class="row" style="margin-top:7px"><span id="todayMove" class="green">Today: KSh 0 (0.00%)</span><span id="totalMove" class="muted">Total P/L: KSh 0 (0.00%)</span></div>
+<div class="intel-chart" id="portfolioChart"></div><div class="periods">
+<button class="btn alt selected" onclick="setPortfolioPeriod('1D',this)">1D</button><button class="btn alt" onclick="setPortfolioPeriod('1W',this)">1W</button><button class="btn alt" onclick="setPortfolioPeriod('1M',this)">1M</button><button class="btn alt" onclick="setPortfolioPeriod('3M',this)">3M</button><button class="btn alt" onclick="setPortfolioPeriod('1Y',this)">1Y</button><button class="btn alt" onclick="setPortfolioPeriod('MAX',this)">MAX</button>
+</div>
+<div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div><div class="metric">Cash<b id="portfolioCash">KSh 100,000</b></div><div class="metric">Sectors<b id="sectorCount">0</b></div></div></div>
+<div class="card"><div class="row"><b>Portfolio Snapshot</b><span class="muted">Paper trading</span></div><div class="grid"><div class="metric">Largest Position<b id="largestPosition">—</b></div><div class="metric">Current Value<b id="currentValueMetric">KSh 100,000</b></div><div class="metric">Unrealized P/L<b id="unrealizedMetric">KSh 0</b></div><div class="metric">Avg Cost<b id="avgCostMetric">—</b></div></div></div>
+<div class="card"><div class="row"><b>Holdings</b><button class="btn alt" onclick="togglePortfolioMode()" id="portfolioModeBtn">👶 Beginner</button></div><div id="holdings"></div><div id="portfolioExplain" class="intel-note" style="margin-top:10px">P/L compares your paper position value with its estimated cost basis. No real money is involved.</div></div>
+<div class="card"><div class="row"><b>Sector Allocation</b><span class="muted">By current value</span></div><div id="sectorAllocation"></div></div>
+<div class="card"><div class="row"><b>Transactions</b><span class="muted">Paper activity</span></div><div id="history"></div></div>
+</section>
+<section id="learn" class="screen" data-tour="learn">
+<div class="card hero" data-tour-target="learnHero"><div class="row"><div><div class="muted">MaliRadar Academy</div><div class="big">🎓 Learn to Trade</div></div><span class="badge">LEARNING MODE</span></div><p class="notice">Learn → Practice → Mission → Quiz → XP. Educational simulation only.</p><div class="grid"><div class="metric">XP<b id="learnXP">0</b></div><div class="metric">Rank<b id="learnRank">Market Rookie</b></div><div class="metric">Lessons<b id="learnDone">0 / 9</b></div><div class="metric">Achievements<b id="learnAch">0</b></div></div></div>
+<div class="card"><div class="row"><b>Learning Path</b><span class="muted">Choose your level</span></div><div class="actions"><button class="btn" onclick="setLearnLevel('beginner')">👶 Beginner</button><button class="btn alt" onclick="setLearnLevel('intermediate')">📈 Intermediate</button><button class="btn alt" onclick="setLearnLevel('expert')">🧠 Expert</button></div><div id="lessonList"></div></div>
+<div class="card"><b>🏆 Achievements</b><div id="achievementList" class="grid"></div></div>
+</section>
+<section id="alertsScreen" class="screen">
+<div class="card hero">
+  <div class="row"><div><div class="muted">MaliRadar</div><div class="big">⚡ Alert Command Center</div></div><span class="badge">DEMO ENGINE</span></div>
+  <p class="notice">Create conditions that MaliRadar will monitor against the current demo price. Alerts are informational and do not provide guaranteed trading outcomes.</p>
+  <div class="grid">
+    <div class="metric">Active Alerts<b id="activeAlertCount">0</b></div>
+    <div class="metric">Triggered<b id="triggeredAlertCount">0</b></div>
+  </div>
+</div>
+<div class="card">
+  <div class="row"><b>Create Smart Alert</b><span class="muted">Beginner</span></div>
+  <div class="actions">
+    <button class="btn" onclick="createPriceAlert()">＋ Price Target</button>
+    <button class="btn alt" onclick="createMoveAlert()">↕ % Movement</button>
+    <button class="btn alt" onclick="createCrossAlert()">⇄ Crossing</button>
+  </div>
+</div>
+<div class="card">
+  <div class="row"><b>Active Alerts</b><span class="muted">Monitoring</span></div>
+  <div id="alertList"></div>
+</div>
+<div class="card">
+  <div class="row"><b>Alert History</b><span class="muted">Recent</span></div>
+  <div id="alertHistory"></div>
+</div>
+</section><section id="accountScreen" class="screen" data-tour-target="accountHero">
+<div class="card"><div class="account-hero"><div class="avatar" id="profileAvatar">👤</div><div><div class="profile-name" id="profileName">MaliRadar User</div><span class="pill" id="profileRank">Market Rookie • 0 XP</span><div style="margin-top:7px"><span class="demo-badge">LOCAL DEMO ACCOUNT</span></div></div></div></div>
+<div class="card"><div class="row"><b>👤 Profile</b><span class="muted">v1.7</span></div><div class="profile-form"><label>Username</label><input id="profileUsername" maxlength="20" placeholder="Choose a username"><label>Avatar emoji</label><input id="profileAvatarInput" maxlength="2" placeholder="👤"><button class="btn" onclick="saveProfile()">Save Profile</button></div></div>
+<div class="card"><div class="row"><b>🎨 Appearance</b><span class="muted">Choose your view</span></div><div class="theme-buttons"><button id="themeDark" onclick="setTheme('dark')">🌙 Dark</button><button id="themeLight" onclick="setTheme('light')">☀️ Light</button><button id="themeSystem" onclick="setTheme('system')">📱 System</button></div></div>
+
+<div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL DEMO</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
+<div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
+<div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local demo</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
+<div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Guided Tour<button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></button></div>
+<button class="btn red" onclick="resetDemo()">Reset local demo</button>
+</section><!-- v1.3 Leaderboards -->
+<section id="leaderboardView" class="screen" data-tour="leaderboard">
+  <div class="section-head" data-tour-target="leaderboardHead"><div>
+    <div class="eyebrow">MALIRADAR COMPETITION</div>
+    <h2>Leaderboards</h2>
+    <p class="muted">Learning progress and paper-trading statistics are shown separately.</p>
+  </div><span class="news-badge">🟡 DEMO RANKINGS</span></div>
+
+  <div class="lb-tabs" id="lbMetricTabs">
+    <button data-metric="xp" class="active">⭐ Learning XP</button>
+    <button data-metric="profit">💰 Simulated Profit</button>
+    <button data-metric="return">📈 Simulated Return %</button>
+    <button data-metric="trades">🎯 Trading Activity</button>
+  </div>
+  <div class="lb-filters" id="lbScopeTabs">
+    <button data-scope="global" class="active">🌍 Global</button>
+    <button data-scope="kenya">🇰🇪 Kenya</button>
+    <button data-scope="friends">👥 Friends</button>
+    <button data-scope="daily">Daily</button>
+    <button data-scope="weekly">Weekly</button>
+    <button data-scope="monthly">Monthly</button>
+    <button data-scope="all">All-time</button>
+  </div>
+
+  <div class="lb-card" style="margin-top:14px">
+    <div class="row"><strong id="lbTitle">⭐ Learning XP • Global</strong><span class="muted" id="lbCount">8 participants</span></div>
+    <div id="lbRows"></div>
+    <div class="lb-note">These are demonstration accounts. Simulated-profit and return figures are fictional paper-trading statistics, not real investment performance.</div>
+  </div>
+
+  <div class="lb-grid">
+    <div class="lb-card"><strong>👤 My Position</strong>
+      <div id="myPosition" style="font-size:28px;font-weight:900;margin-top:8px">#—</div>
+      <div class="lb-note" id="myStat">Your real position will be calculated after cloud accounts and server-side records are implemented.</div>
+    </div>
+    <div class="lb-card"><strong>🏆 Monthly Paper Portfolio Challenge</strong>
+      <div style="margin-top:8px;font-weight:800">September Demo Challenge</div>
+      <div class="grid" style="margin-top:10px">
+        <div class="metric">Starting Capital<b>KSh 100,000</b></div>
+        <div class="metric">Mode<b>Paper only</b></div>
+        <div class="metric">Metric<b>Simulation</b></div>
+        <div class="metric">Status<b>Demo</b></div>
+      </div>
+      <div class="lb-note" style="margin-top:10px">Future challenges can have fixed start/end times, server-recorded trades, eligibility rules and transparent scoring.</div>
+    </div>
+  </div>
+</section>
+
+
+<script>
+(function(){
+ const _nativeNav=window.nav;
+ if(typeof _nativeNav==="function"){
+   window.nav=function(view,btn){
+     const r=_nativeNav.apply(this,arguments);
+     window.scrollTo({top:0,behavior:"instant"});
+     return r;
+   };
+ }
+
+  const demo=[
+    {name:"MarketRookie",xp:1280,profit:18420,ret:18.42,trades:86,kenya:true,lessons:18,achievements:4},
+    {name:"StockExplorer",xp:1125,profit:14680,ret:14.68,trades:71,kenya:true,lessons:16,achievements:4},
+    {name:"MaliMaster",xp:980,profit:12150,ret:12.15,trades:64,kenya:false,lessons:15,achievements:3},
+    {name:"ChartReader",xp:870,profit:9450,ret:9.45,trades:52,kenya:true,lessons:13,achievements:3},
+    {name:"NSEStudent",xp:790,profit:7210,ret:7.21,trades:43,kenya:true,lessons:12,achievements:3},
+    {name:"PaperTrader",xp:710,profit:5830,ret:5.83,trades:38,kenya:false,lessons:10,achievements:2},
+    {name:"MarketScholar",xp:650,profit:4210,ret:4.21,trades:31,kenya:true,lessons:9,achievements:2},
+    {name:"TradeLearner",xp:590,profit:3180,ret:3.18,trades:27,kenya:false,lessons:8,achievements:2}
+  ];
+  let metric="xp",scope="global";
+  function rows(){
+    let a=demo.slice();
+    if(scope==="kenya")a=a.filter(x=>x.kenya);
+    if(scope==="friends")a=a.slice(0,4);
+    const key=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
+    a.sort((x,y)=>y[key]-x[key]); return a;
+  }
+  function label(){
+    const m={xp:"⭐ Learning XP",profit:"💰 Simulated Profit",return:"📈 Simulated Return %",trades:"🎯 Trading Activity"}[metric];
+    const s={global:"Global",kenya:"Kenya",friends:"Friends",daily:"Daily",weekly:"Weekly",monthly:"Monthly",all:"All-time"}[scope];
+    return m+" • "+s;
+  }
+  function value(x){
+    if(metric==="xp")return x.xp.toLocaleString()+" XP";
+    if(metric==="profit")return "KSh "+x.profit.toLocaleString();
+    if(metric==="return")return x.ret.toFixed(2)+"%";
+    return x.trades+" trades";
+  }
+  function render(){
+    const box=document.getElementById("lbRows"),title=document.getElementById("lbTitle");
+    if(!box||!title)return;
+    const a=rows(); title.textContent=label();
+    document.getElementById("lbCount").textContent=a.length+" participants";
+    box.innerHTML=a.map((x,i)=>'<div class="lb-row"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+x.name[0]+'</div><div class="lb-name"><b>'+x.name+'</b><div class="muted">'+x.lessons+' lessons • '+x.achievements+' achievements'+(x.kenya?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+value(x)+'</b><div class="muted">'+x.trades+' total trades</div></div></div>').join("");
+    document.getElementById("myPosition").textContent="#—";
+    document.getElementById("myStat").textContent="Real user positions require cloud accounts and server-side leaderboard records. Current entries are demonstration data.";
+  }
+  document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
+  document.querySelectorAll("#lbScopeTabs button").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
+  window.renderLeaderboards=render;
+  window.openLeaderboards=function(){nav("leaderboardView",document.querySelector(".tabs button:nth-child(5)"));render();};
+  render();
+})();
+</script>
+
+
+
+<section id="newsView" class="screen" data-tour="news">
+  <div class="section-head" data-tour-target="newsHead">
+    <div>
+      <div class="eyebrow">MALIRADAR INTELLIGENCE</div>
+      <h2>Market Feed</h2>
+      <p class="muted">Market and company information for education and research.</p>
+    </div>
+    <span class="news-badge">🟡 DEMO NEWS</span>
+  </div>
+  <div class="news-filters" id="newsFilters">
+    <button class="active" data-filter="all">All</button>
+    <button data-filter="watchlist">My Watchlist</button>
+    <button data-filter="nse">NSE</button>
+    <button data-filter="forex">Forex</button>
+    <button data-filter="crypto">Crypto</button>
+    <button data-filter="global">Global</button>
+  </div>
+  <div id="newsFeed" class="news-grid"></div>
+  <div class="event-panel">
+    <div class="row"><strong>⏱️ Event Radar</strong><span class="news-badge">LIVE LAYOUT</span></div>
+    <div class="event-scroll" id="eventRadar"></div>
+  </div>
+</section>
+
+
+<script>
+(function(){
+const stories=[
+ {cat:"nse",asset:"SCOM",title:"Safaricom market update",time:"Today • 09:30",summary:"Demonstration market item showing how MaliRadar can connect an event with an affected listed company.",why:"The example illustrates how company-related information can be displayed beside market data.",tags:["SCOM","Telecom"]},
+ {cat:"nse",asset:"KCB",title:"Banking sector event",time:"Today • 10:15",summary:"Demonstration item for a banking-sector development and its potential relevance to market monitoring.",why:"Sector information can help users understand the context around individual companies.",tags:["KCB","Banking"]},
+ {cat:"global",asset:"MARKET",title:"Global markets watch",time:"Today • 11:05",summary:"Demonstration global-market headline showing how international events can appear in the feed.",why:"Global developments can be relevant context for market participants.",tags:["Global","Markets"]},
+ {cat:"forex",asset:"USD/KES",title:"Forex monitor update",time:"Today • 11:40",summary:"Demonstration foreign-exchange event for the future Forex intelligence feed.",why:"Currency movements can affect businesses with foreign-currency exposure.",tags:["USD/KES","Forex"]},
+ {cat:"crypto",asset:"BTC",title:"Crypto market monitor",time:"Today • 12:20",summary:"Demonstration crypto-market item for the future digital-asset intelligence section.",why:"It demonstrates the same source, time and affected-asset structure used across markets.",tags:["BTC","Crypto"]}
+];
+const events=[
+ {time:"09:00",title:"Market session monitoring begins",asset:"NSE"},
+ {time:"10:15",title:"Banking sector event",asset:"KCB"},
+ {time:"11:40",title:"Forex monitor update",asset:"USD/KES"},
+ {time:"12:20",title:"Crypto market monitor",asset:"BTC"}
+];
+let filter="all";
+function openNewsDetail(i){
+ const s=stories[i]; const ov=document.getElementById("newsDetailOverlay");
+ if(!ov||!s)return;
+ ov.querySelector(".detail-type").textContent=s.cat.toUpperCase()+" INTELLIGENCE";
+ ov.querySelector(".detail-asset").textContent=s.asset;
+ ov.querySelector(".detail-title").textContent=s.title;
+ ov.querySelector(".detail-time").textContent=s.time;
+ ov.querySelector(".detail-summary").textContent=s.summary;
+ ov.querySelector(".detail-why").textContent=s.why;
+ ov.querySelector(".detail-source").textContent="MaliRadar demonstration feed";
+ ov.style.display="flex";
+}
+function closeNewsDetail(){const x=document.getElementById("newsDetailOverlay");if(x)x.style.display="none";}
+window.openNewsDetail=openNewsDetail; window.closeNewsDetail=closeNewsDetail;
+function renderNews(){
+ const feed=document.getElementById("newsFeed"); if(!feed)return;
+ let arr=stories.map((s,i)=>({...s,idx:i})).filter(s=>filter==="all"||s.cat===filter||(filter==="watchlist"&&["SCOM","KCB"].includes(s.asset)));
+ feed.innerHTML=arr.map(s=>`<article class="news-card">
+   <div class="news-kicker"><span class="news-type">${s.cat.toUpperCase()} • ${s.time}</span><span class="news-asset">${s.asset}</span></div>
+   <h3>${s.title}</h3>
+   <div class="news-tags">${s.tags.map(t=>`<span class="news-tag">${t}</span>`).join("")}</div>
+   <div class="news-summary">${s.summary}</div>
+   <div class="news-source"><span class="news-meta">MaliRadar Demo Feed</span><span class="news-open"><button onclick="openNewsDetail(${s.idx})">OPEN INTELLIGENCE ↗</button></span></div>
+ </article>`).join("")||'<div class="news-card">No items match this filter.</div>';
+}
+function renderEvents(){
+ const e=document.getElementById("eventRadar"); if(!e)return;
+ e.innerHTML=events.map(x=>`<div class="event-line">
+   <div class="event-time">${x.time} • MARKET EVENT</div>
+   <div class="event-title">${x.title}</div>
+   <div class="event-asset">Affected area: ${x.asset}</div>
+ </div>`).join("");
+}
+document.querySelectorAll("#newsFilters button").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.filter;document.querySelectorAll("#newsFilters button").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderNews();}));
+window.renderMarketIntelligence=function(){renderNews();renderEvents();};
+renderNews();renderEvents();
+})();
+</script>
+
+
+<div id="newsDetailOverlay" class="news-detail-overlay" onclick="if(event.target===this)closeNewsDetail()">
+ <div class="news-detail">
+  <div class="scan"></div>
+  <div class="detail-head">
+   <div><div class="news-type detail-type">INTELLIGENCE</div><span class="news-asset detail-asset">ASSET</span></div>
+   <button class="detail-close" onclick="closeNewsDetail()">×</button>
+  </div>
+  <div class="detail-title">Market Intelligence</div>
+  <div class="news-meta detail-time"></div>
+  <div class="detail-section"><div class="detail-label">EVENT SUMMARY</div><div class="detail-text detail-summary"></div></div>
+  <div class="detail-section"><div class="detail-label">WHY IT MATTERS</div><div class="detail-text detail-why"></div></div>
+  <div class="detail-section"><div class="detail-label">SOURCE</div><div class="detail-text detail-source"></div></div>
+ </div>
+</div>
+
+
+<section id="smartAssistView" class="screen" data-tour="assist">
+ <div class="sa-hero" data-tour-target="assistHero">
+  <span class="sa-status">🟡 DEMO ANALYSIS ENGINE</span>
+  <div class="sa-title">Smart Assist</div>
+  <div class="sa-copy">Automated market analysis for the paper-trading environment. Start with Assist to see the analysis dashboard, then explore potential signals. It cannot know the future or guarantee outcomes.</div>
+ </div>
+ <div id="saActivation" class="sa-card" style="margin-top:14px">
+  <div class="eyebrow">OPTIONAL FEATURE</div><h3>Choose your assist level</h3><p class="muted">Activate the paper-trading analysis dashboard after reviewing the safeguard below.</p>
+  <div class="sa-grid" style="margin-top:10px">
+   <div class="sa-card sa-choice selected" data-level="assist"><h3>🔎 Assist</h3><p>Explains market conditions and monitored factors.</p></div>
+   <div class="sa-card sa-choice" data-level="signal"><h3>⚡ Signal</h3><p>Demonstrates potential signals with reasons and uncertainty.</p></div>
+   <div class="sa-card sa-choice" data-level="auto"><h3>🤖 Auto-Assist</h3><p>Paper-only automatic preparation after simulated conditions.</p></div>
+  </div>
+  <div class="sa-disclaimer" style="margin-top:13px"><strong>⚠️ Smart Assist Disclaimer</strong><br>Smart Assist may be inaccurate, incomplete, or wrong and cannot reliably predict future prices. It is not a financial adviser. Markets can move unexpectedly. You remain responsible for your decisions and losses.
+   <div class="sa-controls"><button class="sa-btn primary" id="saActivateBtn">I UNDERSTAND & ACTIVATE</button></div>
+  </div>
+ </div>
+ <div id="saWorkspace" style="display:none;margin-top:14px">
+  <div class="sa-grid">
+   <div class="sa-card"><div class="eyebrow">ASSET</div><h3>SCOM • Safaricom</h3><p>Demo market data only.</p></div>
+   <div class="sa-card"><div class="eyebrow">TIMEFRAME</div><div class="sa-controls" id="saTimeframes"><button class="sa-btn primary">1D</button><button class="sa-btn">1W</button><button class="sa-btn">1M</button><button class="sa-btn">3M</button></div></div>
+   <div class="sa-card"><div class="eyebrow">MODE</div><h3 id="saMode">Assist</h3><p id="saModeCopy">Condition explanation mode.</p></div>
+  </div>
+  <div class="sa-signal" style="margin-top:14px">
+   <div class="eyebrow">CURRENT DEMO ANALYSIS</div><h3 id="saSignalTitle">MARKET CONDITIONS: NEUTRAL</h3>
+   <p id="saSignalCopy" class="muted">Smart Assist is currently using demonstration inputs. Once a legitimate market-data feed is connected, this panel will analyze the selected asset and timeframe.</p>
+   <div id="saReasons"></div>
+   <div class="sa-grid" style="margin-top:12px">
+    <div class="sa-card"><div class="eyebrow">TREND</div><h3>Neutral</h3><p>Demo state. No live price series is being evaluated.</p></div>
+    <div class="sa-card"><div class="eyebrow">MOMENTUM</div><h3>Unavailable</h3><p>Requires verified historical market data.</p></div>
+    <div class="sa-card"><div class="eyebrow">NEWS CONTEXT</div><h3>Demo Feed</h3><p>News intelligence is currently demonstration content.</p></div>
+   </div>
+   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN DEMO ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD DEMO SIGNAL</button></div>
+  </div>
+  <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Signal History</strong><span class="sa-pill">DEMO</span></div><div id="saHistory"></div></div>
+ </div>
+</section>
+
+<script>
+(function(){
+ const levels={assist:["Assist","Condition explanation mode."],signal:["Signal","Potential signal mode. Signals are demonstrations, not instructions."],auto:["Auto-Assist","Paper-only automatic preparation mode."]};
+ let level="assist",tf="1D";
+ let hist=JSON.parse(localStorage.getItem("maliradar_smart_assist_history")||"[]");
+ function reasons(){document.getElementById("saReasons").innerHTML=["Price trend: demonstration input only.","Momentum: no verified live feed connected.","Volume: unavailable in this prototype.","News context: demo feed only."].map(x=>'<div class="sa-reason">◈ '+x+"</div>").join("")}
+ function history(){let b=document.getElementById("saHistory");if(!hist.length){b.innerHTML='<div class="muted" style="padding:14px 0">No demo signals recorded yet.</div>';return}b.innerHTML=hist.slice().reverse().map(x=>'<div class="sa-history-row"><span>'+x.time+'</span><span class="sa-pill">'+x.signal+'</span><span>SCOM • '+x.tf+'</span><span>DEMO</span></div>').join("")}
+ function setLevel(l){level=l;document.querySelectorAll(".sa-choice").forEach(x=>x.classList.toggle("selected",x.dataset.level===l));document.getElementById("saMode").textContent=levels[l][0];document.getElementById("saModeCopy").textContent=levels[l][1]}
+ function run(){document.getElementById("saSignalTitle").textContent=level==="assist"?"MARKET CONDITIONS: NEUTRAL":level==="signal"?"POTENTIAL SIGNAL: HOLD / MONITOR":"PAPER AUTO-ASSIST: WAITING";document.getElementById("saSignalCopy").textContent="Demonstration result only. Production analysis requires verified data, defined methodology and monitored model performance.";reasons()}
+ document.querySelectorAll(".sa-choice").forEach(x=>x.addEventListener("click",()=>setLevel(x.dataset.level)));
+ document.getElementById("saActivateBtn").addEventListener("click",()=>{document.getElementById("saActivation").style.display="none";document.getElementById("saWorkspace").style.display="block";run();history()});
+ document.getElementById("saRunBtn").addEventListener("click",run);
+ document.getElementById("saRecordBtn").addEventListener("click",()=>{hist.push({time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),signal:level==="assist"?"ANALYSIS":level==="signal"?"POTENTIAL SIGNAL":"AUTO-ASSIST",tf});localStorage.setItem("maliradar_smart_assist_history",JSON.stringify(hist.slice(-30)));history()});
+ document.querySelectorAll("#saTimeframes button").forEach(b=>b.addEventListener("click",()=>{tf=b.textContent.trim();document.querySelectorAll("#saTimeframes button").forEach(x=>x.classList.remove("primary"));b.classList.add("primary")}));
+ window.renderSmartAssist=history;
+})();
+</script>
+
+
+<section id="cloudFoundationPanel" class="cloud-foundation">
+  <div class="cloud-status"><span class="cloud-dot"></span> Cloud foundation: <span class="cloud-state">LOCAL DEMO</span></div>
+  <div class="cloud-grid">
+    <div class="cloud-item"><b>☁️ Profile Sync</b>Ready for server storage</div>
+    <div class="cloud-item"><b>💼 Portfolio Sync</b>Ready for cloud data</div>
+    <div class="cloud-item"><b>🏆 Leaderboards</b>Ready for shared rankings</div>
+    <div class="cloud-item"><b>🔔 Alerts</b>Ready for account sync</div>
+    <div class="cloud-item"><b>🎓 Learning</b>Ready for XP persistence</div>
+    <div class="cloud-item"><b>📊 Transactions</b>Ready for server history</div>
+  </div>
+  <div class="cloud-note">v1.8 foundation only. No real cloud account or live multi-device sync is claimed yet. Existing local demo data remains the source of truth until the backend is connected.</div>
+</section>
+
+<section id="trustView" class="screen">
+  <div class="section-head">
+    <div>
+      <div class="eyebrow">MALIRADAR TRUST CENTER</div>
+      <h2>Your Data & Security</h2><div class="actions"><button class="btn alt" onclick="nav('dataArchView',this);if(window.MaliRadarMarketData)MaliRadarMarketData.refreshStatus()">📡 Data Engine</button></div>
+      <p class="muted">Transparency controls for your MaliRadar account.</p>
+    </div>
+    <span class="trust-status">🟡 DEMO / LOCAL</span>
+  </div>
+
+  <div class="trust-card" style="margin-bottom:12px">
+    <h3>⚠️ Current security status</h3>
+    <p>This prototype is not yet connected to production authentication or a managed cloud database. Do not enter real passwords, financial credentials, payment details or sensitive personal information.</p>
+  </div>
+
+  <div class="trust-grid">
+    <div class="trust-card">
+      <h3>🔐 Account Security</h3>
+      <p>Production login, password hashing, secure sessions, recovery and device management are planned for the cloud phase.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Account Security','Production authentication is not connected in this prototype. The current account is local/demo only.')">View details</button></div>
+    </div>
+    <div class="trust-card">
+      <h3>🛡️ Your Privacy</h3>
+      <p>Your public profile can be separated from private portfolio, cash, alerts and simulation information.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy','Public profile fields and private financial/simulation data are designed to remain separate. Production privacy controls will be enforced server-side.')">View details</button></div>
+    </div>
+    <div class="trust-card">
+      <h3>📜 Privacy Policy</h3>
+      <p>Explains what data MaliRadar is designed to collect, use and retain. A production legal policy will be published before public launch.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy Policy','This prototype does not replace the final legal Privacy Policy. A jurisdiction-appropriate policy will be required before production launch.')">Read status</button></div>
+    </div>
+    <div class="trust-card">
+      <h3>📋 Terms of Use</h3>
+      <p>Defines acceptable use, paper-trading limitations, data limitations and future service boundaries.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Terms of Use','The production Terms of Use must be reviewed and published before public launch. Paper trading is simulated and is not a real-money brokerage service.')">Read status</button></div>
+    </div>
+    <div class="trust-card">
+      <h3>💱 Trading Safety</h3>
+      <p>MaliRadar paper trades are simulated. No real-money order should be represented as executed by this prototype.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Trading Safety','Paper orders are simulations. Real-money trading would require appropriate broker/exchange integrations, security controls and regulatory review.')">View details</button></div>
+    </div>
+    <div class="trust-card">
+      <h3>🤖 Smart Assist</h3>
+      <p>Smart Assist provides analysis or simulated signals and must not be presented as guaranteed financial advice.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Smart Assist','Smart Assist analysis can be inaccurate or wrong. Signal confidence is not a guarantee of profit or future price movement.')">View details</button></div>
+    </div>
+  </div>
+
+  <div class="trust-card" style="margin-top:12px">
+    <h3>📊 Data Source Status</h3>
+    <div class="trust-list">
+      <div class="trust-row"><strong>Market prices</strong><span>🟡 Demo / illustrative in prototype</span></div>
+      <div class="trust-row"><strong>News</strong><span>🟡 Demo / prototype content where shown</span></div>
+      <div class="trust-row"><strong>Cloud account</strong><span>🟡 Foundation only</span></div>
+      <div class="trust-row"><strong>Real-money trading</strong><span>⚪ Not available</span></div>
+    </div>
+  </div>
+
+  <div class="trust-card" style="margin-top:12px">
+    <h3>🧾 Data Controls</h3>
+    <p>These controls operate on the current local prototype. Production export/deletion will require server-side implementation.</p>
+    <div class="trust-actions">
+      <button class="trust-btn" onclick="exportTrustData()">📤 Export local data</button>
+      <button class="trust-btn danger" onclick="deleteTrustData()">🗑️ Delete local demo data</button>
+    </div>
+  </div>
+</section>
+
+
+<section id="dataArchView" class="screen">
+  <div class="section-head"><div><div class="eyebrow">MALIRADAR DATA ENGINE</div><h2>Market Data Architecture</h2><p class="muted">Authorized market-data pipeline and provider status.</p></div><span class="data-badge">🟡 CHECKING FEED</span></div>
+  <div class="data-arch"><h3>📡 Feed pipeline</h3><p class="muted">Licensed provider → MaliRadar server → validation → app. API credentials stay server-side.</p></div>
+  <div class="data-arch"><h3>🔄 Data states</h3><div class="data-row"><strong>LIVE</strong><span class="data-muted">Authorized real-time feed</span></div><div class="data-row"><strong>DELAYED</strong><span class="data-muted">Authorized delayed feed</span></div><div class="data-row"><strong>EOD</strong><span class="data-muted">Verified end-of-day data</span></div><div class="data-row"><strong>DEMO</strong><span class="data-muted">Illustrative prototype data</span></div><div class="data-row"><strong>UNAVAILABLE</strong><span class="data-muted">No verified provider data</span></div></div>
+  <div class="data-arch"><h3>🌍 Provider connection</h3><div id="dataAdapters"><p class="muted">Checking MyStocks Sandbox…</p></div><div class="actions"><button class="btn" onclick="MaliRadarMarketData.refresh(true)">↻ Refresh data</button><button class="btn alt" onclick="MaliRadarMarketData.refreshStatus()">Check connection</button></div></div>
+</section>
+</main>
+
+<div id="tourOverlay" class="tour-overlay" role="dialog" aria-modal="true">
+ <div class="tour-card">
+  <div class="tour-top"><span class="tour-kicker">MALIRADAR GUIDED TOUR</span><span id="tourProgress" class="tour-progress"></span></div>
+  <h2 id="tourTitle">Welcome to MaliRadar</h2>
+  <p id="tourText"></p>
+  <div id="tourTip" class="tour-tip tour-bubble"></div>
+  <div class="tour-actions"><button class="btn alt" id="tourSkip">Skip Tour</button><button class="btn" id="tourNext">Next →</button></div>
+ </div>
+</div>
+<nav class="tabs"><button class="active" onclick="nav('home',this)">⌂<br>Home</button><button onclick="nav('markets',this)">📈<br>Markets</button><button onclick="nav('portfolio',this)">💼<br>Portfolio</button><button onclick="nav('learn',this)">🎓<br>Learn</button><button onclick="nav('leaderboardView',this);renderLeaderboards()">🏆<br>Rank</button><button onclick="nav('newsView',this);renderMarketIntelligence()">📰<br>News</button><button onclick="nav('smartAssistView',this)">⚡<br>Assist</button><button onclick="nav('accountScreen',this)">👤<br>Account</button></nav></div>
+<div id="modal" class="modal"><div class="sheet"><div class="row"><b id="mt">MaliRadar</b><button class="btn alt" onclick="closeM()">Close</button></div><div id="mb"></div></div></div>
+<script>
+let STOCKS=[["SCOM","Safaricom","Telecom",35.95,-1.24],["KCB","KCB Group","Banking",92.5,-0.8],["EQTY","Equity Group","Banking",105.0,-0.94],["EABL","East African Breweries","Manufacturing",286.75,-0.52],["COOP","Co-operative Bank","Banking",37.15,0],["ABSA","Absa Bank Kenya","Banking",33.05,-0.45],["BAT","BAT Kenya","Manufacturing",null,null],["BOC","BOC Kenya","Manufacturing",null,null],["BRIT","Britam Holdings","Insurance",null,null],["CIC","CIC Insurance Group","Insurance",null,null],["CTUM","Centum Investment","Investment",null,null],["DTK","Diamond Trust Bank","Banking",null,null],["FMLY","Family Bank","Banking",null,null],["HFCK","HF Group","Banking",null,null],["HFCB","HF Development & Investment","Banking",null,null],["IMH","I&M Group","Banking",null,null],["NCBA","NCBA Group","Banking",null,null],["SBIC","Stanbic Holdings","Banking",null,null],["SCBK","Standard Chartered Bank Kenya","Banking",null,null],["NMG","Nation Media Group","Media",null,null],["SCAN","Scangroup","Media",null,null],["KQ","Kenya Airways","Transport",null,null],["KPC","Kenya Pipeline Company","Energy",null,null],["KEGN","KenGen","Energy",null,null],["KPLC","Kenya Power","Energy",null,null],["TOTL","TotalEnergies Marketing Kenya","Energy",null,null],["UMME","Umeme","Energy",null,null],["EGAD","Eaagads","Agriculture",null,null],["KAPC","Kapchorua Tea Kenya","Agriculture",null,null],["KUKZ","Kakuzi","Agriculture",null,null],["LBTY","Limuru Tea","Agriculture",null,null],["LAPR","Limuru Tea","Agriculture",null,null],["SASN","Sasini","Agriculture",null,null],["UNGA","Unga Group","Agriculture",null,null],["FTGH","Flame Tree Group","Manufacturing",null,null],["CARB","Carbacid Investments","Manufacturing",null,null],["CGEN","Car & General","Manufacturing",null,null],["NSE","Nairobi Securities Exchange","Financial Services",null,null],["OCH","Olympia Capital Holdings","Investment",null,null],["PORT","East African Portland Cement","Manufacturing",null,null],["TPSE","TPS Eastern Africa (Serena)","Hotels & Tourism",null,null],["UCHM","Uchumi Supermarkets","Retail",null,null],["XPRS","Express Kenya","Transport",null,null],["LKL","Longhorn Publishers","Publishing",null,null],["NBV","Nairobi Business Ventures","Retail",null,null],["SMER","Sameer Africa","Manufacturing",null,null],["SGL","Standard Group","Media",null,null],["HAFR","Home Afrika","Real Estate",null,null],["KNRE","Kenya Re-Insurance","Insurance",null,null],["SLAM","Sanlam Kenya","Insurance",null,null],["CRWN","Crown Paints Kenya","Manufacturing",null,null],["KURV","Kurv","Exchange Traded / Investment",null,null],["GLD","GLD","Exchange Traded / Investment",null,null],["SMWF","SME/Market Fund","Exchange Traded / Investment",null,null],["AMAC","African Agricultural Holdings","Investment",null,null],["BKG","BK Group","Banking",null,null],["HBE","Homeboyz Entertainment","Media",null,null],["EVRD","Eveready East Africa","Manufacturing",null,null],["ORCH","Orchid","Manufacturing",null,null],["ALP","Alpharama","Agriculture",null,null],["TRFC","TransCentury","Investment",null,null],["JUB","Jubilee Holdings","Insurance",null,null],["LIMT","Limuru Tea","Agriculture",null,null],["WTK","Williamson Tea Kenya","Agriculture",null,null]];
+const KEY="maliradar_v07_state";
+let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
+  cash:100000,hold:{},history:[],
+  alerts:[],
+  alertHistory:[],
+  watch:["SCOM","KCB","EQTY"]
+};
+const $=id=>document.getElementById(id);
+const stock=s=>STOCKS.find(x=>x[0]===s);
+const money=n=>Math.round(n).toLocaleString("en-KE");
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+
+const ACADEMY={beginner:[['b1','What is a stock?','Ownership in a company and what a share represents.',20],['b2','What is the NSE?','How a securities exchange works and why markets exist.',20],['b3','Why prices move','Buyers, sellers, information and market conditions.',25],['b4','Buying and selling','Basic paper-order concepts and portfolio positions.',25],['b5','Portfolio & P/L','How invested amount, value and profit/loss are calculated.',30],['b6','Basic charts','Price, time, trend and common chart terminology.',30],['b7','Risk basics','Losses, uncertainty, diversification and position size.',35]],intermediate:[['i1','Candlesticks','How open, high, low and close are represented.',35],['i2','Support & resistance','Educational concepts for reading historical price areas.',35],['i3','Volume & trends','What trading activity and trend measures can show.',40],['i4','Moving averages','A basic explanation of smoothing historical prices.',40],['i5','Financial statements','Income statement, balance sheet and cash flow basics.',45],['i6','Dividends & valuation','What dividends and valuation concepts mean.',45],['i7','Diversification & risk','How exposure can be spread and risk discussed.',50]],expert:[['e1','Advanced technical analysis','Indicators and chart structures at a higher level.',50],['e2','Financial ratios','Common profitability, liquidity and leverage ratios.',50],['e3','Fundamental analysis','How investors examine company fundamentals.',55],['e4','Company valuation','Core concepts behind valuation models.',55],['e5','Portfolio construction','Exposure, allocation and risk concepts.',60],['e6','Market psychology','How behavior can affect market activity.',60],['e7','Strategy testing','How historical backtesting works and its limitations.',70]]};
+let learnLevel='beginner';
+let learnState=JSON.parse(localStorage.getItem('maliradar_academy_v12')||'null')||{xp:0,done:[],ach:[]};
+function saveLearn(){localStorage.setItem('maliradar_academy_v12',JSON.stringify(learnState));}
+function rankFor(x){return x>=500?'Market Master':x>=350?'Market Strategist':x>=250?'Market Scholar':x>=150?'Market Explorer':x>=75?'Market Student':x>=25?'Stock Explorer':'Market Rookie'}
+function setLearnLevel(level){learnLevel=level;renderLearn();}
+function renderLearn(){
+ const lessons=ACADEMY[learnLevel];
+ $('learnXP').textContent=learnState.xp; $('learnRank').textContent=rankFor(learnState.xp); $('learnDone').textContent=learnState.done.length+' / '+Object.values(ACADEMY).flat().length; $('learnAch').textContent=learnState.ach.length;
+ $('lessonList').innerHTML='<div class="muted" style="margin-top:12px">'+learnLevel.toUpperCase()+' PATH</div>'+lessons.map(l=>{let done=learnState.done.includes(l[0]);return `<div class="stock"><div class="row"><div><b>${done?'✓ ':''}${l[1]}</b><div class="muted">${l[3]} XP • ${l[2]}</div></div><button class="btn ${done?'alt':''}" onclick="openLesson('${l[0]}')">${done?'Review':'Open'}</button></div></div>`}).join('');
+ const ach=[['first','First Lesson','Complete your first lesson'],['quiz','Quiz Learner','Complete a lesson quiz'],['levels','Three Levels','Open all three learning paths']];
+ $('achievementList').innerHTML=ach.map(a=>`<div class="metric"><b>${learnState.ach.includes(a[0])?'🏅':'🔒'} ${a[1]}</b><span class="muted">${a[2]}</span></div>`).join('');
+}
+function openLesson(id){const l=Object.values(ACADEMY).flat().find(x=>x[0]===id);if(!l)return;openM('📖 '+l[1],`<p class="notice">${l[2]}</p><div class="card"><b>Practice</b><p class="notice">Think about how this concept appears in the MaliRadar simulator. This exercise is educational and does not tell you what trade to make.</p></div><div class="actions"><button class="btn" onclick="completeLesson('${l[0]}',${l[3]})">Complete & Earn XP</button><button class="btn alt" onclick="startQuiz('${l[0]}')">📝 Quiz</button></div>`)}
+function completeLesson(id,xp){if(!learnState.done.includes(id)){learnState.done.push(id);learnState.xp+=xp;if(!learnState.ach.includes('first'))learnState.ach.push('first');}saveLearn();closeM();renderLearn();}
+function startQuiz(id){const l=Object.values(ACADEMY).flat().find(x=>x[0]===id);if(!l)return;openM('📝 Quiz — '+l[1],`<p class="notice">Which statement best matches this lesson?</p><div class="actions"><button class="btn" onclick="quizAnswer('${id}',true)">It is an educational concept that helps explain market activity.</button><button class="btn alt" onclick="quizAnswer('${id}',false)">It guarantees what a stock will do next.</button></div>`)}
+function quizAnswer(id,correct){if(correct){learnState.xp+=15;if(!learnState.ach.includes('quiz'))learnState.ach.push('quiz');saveLearn();openM('⭐ Correct',`<p class="notice">Correct. You earned 15 XP. Market concepts explain information and consequences; they do not guarantee future prices.</p><button class="btn" onclick="closeM();renderLearn()">Continue</button>`)}else{openM('Try again',`<p class="notice">That statement is not correct. Market education cannot guarantee future prices.</p><button class="btn" onclick="startQuiz('${id}')">Try again</button>`)} }
+function markAllLevels(){if(learnLevel==='beginner')learnState._b=true;if(learnLevel==='intermediate')learnState._i=true;if(learnLevel==='expert')learnState._e=true;if(learnState._b&&learnState._i&&learnState._e&&!learnState.ach.includes('levels'))learnState.ach.push('levels');saveLearn();}
+function nav(id,btn){
+  const compact=["leaderboardView","newsView","smartAssistView"].includes(id);
+  document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  document.body.classList.toggle("compact-header",compact);
+  const hdr=document.querySelector(".app > header"), mainEl=document.querySelector(".app > main");
+  if(hdr) hdr.style.display=compact?"none":"";
+  if(mainEl) mainEl.style.display=compact?"contents":"";
+  const target=$(id); if(target)target.classList.add("active");
+  document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
+  if(btn)btn.classList.add("active");
+  render();
+  if(id==="leaderboardView" && window.renderLeaderboards)window.renderLeaderboards();
+  if(id==="newsView" && window.renderMarketIntelligence)window.renderMarketIntelligence();
+  if(id==="accountScreen" && window.renderAccount)window.renderAccount();
+  requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
+}
+function alerts(){
+  nav("alertsScreen",null);
+  renderAlerts();
+}
+function render(){
+  let val=state.cash;
+  Object.keys(state.hold).forEach(s=>{let x=stock(s);if(x && x[3]!=null)val+=state.hold[s]*x[3]});
+  $("total").textContent=money(val);
+  $("cash").textContent=money(state.cash);
+  $("pv").textContent=money(val);
+  renderRadar();renderMarkets();renderPortfolio();renderAlerts();renderMarketStatus();if($(`learn`))renderLearn();
+}
+function renderMarketStatus(){
+  const html=marketStatusHTML();
+  if($("homeMarketStatus"))$("homeMarketStatus").innerHTML=html;
+  if($("marketStatusBar"))$("marketStatusBar").innerHTML=html;
+}
+function renderRadar(){
+  $("radar").innerHTML=STOCKS.slice(0,3).map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</span></div><div class="muted">${x[0]} • ${x[2]} • ${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div></div>`).join("")
+}
+let marketFilter="all";
+function setMarketFilter(f){marketFilter=f;renderMarkets()}
+function marketRows(){
+  let rows=STOCKS.filter(x=>marketFilter==="all"||x[2]===marketFilter);
+  return rows;
+}
+function renderMarkets(){
+  let rows=marketRows();
+  if($("universeCount"))$("universeCount").textContent=`${rows.length} entries`;
+  $("list").innerHTML=rows.map(x=>{
+    let price=x[3]==null?"Price unavailable":"KSh "+x[3].toFixed(2);
+    let move=x[4]==null?"—":((x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%");
+    let cls=x[4]==null?"muted":(x[4]>=0?"green":"red");
+    let trade=x[3]==null?"":"<button class='btn' onclick=\"buy('"+x[0]+"')\">Paper Buy</button><button class='btn red' onclick=\"sell('"+x[0]+"')\">Paper Sell</button>";
+    return `<div class="stock"><div class="row"><div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div><div><b>${price}</b><div class="${cls}">${move}</div></div></div><div class="actions">${trade}<button class="btn alt" onclick="toggleWatch('${x[0]}')">${state.watch.includes(x[0])?"★ Watching":"☆ Watch"}</button><button class="btn alt" onclick="quickAlert('${x[0]}')">🔔 Alert</button></div></div>`
+  }).join("")||"<p class='muted'>No securities in this filter.</p>"
+}
+let portfolioPeriod='1D',portfolioMode='beginner';
+function portfolioPositions(){
+  const out=[];
+  Object.keys(state.hold).forEach(sym=>{
+    const x=stock(sym); const shares=Number(state.hold[sym]||0);
+    if(!x||!shares||x[3]==null)return;
+    let buys=state.history.filter(h=>h.sym===sym&&h.type==='BUY');
+    let sells=state.history.filter(h=>h.sym===sym&&h.type==='SELL');
+    let buyCost=buys.reduce((a,h)=>a+h.q*h.p,0), sellQty=sells.reduce((a,h)=>a+h.q,0);
+    const avg=buyCost/Math.max(1,buys.reduce((a,h)=>a+h.q,0));
+    const cost=shares*avg, value=shares*x[3], pl=value-cost;
+    out.push({sym,x,shares,avg,cost,value,pl,pct:cost?pl/cost*100:0});
+  }); return out;
+}
+function renderPortfolio(){
+  const pos=portfolioPositions(), keys=Object.keys(state.hold);
+  const value=state.cash+pos.reduce((a,p)=>a+p.value,0);
+  const invested=pos.reduce((a,p)=>a+p.cost,0);
+  const pl=pos.reduce((a,p)=>a+p.pl,0), plPct=invested?pl/invested*100:0;
+  const today=pos.reduce((a,p)=>a+p.shares*p.x[3]*(Number(p.x[4]||0)/100),0), todayPct=value?today/value*100:0;
+  $('pv').textContent=money(value); $('portfolioCash').textContent='KSh '+money(state.cash);
+  $('holdingCount').textContent=keys.length; $('sectorCount').textContent=new Set(pos.map(p=>p.x[2])).size;
+  $('invested').textContent='KSh '+money(invested); $('currentValueMetric').textContent='KSh '+money(value);
+  $('unrealizedMetric').textContent='KSh '+money(pl);
+  $('totalMove').textContent=`Total P/L: KSh ${money(pl)} (${plPct.toFixed(2)}%)`;
+  $('totalMove').className=pl>=0?'green':'red';
+  $('todayMove').textContent=`Today: KSh ${money(today)} (${todayPct.toFixed(2)}%)`; $('todayMove').className=today>=0?'green':'red';
+  let largest=pos.slice().sort((a,b)=>b.value-a.value)[0];
+  $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
+  $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
+  $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.x[3].toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
+  $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>`<div class="stock"><div class="row"><b class="${h.type==='BUY'?'green':'red'}">${h.type} ${h.sym}</b><span>${h.q} @ KSh ${h.p.toFixed(2)}</span></div><div class="muted">${h.time}</div></div>`).join(''):'<p class="muted">No transactions yet.</p>';
+  const sectors={}; pos.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
+  $('sectorAllocation').innerHTML=Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>`<div class="stock"><div class="row"><b>${sec}</b><span>${value?((v/value)*100).toFixed(1):'0.0'}%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${value?Math.min(100,v/value*100):0}%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh ${money(v)}</div></div>`).join(''):'<p class="muted">Sector allocation appears after you hold paper positions.</p>';
+  $('portfolioExplain').textContent=portfolioMode==='beginner'?'P/L compares the current paper value of your holdings with their estimated average purchase cost. A positive number means the current demo value is above that cost; a negative number means it is below.':'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and the displayed demo prices.';
+  $('portfolioModeBtn').textContent=portfolioMode==='beginner'?'👶 Beginner':'🧠 Expert';
+  renderPortfolioChart(value);
+}
+function togglePortfolioMode(){portfolioMode=portfolioMode==='beginner'?'expert':'beginner';renderPortfolio()}
+function setPortfolioPeriod(p,btn){portfolioPeriod=p;document.querySelectorAll('.periods button').forEach(b=>b.classList.remove('selected'));if(btn)btn.classList.add('selected');renderPortfolio()}
+function portfolioHistoryValues(){
+  let cash=100000,hold={}; const arr=[];
+  state.history.forEach(h=>{if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q} let v=cash;Object.keys(hold).forEach(s=>{let x=stock(s);if(x&&x[3]!=null)v+=hold[s]*x[3]});arr.push({label:h.time||'',value:v})});
+  return arr;
+}
+function renderPortfolioChart(current){
+  const el=$('portfolioChart'); if(!el)return; let pts=portfolioHistoryValues();
+  const base=100000; if(!pts.length)pts=[{label:'Start',value:base},{label:'Now',value:current}]; else pts.push({label:'Now',value:current});
+  const min=Math.min(...pts.map(p=>p.value),base),max=Math.max(...pts.map(p=>p.value),base),range=Math.max(1,max-min);
+  const width=460,height=210,pad=22; const xy=pts.map((p,i)=>[pad+(width-pad*2)*(i/Math.max(1,pts.length-1)),height-pad-(p.value-min)/(range)*(height-pad*2)]);
+  const line=xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  el.innerHTML=`<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><defs><linearGradient id="pGlow" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#35e0b1"/><stop offset="1" stop-color="#35e0b1" stop-opacity="0"/></linearGradient></defs><g>${[1,2,3,4].map(i=>`<line x1="0" y1="${i*height/5}" x2="${width}" y2="${i*height/5}" class="chart-grid"/>`).join('')}</g><path d="${line} L ${xy[xy.length-1][0]} ${height-pad} L ${xy[0][0]} ${height-pad} Z" fill="url(#pGlow)" opacity=".12"/><path d="${line}" class="chart-line"/><circle cx="${xy[xy.length-1][0]}" cy="${xy[xy.length-1][1]}" r="5" class="price-dot"/></svg><div style="position:absolute;top:9px;left:10px" class="muted">${portfolioPeriod} • DEMO PERFORMANCE</div><div style="position:absolute;bottom:8px;right:10px" class="muted">KSh ${money(current)}</div>`;
+}
+function universalSearch(){
+  const q=($("q")?.value||"").trim().toLowerCase();
+  if(!q){closeSearchResults();return}
+  const matches=STOCKS.filter(x=>x.join(" ").toLowerCase().includes(q));
+  const box=$("globalSearchResults");
+  if(!box)return;
+  box.innerHTML=matches.length?matches.map(x=>`
+    <div class="search-result" onclick="openSearchStock('${x[0]}')">
+      <div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div>
+      <div style="text-align:right"><b>${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</b><div class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</div></div>
+    </div>`).join(""):`<div class="search-empty">No matching demo asset found.</div>`;
+  box.classList.add("show");
+}
+function openSearchStock(sym){
+  closeSearchResults();
+  $("q").value="";
+  details(sym);
+}
+function closeSearchResults(){
+  const box=$("globalSearchResults");
+  if(box)box.classList.remove("show");
+}
+function focusSearch(){
+  $("q")?.focus();
+}
+document.addEventListener("click",e=>{
+  const wrap=$("globalSearchWrap");
+  if(wrap&&!wrap.contains(e.target))closeSearchResults();
+});
+function buy(s){
+  let x=stock(s),q=parseInt(prompt("How many paper shares?","10"));
+  if(!q||q<1)return;
+  if(x[3]*q>state.cash)return alert("Not enough paper cash.");
+  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash-=x[3]*q;state.hold[s]=(state.hold[s]||0)+q;
+  state.history.unshift({type:"BUY",sym:s,q,p:x[3],time:new Date().toLocaleString()});
+  save();render();alert("Paper Buy confirmed. No real money was used.")
+}
+function sell(s){
+  let x=stock(s),owned=state.hold[s]||0;
+  if(!owned)return alert("No paper holding.");
+  let q=parseInt(prompt("How many paper shares to sell?",String(Math.min(1,owned))));
+  if(!q||q<1||q>owned)return;
+  if(x[3]==null)return alert("Market price is not available for this directory entry yet.");state.cash+=x[3]*q;state.hold[s]-=q;if(!state.hold[s])delete state.hold[s];
+  state.history.unshift({type:"SELL",sym:s,q,p:x[3],time:new Date().toLocaleString()});
+  save();render();alert("Paper Sell confirmed. No real money was used.")
+}
+let detailMode=localStorage.getItem("maliradar_mode")||"beginner";
+let chartPeriod="1M";
+function marketIsOpen(){
+  const d=new Date(); const day=d.getDay(); const mins=d.getHours()*60+d.getMinutes();
+  return day>=1 && day<=5 && mins>=540 && mins<900;
+}
+function marketStatusHTML(){
+  const open=marketIsOpen();
+  return `<div class="market-status ${open?"":"closed"}"><span class="pulse"></span><div><b>${open?"MARKET OPEN":"MARKET CLOSED"}</b><div class="muted">NSE trading status • ${new Date().toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</div></div></div>`;
+}
+function setMode(m){detailMode=m;localStorage.setItem("maliradar_mode",m);if(window.currentDetail)renderDetail(window.currentDetail)}
+function setChartPeriod(p){chartPeriod=p;if(window.currentDetail)renderDetail(window.currentDetail)}
+function chartSVG(x){
+  const seed=(x[0].split('').reduce((a,c)=>a+c.charCodeAt(0),0)%17);
+  const pts=[];let base=100;
+  for(let i=0;i<16;i++){base += Math.sin((i+seed)/2)*1.7 + ((i%4)-1.5)*0.35; pts.push(base)}
+  const min=Math.min(...pts),max=Math.max(...pts),w=460,h=205;
+  const xy=pts.map((v,i)=>[18+i*(w-36)/15, h-25-(v-min)/(max-min||1)*(h-55)]);
+  const d=xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const last=xy[xy.length-1];
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1"><stop offset="0"/><stop offset="1" stop-opacity="0"/></linearGradient></defs>${[35,75,115,155].map(y=>`<line class="chart-grid" x1="0" x2="460" y1="${y}" y2="${y}"/>`).join('')}${[60,130,200,270,340,410].map(xx=>`<line class="chart-grid" y1="0" y2="205" x1="${xx}" x2="${xx}"/>`).join('')}<path class="chart-line" d="${d}"/><circle class="price-dot" cx="${last[0]}" cy="${last[1]}" r="5"/><text x="${Math.max(20,last[0]-58)}" y="${Math.max(18,last[1]-12)}" fill="#38c8ff" font-size="12">${x[3]==null?'—':'KSh '+x[3].toFixed(2)}</text></svg>`;
+}
+function renderDetail(s){
+  const x=stock(s);if(!x)return;window.currentDetail=s;
+  const price=x[3]==null?'Price unavailable':'KSh '+x[3].toFixed(2);
+  const move=x[4]==null?'—':(x[4]>=0?'▲ ':'▼ ')+Math.abs(x[4])+'%';
+  const cls=x[4]==null?'muted':(x[4]>=0?'green':'red');
+  const beginner=detailMode==='beginner';
+  const modeText=beginner
+    ? `<div class="intel-note"><b>What's happening?</b><br>${x[3]==null?'This security is in the directory, but a demo price has not been supplied yet.':'The displayed price and movement are simulated demo information. A rising or falling number describes recent movement; it is not a prediction of what happens next.'}</div>`
+    : `<div class="grid"><div class="metric">Open<b>${price}</b></div><div class="metric">Previous Close<b>${price}</b></div><div class="metric">High<b>${price}</b></div><div class="metric">Low<b>${price}</b></div></div><p class="notice">Expert view exposes additional market fields as legitimate data becomes available. No live feed is connected in this prototype.</p>`;
+  const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>`<button class="btn alt ${chartPeriod===p?'selected':''}" onclick="setChartPeriod('${p}')">${p}</button>`).join('');
+  openM(x[1],`<div class="row"><div><b>${x[0]} • ${x[2]}</b><div class="muted">${marketIsOpen()?'MARKET OPEN':'MARKET CLOSED'}</div></div><span class="badge">DEMO DATA</span></div><div class="big">${price}</div><div class="${cls}">${move}</div><div class="intel-chart">${chartSVG(x)}</div><div class="periods">${periods}</div><div class="modebar"><button class="btn alt ${beginner?'selected':''}" onclick="setMode('beginner')">👶 Beginner</button><button class="btn alt ${!beginner?'selected':''}" onclick="setMode('expert')">🧠 Expert</button></div>${modeText}<div class="card"><b>About ${x[1]}</b><p class="notice">${x[1]} is listed in the MaliRadar demo directory under ${x[2]}. Company descriptions, announcements and financial data will be added from legitimate sources in later releases.</p></div><div class="actions"><button class="btn" onclick="buy('${s}');closeM()">Paper Buy</button><button class="btn red" onclick="sell('${s}');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert('${s}')">🔔 Create Alert</button></div><p class="notice">This page is educational. Demo prices and the illustrative chart are not a live market feed and are not financial advice.</p>`);
+}
+function details(s){
+  let x=stock(s);if(!x)return;
+  renderDetail(s);renderMarkets();
+}
+
+function account(){nav("accountScreen",document.querySelectorAll(".tabs button")[4])}
+function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this prototype does not execute real trades.</p><p class="notice"><b>Demo data:</b> prices and market information may be simulated or illustrative.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
+function closeM(){$("modal").classList.remove("show")}
+function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classList.add("show")}
+function resetDemo(){if(confirm("Reset local demo data?")){localStorage.removeItem(KEY);location.reload()}}
+
+/* ---------- ALERT COMMAND CENTER ---------- */
+function alertStockOptions(selected){
+  return STOCKS.map(x=>`<option value="${x[0]}" ${x[0]===selected?"selected":""}>${x[0]} — ${x[1]}</option>`).join("")
+}
+function alertForm(type, sym){
+  let title=type==="price"?"Price Target Alert":type==="move"?"Percentage Movement Alert":"Crossing Alert";
+  let body="";
+  if(type==="price"){
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><select id="aDir"><option value="above">Rises to / above</option><option value="below">Falls to / below</option></select><input id="aValue" type="number" step="0.01" placeholder="Target price"></div>`
+  }else if(type==="move"){
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><select id="aDir"><option value="up">Moves up by at least</option><option value="down">Moves down by at least</option></select><input id="aValue" type="number" step="0.01" min="0.01" placeholder="%"></div>`
+  }else{
+    body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
+    <div class="formline"><input id="aValue" type="number" step="0.01" placeholder="Crossing price"><select id="aDir"><option value="above">Crosses above</option><option value="below">Crosses below</option></select></div>`
+  }
+  openM("🔔 "+title,`<p class="notice">This creates a paper/demo alert. The current prototype checks conditions against its demo price data; it does not connect to a live market feed.</p>${body}<div class="actions"><button class="btn" onclick="saveAlert('${type}')">Create Alert</button><button class="btn alt" onclick="closeM()">Cancel</button></div>`)
+}
+function toggleWatch(sym){
+  state.watch=Array.isArray(state.watch)?state.watch:[];
+  const i=state.watch.indexOf(sym);
+  if(i>=0) state.watch.splice(i,1); else state.watch.push(sym);
+  // Do not call global save(): the Accounts/Profile module also defines save().
+  // Persist the market state directly so watchlist changes survive refresh.
+  localStorage.setItem(KEY,JSON.stringify(state));
+  if(typeof renderMarkets==='function')renderMarkets();
+  if(typeof renderRadar==='function')renderRadar();
+}
+function quickAlert(sym){alertForm("price",sym)}
+function createPriceAlert(){alertForm("price","SCOM")}
+function createMoveAlert(){alertForm("move","SCOM")}
+function createCrossAlert(){alertForm("cross","SCOM")}
+function saveAlert(type){
+  let sym=$("aSym").value,dir=$("aDir").value,value=parseFloat($("aValue").value);
+  if(!value||value<=0)return alert("Enter a valid alert value.");
+  let x=stock(sym);
+  state.alerts.unshift({
+    id:Date.now()+Math.random(),
+    type,sym,dir,value,created:new Date().toLocaleString(),
+    active:true,lastPrice:x[3],triggered:false
+  });
+  save();closeM();renderAlerts();updateAlertCount();
+  alert("Alert created. MaliRadar will monitor this condition in demo mode.")
+}
+function conditionMet(a,x){
+  if(a.type==="price"){
+    return a.dir==="above" ? x[3]>=a.value : x[3]<=a.value;
+  }
+  if(a.type==="cross"){
+    return a.dir==="above" ? x[3]>=a.value : x[3]<=a.value;
+  }
+  if(a.type==="move"){
+    let pct=Math.abs(x[4]);
+    return a.dir==="up" ? x[4]>=a.value : x[4]<=-a.value;
+  }
+  return false;
+}
+function severityFor(a){
+  if(a.type==="price" && Math.abs(a.value-(stock(a.sym)||[,,,0])[3])<1)return "IMPORTANT";
+  if(a.type==="move" && a.value<=3)return "WATCH";
+  return "INFO";
+}
+function checkAlerts(){
+  let changed=false;
+  state.alerts.forEach(a=>{
+    if(!a.active)return;
+    let x=stock(a.sym);if(!x||x[3]==null)return;
+    if(conditionMet(a,x)){
+      a.active=false;a.triggered=true;a.triggeredAt=new Date().toLocaleString();a.triggerPrice=x[3];
+      state.alertHistory.unshift({...a});
+      changed=true;
+      showTriggered(a,x);
+    }
+    a.lastPrice=x[3];
+  });
+  if(changed)save();
+  updateAlertCount();
+  renderAlerts();
+}
+function showTriggered(a,x){
+  let sev=severityFor(a);
+  openM("⚡ ALERT TRIGGERED",`<div class="card alert-trigger"><div class="row"><b>${x[1]} (${x[0]})</b><span class="severity ${sev.toLowerCase()}">${sev}</span></div><p class="notice">Condition: ${alertDescription(a)}</p><div class="big">${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div><p class="notice">${a.triggeredAt}</p><p class="notice">This is an informational demo alert. It is not a buy/sell instruction.</p></div><button class="btn" onclick="closeM()">ACKNOWLEDGE</button>`)
+}
+function alertDescription(a){
+  if(a.type==="price")return `${a.dir==="above"?"Price at or above":"Price at or below"} KSh ${a.value.toFixed(2)}`;
+  if(a.type==="move")return `${a.dir==="up"?"Up":"Down"} by at least ${a.value}%`;
+  return `Price crosses ${a.dir} KSh ${a.value.toFixed(2)}`;
+}
+function renderAlerts(){
+  let active=state.alerts.filter(a=>a.active),hist=state.alertHistory.slice(0,12);
+  if($("activeAlertCount"))$("activeAlertCount").textContent=active.length;
+  if($("triggeredAlertCount"))$("triggeredAlertCount").textContent=state.alertHistory.length;
+  if($("alertList"))$("alertList").innerHTML=active.length?active.map(a=>{
+    let x=stock(a.sym),sev=severityFor(a);
+    return `<div class="alert-item"><div class="row"><div><b>${x[0]} — ${x[1]}</b><div class="muted">${alertDescription(a)}</div></div><span class="severity ${sev.toLowerCase()}">${sev}</span></div><div class="actions"><button class="btn alt" onclick="deleteAlert('${a.id}')">Delete</button></div></div>`
+  }).join(""):"<p class='muted'>No active alerts. Create one above.</p>";
+  if($("alertHistory"))$("alertHistory").innerHTML=hist.length?hist.map(a=>{
+    let x=stock(a.sym);
+    return `<div class="alert-item"><div class="row"><b class="green">⚡ ${x[0]} triggered</b><span>KSh ${(a.triggerPrice||x[3]).toFixed(2)}</span></div><div class="muted">${alertDescription(a)} • ${a.triggeredAt||""}</div></div>`
+  }).join(""):"<p class='muted'>No triggered alerts yet.</p>";
+  updateAlertCount()
+}
+function deleteAlert(id){
+  state.alerts=state.alerts.filter(a=>String(a.id)!==String(id));
+  save();renderAlerts()
+}
+function updateAlertCount(){
+  let n=state.alerts.filter(a=>a.active).length;
+  if($("alertCount"))$("alertCount").textContent=n?`(${n})`:"";
+}
+function migrateV06(){
+  let old=JSON.parse(localStorage.getItem("maliradar_v06_state")||"null");
+  if(!old)return;
+  if(!state.history.length && !Object.keys(state.hold).length && state.cash===100000){
+    state.cash=old.cash??100000;state.hold=old.hold||{};state.history=old.history||[];state.watch=old.watch||state.watch;state.alerts=old.alerts||[];
+    save();
+  }
+}
+async function ping(){try{let r=await fetch("/api/health");if(r.ok){$("dot").classList.add("on");$("status").textContent="MaliRadar system online • DEMO DATA"}else throw new Error("offline")}catch(e){$("status").textContent="MaliRadar system ready • DEMO DATA"}}
+migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000);
+</script>
+
+<script id="v17-account-js">
+(function(){
+ const KEY='maliradar_v17_profile';
+ window.profileState=JSON.parse(localStorage.getItem(KEY)||'null')||{username:'MaliRadar User',avatar:'👤',theme:'dark'};
+ function save(){localStorage.setItem(KEY,JSON.stringify(window.profileState))}
+ window.saveProfile=function(){const u=(document.getElementById('profileUsername').value||'MaliRadar User').trim();const a=(document.getElementById('profileAvatarInput').value||'👤').trim();window.profileState.username=u.slice(0,20)||'MaliRadar User';window.profileState.avatar=a.slice(0,2)||'👤';save();renderAccount();};
+ window.setTheme=function(t){window.profileState.theme=t;save();applyTheme();renderAccount();};
+ window.applyTheme=function(){const t=window.profileState.theme||'dark';document.body.classList.toggle('light',t==='light');if(t==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme: light)').matches);['Dark','Light','System'].forEach(x=>{const b=document.getElementById('theme'+x);if(b)b.classList.toggle('active',t===x.toLowerCase())});};
+ window.renderAccount=function(){const p=window.profileState||{};const name=document.getElementById('profileName');const av=document.getElementById('profileAvatar');const inp=document.getElementById('profileUsername');const ai=document.getElementById('profileAvatarInput');if(name)name.textContent=p.username||'MaliRadar User';if(av)av.textContent=p.avatar||'👤';if(inp)inp.value=p.username||'';if(ai)ai.value=p.avatar||'👤';let xp=Number(localStorage.getItem('maliradar_xp')||0);let ach=JSON.parse(localStorage.getItem('maliradar_achievements')||'[]');if(document.getElementById('accountXP'))document.getElementById('accountXP').textContent=xp+' XP';if(document.getElementById('accountAchievements'))document.getElementById('accountAchievements').textContent=ach.length;let rank=xp>=500?'Market Master':xp>=300?'Market Strategist':xp>=180?'Market Scholar':xp>=100?'Market Explorer':xp>=50?'Market Student':'Market Rookie';if(document.getElementById('profileRank'))document.getElementById('profileRank').textContent=rank+' • '+xp+' XP';applyTheme();};
+ window.exportDemoData=function(){const data={profile:window.profileState,portfolio:state,learningXP:localStorage.getItem('maliradar_xp')||'0'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='maliradar-demo-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+ window.deleteLocalProfile=function(){if(!confirm('Delete this local demo profile?'))return;localStorage.removeItem(KEY);window.profileState={username:'MaliRadar User',avatar:'👤',theme:'dark'};save();renderAccount();};
+ applyTheme();
+ window.addEventListener('load',()=>setTimeout(renderAccount,50));
+})();
+</script>
+<script id="v161-onboarding-js">
+(function(){
+ const steps=[
+  {id:'home',title:'Home',prompt:'Tap Home below.',guide:'Home is your quick market snapshot.'},
+  {id:'markets',title:'Markets',prompt:'Tap Markets below.',guide:'Here you can search and explore stocks.'},
+  {id:'portfolio',title:'Portfolio',prompt:'Tap Portfolio below.',guide:'This is where your paper holdings and P/L live.'},
+  {id:'learn',title:'Learn',prompt:'Tap Learn below.',guide:'Learn market basics, complete lessons and earn XP.'},
+  {id:'leaderboard',title:'Rank',prompt:'Tap Rank below.',guide:'Rank shows learning and paper-trading statistics.'},
+  {id:'news',title:'News',prompt:'Tap News below.',guide:'News and Event Radar keep market information together.'},
+  {id:'assist',title:'Smart Assist',prompt:'Tap Assist below.',guide:'Smart Assist explains market conditions and demo signals.'}
+ ];
+ let i=0,phase='tap',started=false,highlight=null,clickTarget=null;
+ const $t=id=>document.getElementById(id);
+ const viewId=id=>id==='leaderboard'?'leaderboardView':id==='news'?'newsView':id==='assist'?'smartAssistView':id;
+ const navButton=id=>document.querySelector(`.tabs button[onclick*="nav('${viewId(id)}'"]`);
+ const sectionTarget=id=>{
+   const map={home:'[data-tour-target="homeHero"]',markets:'[data-tour-target="marketsCard"]',portfolio:'[data-tour-target="portfolioHero"]',learn:'[data-tour-target="learnHero"]',leaderboard:'[data-tour-target="leaderboardHead"]',news:'[data-tour-target="newsHead"]',assist:'[data-tour-target="assistHero"]'};
+   return document.querySelector(map[id]);
+ };
+ function clear(){
+   if(highlight){highlight.classList.remove('tour-highlight');highlight=null}
+   if(clickTarget){clickTarget.removeEventListener('click',onTargetClick,true);clickTarget=null}
+ }
+ function onTargetClick(e){
+   if(phase!=='tap')return;
+   e.stopPropagation();
+   phase='guide';
+   show();
+ }
+ function attachTarget(){
+   clear();
+   const el=navButton(steps[i].id);
+   if(!el)return;
+   clickTarget=el;
+   el.addEventListener('click',onTargetClick,true);
+   el.classList.add('tour-highlight');
+   highlight=el;
+ }
+ function show(){
+   const s=steps[i];
+   $t('tourProgress').textContent=`${i+1} / ${steps.length}`;
+   $t('tourTitle').textContent=phase==='tap'?s.title:s.title+' ✓';
+   $t('tourText').textContent=phase==='tap'?s.prompt:s.guide;
+   $t('tourTip').textContent=phase==='tap'?'Follow the highlighted button.':'You can explore this area now.';
+   $t('tourNext').textContent=phase==='tap'?'Tap the highlighted button':'Next →';
+   $t('tourNext').disabled=phase==='tap';
+   if(phase==='tap'){
+     attachTarget();
+   }else{
+     if(highlight){highlight.classList.remove('tour-highlight');highlight=null}
+     const target=sectionTarget(s.id);
+     if(target){
+       target.scrollIntoView({behavior:'smooth',block:'start'});
+       setTimeout(()=>{if(phase==='guide'){highlight=target;target.classList.add('tour-highlight')}},250);
+     }
+   }
+   $t('tourOverlay').style.display='flex';
+ }
+ function start(){
+   if(started)return;
+   started=true;i=0;phase='tap';document.body.classList.add('tour-open');show();
+ }
+ function finish(){
+   clear();document.body.classList.remove('tour-open');$t('tourOverlay').style.display='none';localStorage.setItem('maliradar_onboarding_v161','done');
+ }
+ function next(){
+   if(phase==='tap')return;
+   if(i<steps.length-1){i++;phase='tap';show()}else finish();
+ }
+ $t('tourNext').addEventListener('click',next);
+ $t('tourSkip').addEventListener('click',finish);
+ window.startMaliRadarTour=start;
+ window.restartMaliRadarTour=function(){localStorage.removeItem('maliradar_onboarding_v161');started=false;start()};
+ window.addEventListener('load',()=>{
+   // Migrate the old completion key so existing users are not forced through the tour again.
+   if(localStorage.getItem('maliradar_onboarding_v161')==='done')localStorage.setItem('maliradar_onboarding_v161','done');
+   if(!localStorage.getItem('maliradar_onboarding_v161'))setTimeout(start,700);
+ });
+})();
+</script>
+
+<script id="v19-region-market-script">
+(function(){
+ const KEY='maliradar_region_market_v19';
+ const REGIONS=[
+  {id:'ke',flag:'🇰🇪',country:'Kenya',market:'NSE',name:'Nairobi Securities Exchange'},
+  {id:'ng',flag:'🇳🇬',country:'Nigeria',market:'NGX',name:'Nigerian Exchange'},
+  {id:'za',flag:'🇿🇦',country:'South Africa',market:'JSE',name:'Johannesburg Stock Exchange'},
+  {id:'gh',flag:'🇬🇭',country:'Ghana',market:'GSE',name:'Ghana Stock Exchange'},
+  {id:'eg',flag:'🇪🇬',country:'Egypt',market:'EGX',name:'Egyptian Exchange'},
+  {id:'ma',flag:'🇲🇦',country:'Morocco',market:'CSE',name:'Casablanca Stock Exchange'},
+  {id:'tz',flag:'🇹🇿',country:'Tanzania',market:'DSE',name:'Dar es Salaam Stock Exchange'},
+  {id:'ug',flag:'🇺🇬',country:'Uganda',market:'USE',name:'Uganda Securities Exchange'},
+  {id:'rw',flag:'🇷🇼',country:'Rwanda',market:'RSE',name:'Rwanda Stock Exchange'},
+  {id:'us',flag:'🇺🇸',country:'United States',market:'NYSE/Nasdaq',name:'US Markets'}
+ ];
+ function state(){try{return JSON.parse(localStorage.getItem(KEY)||'null')||{region:'ke',markets:['ke']}}catch(e){return {region:'ke',markets:['ke']}}}
+ function save(x){localStorage.setItem(KEY,JSON.stringify(x))}
+ window.setMaliRegion=function(id){const s=state();s.region=id;s.markets=Array.from(new Set([id,...(s.markets||[])]));save(s);render();};
+ window.toggleMaliMarket=function(id){const s=state();s.markets=s.markets||['ke'];if(id===s.region){return;}if(s.markets.includes(id))s.markets=s.markets.filter(x=>x!==id);else s.markets.push(id);save(s);render();};
+ function render(){const s=state(),sel=document.getElementById('regionSelect'),box=document.getElementById('marketChoices');if(!sel||!box)return;sel.innerHTML=REGIONS.map(r=>`<option value="${r.id}" ${r.id===s.region?'selected':''}>${r.flag} ${r.country} — ${r.market}</option>`).join('');box.innerHTML=REGIONS.map(r=>`<div class="market-choice ${s.markets.includes(r.id)?'active':''}" onclick="toggleMaliMarket('${r.id}')"><b>${r.flag} ${r.market}</b><span>${r.country}</span></div>`).join('');const r=REGIONS.find(x=>x.id===s.region)||REGIONS[0];const subtitle=document.querySelector('#markets .row .muted');if(subtitle)subtitle.textContent=r.market+' market';const title=document.querySelector('#markets .row b');if(title)title.textContent='Markets • '+r.market;}
+ window.getMaliRegion=function(){const s=state();return REGIONS.find(r=>r.id===s.region)||REGIONS[0]};
+ window.addEventListener('load',()=>setTimeout(render,80));
+})();
+</script>
+
+<script id="v191-market-universe-fix">
+(function(){
+ const UNIVERSES={
+  ke:[
+   ['SCOM','Safaricom','Telecom',35.95,-1.24],['KCB','KCB Group','Banking',92.5,-0.8],['EQTY','Equity Group','Banking',105,-0.94],['EABL','East African Breweries','Consumer Goods',286.75,-0.52],['COOP','Co-operative Bank','Banking',37.15,0],['ABSA','Absa Bank Kenya','Banking',33.05,-0.45],
+   ['BAT','BAT Kenya','Consumer Goods',null,null],['BRIT','Britam Holdings','Insurance',null,null],['CIC','CIC Insurance Group','Insurance',null,null],['CTUM','Centum Investment','Investment',null,null],['DTK','Diamond Trust Bank','Banking',null,null],['HFCK','HF Group','Banking',null,null],['IMH','I&M Group','Banking',null,null],['NCBA','NCBA Group','Banking',null,null],['SBIC','Stanbic Holdings','Banking',null,null],['SCBK','Standard Chartered Bank Kenya','Banking',null,null],['NMG','Nation Media Group','Media',null,null],['KQ','Kenya Airways','Transport',null,null],['KEGN','KenGen','Energy',null,null],['KPLC','Kenya Power','Energy',null,null],['TOTL','TotalEnergies Marketing Kenya','Energy',null,null],['KUKZ','Kakuzi','Agriculture',null,null],['SASN','Sasini','Agriculture',null,null],['UNGA','Unga Group','Agriculture',null,null],['CARB','Carbacid Investments','Manufacturing',null,null],['CGEN','Car & General','Manufacturing',null,null],['NSE','Nairobi Securities Exchange','Financial Services',null,null],['JUB','Jubilee Holdings','Insurance',null,null],['KNRE','Kenya Re-Insurance','Insurance',null,null],['SLAM','Sanlam Kenya','Insurance',null,null],['CRWN','Crown Paints Kenya','Manufacturing',null,null],['LBTY','Limuru Tea','Agriculture',null,null],['LAPR','Limuru Tea','Agriculture',null,null],['WTK','Williamson Tea Kenya','Agriculture',null,null],['TPSE','TPS Eastern Africa','Hotels & Tourism',null,null],['LKL','Longhorn Publishers','Publishing',null,null]
+  ],
+  ng:[
+   ['DANGCEM','Dangote Cement','Industrial Goods',1066.7,0],['AIRTELAFRI','Airtel Africa','ICT',6300,0],['MTNN','MTN Nigeria','ICT',null,null],['GTCO','Guaranty Trust Holding','Banking',null,null],['ZENITHBANK','Zenith Bank','Banking',null,null],['UBA','United Bank for Africa','Banking',null,null],['ACCESSCORP','Access Holdings','Banking',null,null],['FBNH','FBN Holdings','Banking',null,null],['STANBIC','Stanbic IBTC Holdings','Banking',null,null],['FIDELITYBK','Fidelity Bank','Banking',null,null],['SEPLAT','Seplat Energy','Energy',null,null],['BUAFOODS','BUA Foods','Consumer Goods',null,null],['BUACEMENT','BUA Cement','Industrial Goods',null,null],['NESTLE','Nestle Nigeria','Consumer Goods',null,null],['NB','Nigerian Breweries','Consumer Goods',null,null],['PRESCO','Presco','Agriculture',null,null],['OANDO','Oando','Energy',null,null],['TRANSCORP','Transnational Corporation','Conglomerates',null,null],['DANGSUGAR','Dangote Sugar Refinery','Consumer Goods',null,null],['FLOURMILL','Flour Mills of Nigeria','Consumer Goods',null,null],['GEREGU','Geregu Power','Utilities',null,null],['MAYBAKER','May & Baker Nigeria','Healthcare',null,null],['JAPAULGOLD','Japaul Gold & Ventures','Mining',null,null],['CUSTODIAN','Custodian Investment','Insurance',null,null],['CORNERST','Cornerstone Insurance','Insurance',null,null],['FCMB','FCMB Group','Banking',null,null],['STERLINGNG','Sterling Financial Holdings','Banking',null,null],['ETI','Ecobank Transnational','Banking',null,null],['VITAFOAM','Vitafoam Nigeria','Manufacturing',null,null],['CUTIX','Cutix','Industrial Goods',null,null]
+  ],
+  za:[
+   ['NPN','Naspers','Technology',null,null],['MTN','MTN Group','Telecommunications',null,null],['SBK','Standard Bank','Banking',null,null],['SHP','Shoprite','Retail',null,null],['SOL','Sasol','Energy',null,null],['AGL','Anglo American','Mining',null,null],['ABG','Absa Group','Banking',null,null],['FSR','FirstRand','Banking',null,null],['CPI','Capitec Bank','Banking',null,null],['BID','Bid Corporation','Consumer Services',null,null],['NED','Nedbank','Banking',null,null],['DSY','Discovery','Financial Services',null,null],['PRX','Prosus','Technology',null,null],['GLN','Glencore','Mining',null,null],['ANG','AngloGold Ashanti','Mining',null,null],['GFI','Gold Fields','Mining',null,null],['CFR','Compagnie Financiere Richemont','Luxury Goods',null,null],['BTI','British American Tobacco','Consumer Goods',null,null],['VOD','Vodacom','Telecommunications',null,null],['AMS','Anglo American Platinum','Mining',null,null],['IMP','Impala Platinum','Mining',null,null],['REM','Remgro','Investment',null,null],['OUT','OUTsurance','Insurance',null,null],['S32','South32','Mining',null,null],['BVT','The Bidvest Group','Services',null,null],['KIO','Kumba Iron Ore','Mining',null,null],['INP','Investec','Financial Services',null,null],['NHM','Ninety One','Financial Services',null,null],['HAR','Harmony Gold Mining','Mining',null,null],['VAL','Valterra Platinum','Mining',null,null],['4SI','4Sight Holdings','Technology',null,null]
+  ],
+  gh:[
+   ['ACCESS','Access Bank Ghana','Banking',null,null],['ADB','Agricultural Development Bank','Banking',null,null],['AGA','AngloGold Ashanti','Mining',null,null],['ALW','Aluworks','Industrial Goods',null,null],['ASG','Asante Gold','Mining',null,null],['BOPP','Benso Oil Palm Plantation','Agriculture',null,null],['CAL','CalBank','Banking',null,null],['CLYD','Clydestone','Technology',null,null],['CMLT','Camelot Ghana','Services',null,null],['CPC','Cocoa Processing Company','Consumer Goods',null,null],['DASPHARMA','Dannex Ayrton Starwin','Healthcare',null,null],['EGH','Ecobank Ghana','Banking',null,null],['EGL','Enterprise Group','Insurance',null,null],['ETI','Ecobank Transnational','Banking',null,null],['FML','Fan Milk','Consumer Goods',null,null],['GCB','GCB Bank','Banking',null,null],['GGBL','Guinness Ghana Breweries','Consumer Goods',null,null],['GOIL','GOIL','Energy',null,null],['MAC','Mega African Capital','Investment',null,null],['MTNGH','MTN Ghana','Telecommunications',null,null],['PBC','Produce Buying Company','Agriculture',null,null],['RBGH','Republic Bank Ghana','Banking',null,null],['SCB','Standard Chartered Bank Ghana','Banking',null,null],['SIC','SIC Insurance','Insurance',null,null],['SOGEGH','Societe Generale Ghana','Banking',null,null],['SWL','Sam Wood','Services',null,null],['TBL','Trust Bank Gambia','Banking',null,null],['TLW','Tullow Oil','Energy',null,null],['TOTAL','TotalEnergies Ghana','Energy',null,null],['UNIL','Unilever Ghana','Consumer Goods',null,null],['ALLGH','Atlantic Lithium','Mining',null,null],['FAB','First Atlantic Bank','Banking',null,null],['ZEN','ZEN Petroleum','Energy',null,null],['KASA','Kasapreko','Consumer Goods',null,null]
+  ],
+  eg:[
+   ['COMI','Commercial International Bank','Banking',null,null],['CCAP','Qalaa Financial Investments','Financial Services',null,null],['OFH','O B Financial Holding','Financial Services',null,null],['RUBX','Rubex International','Building Materials',null,null],['TMGH','Telecom Egypt','Telecommunications',null,null],['SWDY','Elsewedy Electric','Industrials',null,null],['FWRY','Fawry','Financial Technology',null,null],['EAST','Eastern Company','Consumer Goods',null,null],['ABUK','Abu Qir Fertilizers','Chemicals',null,null],['ORAS','Orascom Construction','Construction',null,null],['EMFD','Emaar Misr','Real Estate',null,null],['HRHO','EFG Holding','Financial Services',null,null],['ETEL','Telecom Egypt','Telecommunications',null,null],['ESRS','Ezz Steel','Materials',null,null],['HELI','Heliopolis Housing','Real Estate',null,null],['SWDY','Elsewedy Electric','Industrials',null,null],['JUFO','Juhayna Food Industries','Consumer Goods',null,null],['ADIB','Abu Dhabi Islamic Bank Egypt','Banking',null,null],['CIEB','Credit Agricole Egypt','Banking',null,null],['PHDC','Palm Hills Developments','Real Estate',null,null],['ORWE','Oriental Weavers','Textiles',null,null],['AUTO','GB Auto','Automotive',null,null],['EFID','Edita Food Industries','Consumer Goods',null,null],['TMGH','Talaat Moustafa Group','Real Estate',null,null],['CLHO','Cleopatra Hospital','Healthcare',null,null]
+  ],
+  ma:[
+   ['M2M','M2M Group','Technology',null,null],['ATL','AtlantaSanad','Insurance',null,null],['SNA','Stokvis Nord Afrique','Industrial Goods',null,null],['SNP','SNEP','Chemicals',null,null],['MIC','Microdata','Technology',null,null],['SLF','Salafin','Financial Services',null,null],['DLM','Delattre Levivier','Industrial Goods',null,null],['DHO','Delta Holding','Industrial Goods',null,null],['BOA','Bank of Africa','Banking',null,null],['CMT','Compagnie Miniere de Touissit','Mining',null,null],['LBV','Label Vie','Retail',null,null],['ADI','Alliances Developpement Immobilier','Real Estate',null,null],['NKL','Ennakl','Automotive',null,null],['SAH','Sanlam Maroc','Insurance',null,null],['JET','Jet Contractors','Construction',null,null],['AFI','Afric Industries','Industrial Goods',null,null],['S2M','Societe Maghrebine de Monetique','Technology',null,null],['TQM','Taqa Morocco','Utilities',null,null],['IMO','Immorente Invest','Real Estate',null,null],['RDS','Residences Dar Saada','Real Estate',null,null],['TMA','TotalEnergies Marketing Maroc','Energy',null,null],['AFM','AFMA','Insurance',null,null],['MSA','Marsa Maroc','Transport',null,null],['SID','Sonasid','Steel',null,null],['SMI','Societe Metallurgique d’Imiter','Mining',null,null],['MAB','Maghrebail','Financial Services',null,null],['SBM','Societe des Boissons du Maroc','Consumer Goods',null,null],['MUT','Mutandis','Consumer Goods',null,null],['CTM','Compagnie de Transport au Maroc','Transport',null,null],['EQD','Eqdom','Financial Services',null,null],['MLE','Maroc Leasing','Financial Services',null,null],['ARD','Aradei Capital','Real Estate',null,null],['TGC','Travaux Generaux de Construction de Casablanca','Construction',null,null],['CIH','CIH Bank','Banking',null,null],['DYT','Disty Technologies','Technology',null,null],['ATH','Auto Hall','Automotive',null,null],['AKT','Akdital','Healthcare',null,null],['CDM','Credit du Maroc','Banking',null,null],['CFG','CFG Bank','Banking',null,null],['CMA','Ciments du Maroc','Materials',null,null],['CMG','CMGP Group','Agriculture',null,null],['CSR','Cosumar','Consumer Goods',null,null],['CAP','Cash Plus','Financial Services',null,null],['GTM','SGTM','Construction',null,null],['LES','Lesieur Cristal','Consumer Goods',null,null],['BCI','BMCI','Banking',null,null],['OUL','Les Eaux Minerales d’Oulmès','Consumer Goods',null,null],['WAA','Wafa Assurance','Insurance',null,null],['MDP','Med Paper','Paper',null,null],['ALM','Aluminium du Maroc','Materials',null,null],['AGM','AGMA','Insurance',null,null],['GAZ','Afriquia Gaz','Energy',null,null],['MNG','Managem','Mining',null,null],['BCP','Banque Centrale Populaire','Banking',null,null],['IAM','Itissalat Al-Maghrib','Telecommunications',null,null],['ATW','Attijariwafa Bank','Banking',null,null],['ADH','Douja Promotion Groupe Addoha','Real Estate',null,null],['HPS','Hightech Payment Systems','Technology',null,null],['DWY','Disway','Technology',null,null],['SOT','Sothema','Healthcare',null,null],['PRO','Promopharm','Healthcare',null,null]
+  ],
+  tz:[['CRDB','CRDB Bank','Banking',null,null],['NMB','NMB Bank','Banking',null,null],['TOL','Tanga Cement','Materials',null,null],['TPCC','Tanzania Portland Cement','Materials',null,null],['SWIS','Swissport Tanzania','Services',null,null],['VODA','Vodacom Tanzania','Telecommunications',null,null],['TBL','Tanzania Breweries','Consumer Goods',null,null],['DSE','Dar es Salaam Stock Exchange','Financial Services',null,null],['MBP','Mbeya Cement','Materials',null,null],['MFIN','Maendeleo Bank','Banking',null,null],['PAL','Pal Holdings','Investment',null,null],['NICO','NICO Insurance','Insurance',null,null],['DCB','DCB Commercial Bank','Banking',null,null],['MKCB','Mkombozi Commercial Bank','Banking',null,null]],
+  ug:[['MTNU','MTN Uganda','Telecommunications',null,null],['NIC','NIC Holdings','Insurance',null,null],['BATU','BAT Uganda','Consumer Goods',null,null],['DFCU','DFCU Bank','Banking',null,null],['USE','Uganda Securities Exchange','Financial Services',null,null],['UMEME','Umeme','Utilities',null,null],['SBU','Stanbic Uganda','Banking',null,null],['BOU','Bank of Uganda','Financial Services',null,null],['UCL','Uganda Clays','Materials',null,null],['EABL','East African Breweries','Consumer Goods',null,null]],
+  rw:[['BOK','Bank of Kigali','Banking',null,null],['MTNR','MTN Rwanda','Telecommunications',null,null],['CIMERWA','CIMERWA','Materials',null,null],['I&M','I&M Group','Banking',null,null],['BRALIRWA','Bralirwa','Consumer Goods',null,null],['EQTYRW','Equity Bank Rwanda','Banking',null,null],['KCBRW','KCB Bank Rwanda','Banking',null,null]],
+  us:[['AAPL','Apple','Technology',null,null],['MSFT','Microsoft','Technology',null,null],['NVDA','NVIDIA','Technology',null,null],['AMZN','Amazon','Consumer',null,null],['GOOGL','Alphabet','Technology',null,null],['TSLA','Tesla','Automotive',null,null],['META','Meta Platforms','Technology',null,null],['AVGO','Broadcom','Technology',null,null],['JPM','JPMorgan Chase','Banking',null,null],['V','Visa','Financial Services',null,null],['WMT','Walmart','Retail',null,null],['MA','Mastercard','Financial Services',null,null],['XOM','Exxon Mobil','Energy',null,null],['JNJ','Johnson & Johnson','Healthcare',null,null],['PG','Procter & Gamble','Consumer Goods',null,null],['HD','Home Depot','Retail',null,null],['COST','Costco','Retail',null,null],['NFLX','Netflix','Entertainment',null,null],['AMD','AMD','Technology',null,null],['KO','Coca-Cola','Consumer Goods',null,null],['PEP','PepsiCo','Consumer Goods',null,null],['DIS','Walt Disney','Entertainment',null,null],['BAC','Bank of America','Banking',null,null],['ORCL','Oracle','Technology',null,null],['CRM','Salesforce','Technology',null,null],['INTC','Intel','Technology',null,null],['CSCO','Cisco','Technology',null,null],['NKE','Nike','Consumer Goods',null,null],['CVX','Chevron','Energy',null,null],['PFE','Pfizer','Healthcare',null,null]]
+ }
+ const META={ke:{currency:'KSh',market:'NSE'},ng:{currency:'₦',market:'NGX'},za:{currency:'R',market:'JSE'},gh:{currency:'GH₵',market:'GSE'},eg:{currency:'E£',market:'EGX'},ma:{currency:'MAD',market:'CSE'},tz:{currency:'TSh',market:'DSE'},ug:{currency:'USh',market:'USE'},rw:{currency:'RWF',market:'RSE'},us:{currency:'$',market:'NYSE/Nasdaq'}};
+ function getRegion(){try{return JSON.parse(localStorage.getItem('maliradar_region_market_v19')||'null')||{region:'ke'}}catch(e){return {region:'ke'}}}
+ function applyUniverse(){const id=getRegion().region||'ke'; STOCKS=(UNIVERSES[id]||UNIVERSES.ke).map(x=>x.slice()); window.maliRadarMarketMeta=META[id]||META.ke;}
+ window.maliRadarUniverseCounts=Object.fromEntries(Object.entries(UNIVERSES).map(([k,v])=>[k,v.length]));
+ window.maliRadarApplyUniverse=applyUniverse;
+ window.maliRadarDirectoryLabel=function(){const id=getRegion().region||'ke';const n=(window.maliRadarUniverseCounts||{})[id]||STOCKS.length;return n+' securities in prototype directory';};
+ window.maliRadarFormatPrice=function(v){if(v==null)return 'Price unavailable';const c=(window.maliRadarMarketMeta||META.ke).currency;return c+' '+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});};
+ const oldSet=window.setMaliRegion;
+ window.setMaliRegion=function(id){ if(oldSet) oldSet(id); applyUniverse(); if(typeof renderMarkets==='function')renderMarkets(); if(typeof renderRadar==='function')renderRadar(); if(typeof universalSearch==='function' && document.getElementById('q') && document.getElementById('q').value)universalSearch(); };
+ window.addEventListener('load',()=>setTimeout(()=>{applyUniverse(); if(typeof renderMarkets==='function')renderMarkets(); if(typeof renderRadar==='function')renderRadar();},120));
+ // Replace market rendering with region-aware currency and universe.
+ window.renderMarkets=function(){
+  const rows=(STOCKS||[]).filter(x=>marketFilter==='all'||x[2]===marketFilter);
+  if(document.getElementById('universeCount'))document.getElementById('universeCount').textContent=`${rows.length} demo entries`;
+  const list=document.getElementById('list'); if(!list)return;
+  list.innerHTML=rows.map(x=>{const price=maliRadarFormatPrice(x[3]);const move=x[4]==null?'—':((x[4]>=0?'▲':'▼')+' '+Math.abs(x[4])+'%');const cls=x[4]==null?'muted':(x[4]>=0?'green':'red');const trade=x[3]==null?'':`<button class="btn" onclick="buy('${x[0]}')">Paper Buy</button><button class="btn red" onclick="sell('${x[0]}')">Paper Sell</button>`;return `<div class="stock"><div class="row"><div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div><div><b>${price}</b><div class="${cls}">${move}</div></div></div><div class="actions">${trade}<button class="btn alt" onclick="toggleWatch('${x[0]}')">${state.watch.includes(x[0])?'★ Watching':'☆ Watch'}</button><button class="btn alt" onclick="quickAlert('${x[0]}')">🔔 Alert</button></div></div>`}).join('')||"<p class='muted'>No securities in this filter.</p>";
+ };
+ window.renderRadar=function(){const r=(Array.isArray(state.watch)?state.watch:[]).map(sym=>(STOCKS||[]).find(x=>x[0]===sym)).filter(Boolean);const el=document.getElementById('radar');if(!el)return;if(!r.length){el.innerHTML='<p class="muted">Your watchlist is empty. Add stocks from Markets.</p>';return;}el.innerHTML=r.map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?'green':'red'}">${x[4]==null?'—':(x[4]>=0?'▲':'▼')+' '+Math.abs(x[4])+'%'}</span></div><div class="muted">${x[0]} • ${x[2]} • ${maliRadarFormatPrice(x[3])}</div></div>`).join('');};
+})();
+</script>
+
+
+<div id="trustModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);padding:24px;align-items:center;justify-content:center">
+  <div class="trust-card" style="max-width:520px;width:100%;background:#0b1218">
+    <h3 id="trustModalTitle">Trust Center</h3>
+    <p id="trustModalText"></p>
+    <div class="trust-actions"><button class="trust-btn" onclick="closeTrustInfo()">Close</button></div>
+  </div>
+</div>
+<script>
+function openTrustInfo(title,text){
+  const m=document.getElementById('trustModal');
+  if(!m)return;
+  document.getElementById('trustModalTitle').textContent=title;
+  document.getElementById('trustModalText').textContent=text;
+  m.style.display='flex';
+}
+function closeTrustInfo(){
+  const m=document.getElementById('trustModal');
+  if(m)m.style.display='none';
+}
+function exportTrustData(){
+  const data={exportedAt:new Date().toISOString(),localStorage:Object.fromEntries(Object.entries(localStorage))};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='maliradar-local-data.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+function deleteTrustData(){
+  if(!confirm('Delete MaliRadar local demo data from this browser?'))return;
+  localStorage.clear();
+  location.reload();
+}
+</script>
+
+<script id="v21-directory-ui">
+(function(){
+ function show(){const r=window.getMaliRegion&&window.getMaliRegion();const n=window.maliRadarUniverseCounts&&window.maliRadarUniverseCounts[r.id];const el=document.getElementById('markets');if(!el||!r||!n)return;let b=el.querySelector('.v21-dir-count');if(!b){b=document.createElement('div');b.className='muted v21-dir-count';b.style='margin:6px 0 10px;font-size:11px';const h=el.querySelector('.row');if(h)h.insertAdjacentElement('afterend',b);}b.textContent='Directory: '+n+' securities loaded • Prices shown only when verified data is available';}
+ window.addEventListener('load',()=>setTimeout(show,150));
+ const old=window.maliRadarApplyUniverse; if(old) window.maliRadarApplyUniverse=function(){old();show();};
+})();
+</script>
+<script id="v23-mystocks-market-bridge">
+(function(){
+  const MARKET_MAP={ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'};
+  function region(){try{return window.getMaliRegion?window.getMaliRegion().id:(JSON.parse(localStorage.getItem('maliradar_region_market_v19')||'{"region":"ke"}').region||'ke')}catch(e){return 'ke'}}
+  function market(){return MARKET_MAP[region()]||'NSE'}
+  function n(v){return typeof v==='number'&&Number.isFinite(v)?v:(v!=null&&v!==''&&!Number.isNaN(Number(v))?Number(v):null)}
+  async function loadProvider(){
+    try{
+      const r=await fetch('/api/market-data/stocks?market='+encodeURIComponent(market())+'&limit=1000',{headers:{Accept:'application/json'}});
+      if(!r.ok)return;
+      const j=await r.json();
+      const rows=Array.isArray(j?.stocks)?j.stocks:(Array.isArray(j)?j:[]);
+      if(!rows.length)return;
+      const existing=new Set((MaliRadarStocks()||[]).map(x=>x[0]));
+      rows.forEach(x=>{
+        const symbol=String(x.symbol||x.ticker||x.code||'').split('.')[0];
+        if(!symbol)return;
+        const price=n(x.price??x.lastPrice??x.last??x.close);
+        const change=n(x.changePct??x.changePercent??x.percentChange);
+        const name=x.name||x.companyName||x.company?.name||symbol;
+        const exchange=x.exchange||x.market||market();
+        const row=[symbol,name,exchange,price,change];
+        const old=(MaliRadarStocks()||[]).find(y=>y[0]===symbol);
+        if(old){old[1]=name||old[1];if(price!=null)old[3]=price;if(change!=null)old[4]=change;}
+        else MaliRadarStocks().push(row);
+      });
+      if(typeof window.renderMarkets==='function')window.renderMarkets();
+      if(typeof window.renderRadar==='function')window.renderRadar();
+      const count=document.querySelector('.v21-dir-count');
+      if(count)count.textContent='Directory: '+rows.length+' provider instruments loaded • 🟡 15-min delayed';
+      const status=document.getElementById('status');
+      if(status)status.textContent='MaliRadar system online • '+market()+' • 15-MIN DELAYED';
+    }catch(e){/* Keep the v2.1 directory working if provider is unavailable. */}
+  }
+  const oldSet=window.setMaliRegion;
+  if(oldSet)window.setMaliRegion=function(id){oldSet(id);setTimeout(loadProvider,150)};
+  window.addEventListener('load',()=>setTimeout(loadProvider,350));
+})();
+</script>
+
+<style id="mr-stockdata-css">
+.mr-data-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px}
+.mr-data-badge{font-size:10px;padding:5px 8px;border-radius:999px;border:1px solid #665629;color:#ffe08a;background:#3b3010}
+.mr-data-badge.ok{border-color:#1f6659;color:#35e0b1;background:#09231e}
+.mr-data-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.mr-data-meta div{padding:9px;border:1px solid var(--line);border-radius:10px;background:#09151c}
+.mr-data-chart{height:230px;border:1px solid #1c4a55;border-radius:15px;background:#061116;position:relative;overflow:hidden;margin:12px 0}
+.mr-data-chart svg{width:100%;height:100%;display:block}
+.mr-data-chart .gridline{stroke:#17333d;stroke-width:1;opacity:.65}
+.mr-data-chart .candle-line{fill:none;stroke:#35e0b1;stroke-width:2.5;filter:drop-shadow(0 0 5px #35e0b1)}
+.mr-data-chart .last-dot{fill:#38c8ff;stroke:#071016;stroke-width:3}
+.mr-data-source{font-size:11px;color:var(--muted);margin-top:8px}
+@media(max-width:480px){.mr-data-meta{grid-template-columns:1fr}.mr-data-chart{height:200px}}
+</style>
+<script id="mr-data-engine-ui-v3">
+(function(){
+  const API_BASE=(window.MALIRADAR_API_BASE||'').replace(/\/$/,'');
+  const STATUS_PATH='/api/market-data/status';
+  const STOCKS_PATH='/api/market-data/stocks';
+  let current={state:'CHECKING',configured:false,source:'MyStocks Africa Sandbox',delayMinutes:15,environment:'sandbox'};
+  function el(id){return document.getElementById(id)}
+  function setBadge(){
+    const b=document.querySelector('#dataArchView .data-badge'); if(!b)return;
+    const st=current.state||'CHECKING';
+    b.textContent=st==='DELAYED'?'🟡 15-MIN DELAYED • MYSTOCKS':st==='UNAVAILABLE'?'⚪ DATA UNAVAILABLE':st==='DEMO'?'🟠 DEMO FALLBACK':'🟠 CHECKING FEED';
+  }
+  function render(message){
+    const box=el('dataAdapters'); if(!box)return;
+    const st=current.state||'CHECKING';
+    const label=st==='DELAYED'?'🟡 15-min delayed':st==='READY'?'🟢 Connected':st==='UNAVAILABLE'?'⚪ Unavailable':st==='DEMO'?'🟠 Demo fallback':'🟠 Checking';
+    const extra=message||((current.configured)?'Backend connection verified. Provider data is authorized sandbox data with a 15-minute delay.':'Waiting for the MaliRadar backend to confirm provider configuration.');
+    box.innerHTML='<div class="mr23-source-card"><div class="mr23-source-head"><div><div class="mr23-source-title">📡 MyStocks Africa Sandbox</div><div class="muted">Authorized development feed • provider credentials remain server-side</div></div><span class="mr23-state '+(current.configured?'ok':'warn')+'">'+(current.configured?'SANDBOX READY':'NOT CONFIGURED')+'</span></div><div class="mr23-live-row"><span class="mr23-dot '+(current.configured?'ok':'')+'"></span><span>'+label+'</span></div><div class="mr23-meta"><div><span class="muted">Environment</span><b>'+String(current.environment||'sandbox').toUpperCase()+'</b></div><div><span class="muted">African equity feed</span><b>'+Number(current.delayMinutes||15)+'-min delayed</b></div><div><span class="muted">Provider state</span><b>'+st+'</b></div></div><p class="notice" style="margin-top:10px">'+extra+'</p><div class="mr23-btnrow"><button class="btn" id="mrRefreshDataBtn">↻ Refresh data</button><button class="btn alt" id="mrCheckConnectionBtn">Check connection</button></div><p class="notice" style="margin-top:10px">Delayed data is never labeled LIVE. Public production use still depends on provider terms, attribution, exchange permissions and production access.</p></div>';
+    setBadge();
+    const rb=el('mrRefreshDataBtn'), cb=el('mrCheckConnectionBtn');
+    if(rb)rb.onclick=refreshData;
+    if(cb)cb.onclick=checkConnection;
+  }
+  function setStatus(j){
+    current=Object.assign(current,j||{});
+    if(current.configured && current.state==='READY') current.state='DELAYED';
+    if(!current.state)current.state=current.configured?'DELAYED':'UNAVAILABLE';
+    window.MaliRadarMarketData=window.MaliRadarMarketData||{};
+    window.MaliRadarMarketData.status=current;
+  }
+  async function get(path){
+    const url=API_BASE+path;
+    const r=await fetch(url,{headers:{Accept:'application/json'},cache:'no-store'});
+    let j=null; try{j=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(j?.error||j?.message||('HTTP '+r.status));
+    return j;
+  }
+  async function checkConnection(){
+    render('Checking the MaliRadar server and MyStocks provider connection…');
+    if(location.protocol==='file:'){
+      current.state='UNAVAILABLE';current.configured=false;
+      render('This is a local file preview. The provider API lives on the deployed MaliRadar server, so connection checks work after this build is deployed to Render.');
+      return current;
+    }
+    try{setStatus(await get(STATUS_PATH));render();return current}
+    catch(e){current.state='UNAVAILABLE';current.configured=false;render('The deployed MaliRadar server could not be reached. Check the Render deployment and try again.');return current}
+  }
+  async function refreshData(){
+    render('Refreshing provider status and verified market instruments…');
+    if(location.protocol==='file:'){
+      current.state='UNAVAILABLE';current.configured=false;
+      render('Local preview detected. Refreshing live provider data requires the deployed Render app; the buttons are active and will perform the full refresh there.');
+      return 0;
+    }
+    try{
+      setStatus(await get(STATUS_PATH));
+      const market=(window.getMaliRegion?window.getMaliRegion().id:'ke');
+      const map={ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'};
+      const ex=map[market]||'NSE';
+      const j=await get(STOCKS_PATH+'?market='+encodeURIComponent(ex)+'&limit=1000&refresh=1');
+      const rows=Array.isArray(j?.stocks)?j.stocks:Array.isArray(j)?j:[];
+      const priced=rows.filter(x=>x && (x.price!=null||x.lastPrice!=null||x.last!=null||x.close!=null)).length;
+      if(priced>0)current.state='DELAYED';
+      const label=document.querySelector('.v21-dir-count');
+      if(label)label.textContent='Directory: '+(rows.length||0)+' securities loaded • 🟡 15-min delayed';
+      render('Provider connection verified. '+(rows.length||0)+' provider instruments returned for '+ex+'. Prices are authorized sandbox data with a 15-minute delay.');
+      if(typeof window.renderMarkets==='function')window.renderMarkets();
+      return rows.length;
+    }catch(e){current.state='UNAVAILABLE';render('Refresh failed: '+(e.message||'provider data unavailable')+'. The existing market directory remains intact.');return 0}
+  }
+  window.MaliRadarMarketData=window.MaliRadarMarketData||{};
+  window.MaliRadarMarketData.status=current;
+  window.MaliRadarMarketData.refreshStatus=checkConnection;
+  window.MaliRadarMarketData.refresh=refreshData;
+  window.addEventListener('load',()=>setTimeout(checkConnection,700));
+  window.addEventListener('maliradar:marketdata-updated',checkConnection);
+})();
+</script>
+
+<style id="mr24-stock-detail-css">
+.mr24-hero{padding:14px;border:1px solid rgba(80,230,195,.22);border-radius:16px;background:linear-gradient(145deg,rgba(10,28,40,.92),rgba(5,12,20,.92));margin-bottom:12px}
+.mr24-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.mr24-symbol{font-size:12px;letter-spacing:.8px}.mr24-name{font-size:20px;font-weight:800;margin-top:4px}.mr24-price{font-size:30px;font-weight:900;margin-top:12px}.mr24-badge{display:inline-block;padding:5px 8px;border-radius:999px;font-size:10px;border:1px solid rgba(255,202,80,.35);background:rgba(255,202,80,.08);color:#ffe08a;white-space:nowrap}.mr24-chartwrap{position:relative;margin:12px 0}.mr24-chart{height:250px;border:1px solid rgba(80,230,195,.2);border-radius:15px;background:#061116;overflow:hidden;touch-action:none}.mr24-chart svg{width:100%;height:100%;display:block}.mr24-chartline{fill:none;stroke:#35e0b1;stroke-width:2.6;filter:drop-shadow(0 0 5px rgba(53,224,177,.55))}.mr24-grid{stroke:#17333d;stroke-width:1;opacity:.7}.mr24-dot{fill:#38c8ff;stroke:#061116;stroke-width:3}.mr24-tooltip{position:absolute;left:10px;top:10px;padding:7px 9px;border:1px solid rgba(80,230,195,.25);border-radius:9px;background:rgba(4,12,18,.92);font-size:11px;pointer-events:none;min-width:125px;display:none}.mr24-periods{display:flex;gap:6px;overflow:auto;padding-bottom:3px}.mr24-periods .btn{min-width:47px}.mr24-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}.mr24-stat{padding:10px;border:1px solid var(--line);border-radius:11px;background:#09151c}.mr24-stat span{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}.mr24-stat b{font-size:13px}.mr24-section{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(9,19,31,.55)}.mr24-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}.mr24-actions .btn{width:100%}.mr24-note{font-size:11px;line-height:1.5;color:var(--muted);margin-top:10px}@media(max-width:480px){.mr24-chart{height:215px}.mr24-stats{grid-template-columns:1fr 1fr}.mr24-name{font-size:18px}}
+</style>
+<style id="mr24-unified-market-engine-css">
+.mr24-market-sync{margin:8px 0 12px;padding:9px 11px;border:1px solid rgba(80,230,195,.22);border-radius:12px;background:rgba(8,20,28,.72);font-size:11px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.mr24-market-sync b{font-size:11px}.mr24-market-sync .muted{font-size:10px}.mr24-qbadge{font-size:9px;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,224,138,.35);color:#ffe08a;background:#2b2410;white-space:nowrap}.mr24-qbadge.ok{border-color:rgba(53,224,177,.35);color:#35e0b1;background:#09231e}.mr24-qbadge.err{border-color:rgba(255,125,125,.25);color:#ff9a9a;background:#241316}
+.mr24-qloading{opacity:.75}
+</style>
+<!-- v2.4.4: replaced by the single bulk-provider engine below -->
+<script id="mr-stock-directory-bridge">
+(function(){
+  // Top-level `let STOCKS` is a global lexical binding, not MaliRadarStocks().
+  // Expose the live array safely so provider modules can see the same directory.
+  window.MaliRadarStocks=function(){
+    try{ if(Array.isArray(STOCKS)) return STOCKS; }catch(e){}
+    return Array.isArray(window.STOCKS)?window.STOCKS:[];
+  };
+})();
+</script>
+
+<style id="mr243-bulk-truth-css">
+.mr243-sync{margin:8px 0 12px;padding:9px 11px;border:1px solid rgba(80,230,195,.22);border-radius:12px;background:rgba(8,20,28,.72);font-size:11px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.mr243-sync b{font-size:11px}.mr243-sync .muted{font-size:10px}.mr243-badge{font-size:9px;padding:3px 7px;border-radius:999px;border:1px solid rgba(255,224,138,.35);color:#ffe08a;background:#2b2410;white-space:nowrap}.mr243-badge.ok{border-color:rgba(53,224,177,.35);color:#35e0b1;background:#09231e}.mr243-badge.err{border-color:rgba(255,125,125,.25);color:#ff9a9a;background:#241316}
+</style>
+
+<script id="mr246-unified-provider-engine">
+(function(){
+  const MAP={ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'};
+  const SUFFIX={NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'};
+  const store=window.maliRadarProviderQuotes=window.maliRadarProviderQuotes||Object.create(null);
+  const api=(path)=>fetch(path,{headers:{Accept:'application/json'},cache:'no-store'}).then(async r=>{let j=null;try{j=await r.json()}catch(e){}if(!r.ok)throw Error(j?.error||j?.message||('HTTP '+r.status));return j});
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const local=v=>String(v||'').split('.')[0].toUpperCase();
+  const market=()=>{try{const x=JSON.parse(localStorage.getItem('maliradar_region_market_v19')||'{}');return MAP[x.region||'ke']||'NSE'}catch(e){return 'NSE'}};
+  const stocks=()=>{try{return typeof MaliRadarStocks==='function'?MaliRadarStocks():[]}catch(e){return Array.isArray(window.STOCKS)?window.STOCKS:[]}};
+  const row=k=>stocks().find(x=>local(x[0])===local(k));
+  const fmt=(v,c)=>v==null?'Price unavailable':({USD:'$',KES:'KSh',NGN:'₦',ZAR:'R',GHS:'GH₵',EGP:'E£',MAD:'MAD ',TZS:'TSh ',UGX:'USh ',RWF:'FRw '}[String(c||'').toUpperCase()]||'')+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  function norm(x,sym){const q=x?.quote||{};const symbol=String(x?.symbol||sym||'');return{symbol,localSymbol:local(symbol),name:x?.name||x?.companyName||x?.company?.name||sym,exchange:x?.exchange||x?.market||market(),currency:x?.currency||q?.currency||null,price:num(x?.price??x?.lastPrice??x?.last??x?.close??q?.price??q?.lastPrice??q?.last??q?.close),changePct:num(x?.changePct??x?.changePercent??x?.percentChange??q?.changePct??q?.changePercent??q?.percentChange),asOf:x?.asOf||x?.timestamp||x?.updatedAt||q?.asOf||q?.timestamp||null,delayMinutes:num(x?.delayMinutes??q?.delayMinutes)||15,stale:Boolean(x?.stale??q?.stale),state:(x?.price??x?.lastPrice??x?.last??x?.close??q?.price??q?.lastPrice??q?.last??q?.close)!=null?'DELAYED':'UNAVAILABLE',source:x?.source||'MyStocks Africa Sandbox'}}
+  function apply(q){if(!q||!q.symbol)return;store[local(q.symbol)]=q;const r=row(q.localSymbol||q.symbol);if(r&&q.price!=null){r[1]=q.name||r[1];r[2]=q.exchange||r[2];r[3]=q.price;r[4]=q.changePct} }
+  async function batch(symbols){if(!symbols.length)return[];const qs=symbols.map(x=>local(x));const out=[];for(let i=0;i<qs.length;i+=50){const chunk=qs.slice(i,i+50);const j=await api('/api/market-data/quotes?market='+encodeURIComponent(market())+'&symbols='+encodeURIComponent(chunk.join(','))+'&_mr='+Date.now());const arr=Array.isArray(j?.quotes)?j.quotes:[];arr.forEach(x=>{const q=norm(x,x.symbol);apply(q);out.push(q)})}return out}
+  function renderBar(total){const b=document.getElementById('mr243StatusBar')||document.getElementById('mrProviderStatus');if(!b)return;const all=stocks();const verified=all.filter(x=>{const q=store[local(x[0])];return q&&q.price!=null}).length;b.innerHTML='<span class="mr243-badge ok">🟡 15-min delayed</span><span class="mr243-badge">'+verified+' verified</span><span class="mr243-badge">'+all.length+' securities</span><button class="btn alt" onclick="window.maliRadarProviderRefreshMarkets(true)">↻ Refresh</button>'}
+  function renderMarkets(){const el=document.getElementById('list');if(!el)return;const all=stocks();let verified=0;el.innerHTML=all.map(x=>{const k=local(x[0]),q=store[k],has=q&&q.price!=null;if(has)verified++;const price=has?fmt(q.price,q.currency):'Price unavailable';const move=has&&q.changePct!=null?(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%':'—';const cls=has&&q.changePct!=null?(q.changePct>=0?'green':'red'):'muted';const safe=esc(k);return '<div class="stock"><div class="row"><div><b>'+esc(q?.name||x[1])+'</b><div class="muted">'+safe+' • '+esc(q?.exchange||x[2])+'</div></div><div style="text-align:right"><b>'+esc(price)+'</b><div class="'+cls+'">'+esc(move)+'</div></div></div><div class="row" style="margin-top:7px"><span class="mr243-badge '+(has?'ok':'err')+'">'+(has?'🟡 15-min delayed':'⚪ no verified price')+'</span><span class="muted">'+(q?.asOf?'As of '+esc(q.asOf):'MyStocks provider')+'</span></div><div class="actions"><button class="btn" onclick="details(\''+safe+'\')">View</button>'+(has?'<button class="btn" onclick="buy(\''+safe+'\')">Paper Buy</button><button class="btn red" onclick="sell(\''+safe+'\')">Paper Sell</button>':'')+'<button class="btn alt" onclick="toggleWatch(\''+safe+'\')">'+(state.watch.includes(k)?'★ Watching':'☆ Watch')+'</button><button class="btn alt" onclick="quickAlert(\''+safe+'\')">🔔 Alert</button></div></div>'}).join('')||'<p class="muted">No securities in this market.</p>';renderBar(all.length);const c=document.querySelector('.v21-dir-count');if(c)c.textContent='Directory: '+all.length+' securities • 🟡 15-min delayed provider bridge';const st=document.getElementById('status');if(st)st.textContent='MaliRadar system online • '+market()+' • 15-MIN DELAYED'}
+  function renderRadar(){const el=document.getElementById('radar');if(!el)return;const watch=Array.isArray(state.watch)?state.watch:[];const arr=watch.map(k=>{const x=row(k);return x?{x,q:store[local(k)]}:null}).filter(Boolean);if(!arr.length){el.innerHTML='<p class="muted">Your watchlist is empty. Add stocks from Markets.</p>';return}el.innerHTML=arr.map(({x,q})=>{const has=q&&q.price!=null;const move=has&&q.changePct!=null?(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%':'—';const cls=has&&q.changePct!=null?(q.changePct>=0?'green':'red'):'muted';return '<div class="stock"><div class="row"><div><b>'+esc(q?.name||x[1])+'</b><div class="muted">'+esc(local(x[0]))+' • '+esc(q?.exchange||x[2])+'</div></div><span class="'+cls+'">'+esc(move)+'</span></div><div class="muted">'+esc(has?fmt(q.price,q.currency):'Price unavailable')+' • '+(has?'🟡 15-min delayed':'⚪ no verified price')+'</div><div class="actions"><button class="btn" onclick="details(\''+esc(local(x[0]))+'\')">View</button><button class="btn alt" onclick="toggleWatch(\''+esc(local(x[0]))+'\')">★ Watching</button></div></div>'}).join('')}
+  async function candles(sym,range){try{const j=await api('/api/market-data/stock/'+encodeURIComponent(sym)+'/candles?market='+encodeURIComponent(market())+'&range='+encodeURIComponent(range||'1M')+'&_mr='+Date.now());const a=j?.candles||j?.data?.candles||j?.data||j?.results||[];return Array.isArray(a)?a:[]}catch(e){return[]}}
+  async function openDetail(sym,range){const k=local(sym),x=row(k)||[k,k,market(),null,null];let q=store[k];openM(esc(q?.name||x[1]),'<p class="notice">Loading provider-backed stock intelligence…</p>');try{if(!q||q.price==null){const got=await batch([k]);q=store[k]||got.find(z=>local(z.symbol)===k)}if(!q||q.price==null)throw Error('No verified price');const move=q.changePct==null?'—':(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%',cls=q.changePct==null?'muted':q.changePct>=0?'green':'red';const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>'<button class="btn alt '+(p===(range||'1M')?'selected':'')+'" onclick="MaliRadarProviderDetail.open(\''+esc(k)+'\',\''+p+'\')">'+p+'</button>').join('');let chart='<div class="mr-data-chart" style="display:flex;align-items:center;justify-content:center"><span class="muted">Loading historical candles…</span></div>';const pts=(await candles(k,range||'1M')).map(c=>({t:c?.time||c?.timestamp||c?.date||c?.datetime,v:num(c?.close??c?.price??c?.c)})).filter(p=>p.t&&p.v!=null);if(pts.length>1){const vals=pts.map(p=>p.v),mn=Math.min(...vals),mx=Math.max(...vals),sp=Math.max(1e-9,mx-mn),d=pts.map((p,i)=>(i?'L':'M')+(22+i*716/(pts.length-1)).toFixed(1)+' '+(208-(p.v-mn)/sp*186).toFixed(1)).join(' ');chart='<div class="mr-data-chart"><svg viewBox="0 0 760 230" preserveAspectRatio="none"><path class="candle-line" d="'+d+'"/><circle class="last-dot" cx="738" cy="'+(208-(pts[pts.length-1].v-mn)/sp*186)+'" r="5"/></svg></div>'}openM(esc(q.name||x[1]),'<div class="mr-data-head"><div><b>'+esc(k)+' • '+esc(q.exchange||market())+'</b><div class="muted">Provider-backed stock intelligence</div></div><span class="mr-data-badge ok">🟡 15-MIN DELAYED</span></div><div class="big">'+esc(fmt(q.price,q.currency))+'</div><div class="'+cls+'">'+esc(move)+'</div><div class="periods">'+periods+'</div>'+chart+'<div class="mr-data-meta"><div><span class="muted">Market</span><b>'+esc(q.exchange||market())+'</b></div><div><span class="muted">Currency</span><b>'+esc(q.currency||'Provider not supplied')+'</b></div><div><span class="muted">As of</span><b>'+esc(q.asOf||'Provider timestamp unavailable')+'</b></div><div><span class="muted">Delay</span><b>'+esc(String(q.delayMinutes||15))+' min</b></div></div><p class="mr-data-source">Source: '+esc(q.source||'MyStocks Africa Sandbox')+' • same provider quote used by Markets and Home Watchlist.</p><div class="actions"><button class="btn" onclick="buy(\''+esc(k)+'\');closeM()">Paper Buy</button><button class="btn red" onclick="sell(\''+esc(k)+'\');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert(\''+esc(k)+'\')">🔔 Alert</button></div>')}catch(e){openM(esc(x[1]),'<div class="mr-data-head"><div><b>'+esc(k)+' • '+esc(x[2])+'</b><div class="muted">Provider-backed stock intelligence</div></div><span class="mr243-badge err">⚪ NO VERIFIED PRICE</span></div><p class="notice">MyStocks did not return a verified price for this security. MaliRadar will not substitute an old prototype/static price.</p><button class="btn" onclick="MaliRadarProviderDetail.open(\''+esc(k)+'\',\''+(range||'1M')+'\')">↻ Try again</button>')}}
+  async function load(force){const all=stocks();try{const j=await api('/api/market-data/quotes?market='+encodeURIComponent(market())+'&symbols='+encodeURIComponent(all.map(x=>local(x[0])).join(','))+'&_mr='+Date.now());(j?.quotes||[]).forEach(x=>apply(norm(x,x.symbol)));renderMarkets();renderRadar();window.MaliRadarProviderQuotes=store}catch(e){renderMarkets();renderRadar()}}
+  window.maliRadarProviderQuotes=store;window.maliRadarProviderRefreshMarkets=load;window.MaliRadarProviderDetail={open:openDetail};window.details=s=>openDetail(s,'1M');window.renderMarkets=renderMarkets;window.renderRadar=renderRadar;
+  const oldSet=window.setMaliRegion;if(oldSet)window.setMaliRegion=function(id){Object.keys(store).forEach(k=>delete store[k]);const r=oldSet.apply(this,arguments);setTimeout(()=>load(true),250);return r};
+  window.addEventListener('load',()=>{setTimeout(()=>load(false),700);setTimeout(()=>load(true),2200)});
+})();
+</script>
+
+<style id="mr247-status-css">
+.mr247-status-note{font-size:10px;margin-top:5px}
+</style>
+<script id="mr247-nse-market-status">
+(function(){
+  /*
+   * v2.4.7: NSE status uses Africa/Nairobi time rather than
+   * the device timezone. This is intentionally separate from
+   * the provider quote engine.
+   *
+   * NSE regular continuous session: Monday-Friday, 09:00-15:00 EAT.
+   * This does not claim exchange-holiday awareness; holidays remain
+   * a future provider-status integration item.
+   */
+  function nseNow(){
+    var parts=new Intl.DateTimeFormat('en-GB',{
+      timeZone:'Africa/Nairobi',
+      weekday:'short',
+      hour:'2-digit',
+      minute:'2-digit',
+      hour12:false
+    }).formatToParts(new Date());
+    var o={};
+    parts.forEach(function(p){o[p.type]=p.value});
+    var day={Mon:1,Tue:2,Wed:3,Thu:4,Fri:5,Sat:6,Sun:0}[o.weekday];
+    var hm=String(o.hour)+':'+String(o.minute);
+    var mins=parseInt(o.hour,10)*60+parseInt(o.minute,10);
+    return {day:day,mins:mins,time:hm};
+  }
+
+  window.marketIsOpen=function(){
+    var n=nseNow();
+    return n.day>=1 && n.day<=5 && n.mins>=540 && n.mins<900;
+  };
+
+  window.marketStatusHTML=function(){
+    var n=nseNow();
+    var open=window.marketIsOpen();
+    var label=open?'MARKET OPEN':'MARKET CLOSED';
+    var reason=open
+      ? 'NSE session • 09:00–15:00 EAT'
+      : (n.day===0 || n.day===6
+          ? 'NSE closed • weekend • EAT'
+          : 'NSE session closed • 09:00–15:00 EAT');
+
+    return '<div class="market-status '+(open?'':'closed')+'">'+
+      '<span class="pulse"></span>'+
+      '<div><b>'+label+'</b>'+
+      '<div class="muted">'+reason+' • '+n.time+' EAT</div>'+
+      '<div class="mr247-status-note">Prices may remain available outside trading hours because MaliRadar uses 15-min delayed provider data.</div>'+
+      '</div></div>';
+  };
+
+  window.renderMarketStatus=function(){
+    var html=window.marketStatusHTML();
+    var a=document.getElementById('homeMarketStatus');
+    var b=document.getElementById('marketStatusBar');
+    if(a)a.innerHTML=html;
+    if(b)b.innerHTML=html;
+  };
+
+  document.addEventListener('DOMContentLoaded',function(){
+    window.renderMarketStatus();
+    setInterval(window.renderMarketStatus,30000);
+  });
+})();
+</script>
+
+<style id="mr25-stock-intel-css">
+.mr25-panel{margin-top:10px}.mr25-chart{width:100%;height:210px;display:block;background:rgba(4,10,16,.55);border:1px solid rgba(90,220,200,.12);border-radius:14px}.mr25-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.mr25-period{font-size:10px;padding:7px 9px;border-radius:9px}.mr25-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.mr25-stat{padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:11px;background:rgba(255,255,255,.025)}.mr25-stat span{display:block;font-size:9px;opacity:.65}.mr25-stat b{display:block;margin-top:4px;font-size:12px}.mr25-source{font-size:9px;opacity:.65;margin-top:8px}.mr25-explain{border-left:2px solid rgba(80,230,195,.5);padding-left:10px}.mr25-loading{opacity:.7}
+</style>
+<script id="mr25-stock-intelligence">
+(function(){
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const api=p=>fetch(p,{cache:'no-store',headers:{Accept:'application/json'}}).then(async r=>{let j=null;try{j=await r.json()}catch(e){}if(!r.ok)throw Error(j?.error||j?.message||('HTTP '+r.status));return j});
+  const market=()=>{try{return typeof window.maliRegion==='object'&&window.maliRegion?.market?window.maliRegion.market:'NSE'}catch(e){return 'NSE'}};
+  const local=s=>String(s||'').split('.')[0].toUpperCase();
+  const cache=window.mr25Intel=window.mr25Intel||Object.create(null);
+  function chartSvg(candles){
+    const a=(candles||[]).map(x=>({t:x.time??x.timestamp??x.date,p:num(x.close??x.c??x.price)})).filter(x=>x.p!=null);
+    if(a.length<2)return '<div class="notice">Provider candles are not available for this period yet.</div>';
+    const w=700,h=210,pad=18,vals=a.map(x=>x.p),lo=Math.min(...vals),hi=Math.max(...vals),span=hi-lo||1;
+    const pts=a.map((x,i)=>[(i/(a.length-1))*(w-pad*2)+pad,h-pad-((x.p-lo)/span)*(h-pad*2)]);
+    const d=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+    const last=vals[vals.length-1], first=vals[0], move=first?((last-first)/first*100):0;
+    return '<svg class="mr25-chart" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none"><path d="'+d+'" fill="none" stroke="currentColor" stroke-width="2.5" vector-effect="non-scaling-stroke"/><circle cx="'+pts[pts.length-1][0]+'" cy="'+pts[pts.length-1][1]+'" r="4" fill="currentColor"/><text x="18" y="18" fill="currentColor" opacity=".55" font-size="11">'+esc(last.toFixed(2))+' • '+(move>=0?'▲ ':'▼ ')+Math.abs(move).toFixed(2)+'%</text></svg>';
+  }
+  function normalizeCandles(j){return Array.isArray(j?.candles)?j.candles:Array.isArray(j?.data)?j.data:Array.isArray(j)?j:[]}
+  function detailFallback(sym,range){
+    if(window.MaliRadarProviderDetail?.open && window.MaliRadarProviderDetail.open!==open)return window.MaliRadarProviderDetail.open(sym,range);
+  }
+  async function open(sym,range){
+    const s=local(sym), base=(window.MaliRadarStocks?window.MaliRadarStocks():window.STOCKS||[]).find(x=>local(x[0])===s)||[s,s,'—',null,null];
+    const title=base[1]||s;
+    if(typeof window.openM!=='function')return;
+    openM(esc(title),'<div class="mr25-loading notice">Loading provider stock intelligence…</div>');
+    try{
+      const q=await api('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(market())+'&_mr='+Date.now());
+      const price=num(q?.price), change=num(q?.changePct);
+      cache[s]=q;
+      let candles=[];
+      try{const c=await api('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(market())+'&range='+encodeURIComponent(range||'1M')+'&_mr='+Date.now());candles=normalizeCandles(c)}catch(e){}
+      const nm=q?.name||title, cur=q?.currency||'KES';
+      const move=change!=null?(change>=0?'▲ ':'▼ ')+Math.abs(change).toFixed(2)+'%':'Provider change unavailable';
+      const periods=['1D','1W','1M','3M','1Y','MAX'];
+      const html='<div class="mr25-panel"><div class="row"><div><b>'+esc(s)+' • '+esc(nm)+'</b><div class="muted">'+esc(q?.exchange||market())+' • '+esc(cur)+'</div></div><span class="mr243-badge">🟡 15-MIN DELAYED</span></div><div style="font-size:25px;font-weight:800;margin-top:10px">'+(price!=null?esc(cur+' '+price.toFixed(2)):'Price unavailable')+'</div><div class="'+(change!=null&&change<0?'red':'green')+'">'+esc(move)+'</div><div class="mr25-toolbar">'+periods.map(p=>'<button class="btn alt mr25-period" onclick="MaliRadarStockIntel.open(\''+esc(s)+'\',\''+p+'\')">'+p+'</button>').join('')+'</div>'+chartSvg(candles)+'<div class="mr25-grid"><div class="mr25-stat"><span>Open</span><b>'+(num(q?.open)!=null?q.open.toFixed(2):'—')+'</b></div><div class="mr25-stat"><span>High</span><b>'+(num(q?.high)!=null?q.high.toFixed(2):'—')+'</b></div><div class="mr25-stat"><span>Low</span><b>'+(num(q?.low)!=null?q.low.toFixed(2):'—')+'</b></div><div class="mr25-stat"><span>Previous close</span><b>'+(num(q?.previousClose)!=null?q.previousClose.toFixed(2):'—')+'</b></div><div class="mr25-stat"><span>Volume</span><b>'+(num(q?.volume)!=null?q.volume.toLocaleString():'—')+'</b></div><div class="mr25-stat"><span>Data status</span><b>15-min delayed</b></div></div><div class="mr25-source">Source: '+esc(q?.source||'MyStocks Africa Sandbox')+' • As of: '+esc(q?.asOf||'Provider timestamp unavailable')+'</div><div class="card mr25-explain"><b>What’s happening?</b><p class="notice">This screen reports provider data. A price change shows how the reported price differs from the provider’s reference value; it does not predict what happens next.</p></div><div class="actions"><button class="btn" onclick="buy(\''+esc(s)+'\');closeM()">Paper Buy</button><button class="btn red" onclick="sell(\''+esc(s)+'\');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert(\''+esc(s)+'\')">🔔 Alert</button></div></div>';
+      openM(esc(title),html);
+    }catch(e){
+      openM(esc(title),'<div class="notice">Provider stock data could not be loaded. MaliRadar will not substitute an old static price.</div><button class="btn" onclick="MaliRadarStockIntel.open(\''+esc(s)+'\',\''+(range||'1M')+'\')">↻ Try again</button>');
+    }
+  }
+  window.MaliRadarStockIntel={open};
+  const previous=window.details;
+  window.details=function(sym){open(sym,'1M')};
+})();
+</script>
+
+<style id="mr251-chart-fix-css">
+.mr251-candle-note{font-size:9px;color:var(--muted);margin-top:6px}
+</style>
+<script id="mr251-chart-fix-marker">
+(function(){
+  // v2.5.1 frontend marker: chart periods are backed by the server candle bridge.
+  window.MaliRadarChartVersion='2.6';
+})();
+</script>
+
+<style id="mr26-market-data-pro-css">
+.mr26-wrap{display:grid;gap:12px}
+.mr26-chart-card{padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.025)}
+.mr26-chart-head{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.mr26-badge{font-size:10px;padding:5px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.12);letter-spacing:.06em}
+.mr26-chart{position:relative;overflow:hidden;margin-top:8px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008))}
+.mr26-chart svg{display:block;width:100%;height:250px}
+.mr26-tip{position:absolute;pointer-events:none;display:none;min-width:118px;padding:7px 9px;border-radius:9px;background:rgba(10,14,20,.96);border:1px solid rgba(255,255,255,.14);font-size:10px;line-height:1.45;z-index:3}
+.mr26-cross{stroke:rgba(255,255,255,.28);stroke-width:1;stroke-dasharray:3 3}
+.mr26-dot{stroke:var(--bg,#0b0f14);stroke-width:2}
+.mr26-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.mr26-meta div{padding:9px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.07)}
+.mr26-meta span{display:block;font-size:9px;color:var(--muted);margin-bottom:3px}
+.mr26-meta b{font-size:12px}
+.mr26-note{font-size:10px;color:var(--muted);line-height:1.45}
+@media(min-width:650px){.mr26-meta{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<script id="mr26-market-data-pro">
+(function(){
+  const esc26 = s => String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const num26 = v => { const n=Number(v); return Number.isFinite(n)?n:null };
+  const api26 = async p => {
+    const r=await fetch(p,{cache:'no-store',headers:{Accept:'application/json'}});
+    const j=await r.json().catch(()=>null);
+    if(!r.ok) throw new Error(j?.error||('HTTP '+r.status));
+    return j;
+  };
+  const market26 = () => {
+    try{
+      const r=window.getMaliRegion ? window.getMaliRegion() : {id:'ke'};
+      return ({ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'})[r.id]||'NSE';
+    }catch(e){return 'NSE'}
+  };
+  const local26 = s => String(s||'').toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,'');
+  function chart26(rows){
+    const a=(rows||[]).map(x=>({
+      t:x.timestamp??x.time??x.date??x.datetime,
+      p:num26(x.close??x.c??x.price),
+      o:num26(x.open??x.o), h:num26(x.high??x.h), l:num26(x.low??x.l),
+      v:num26(x.volume??x.v)
+    })).filter(x=>x.p!=null&&x.t!=null);
+    if(a.length<2) return '<div class="notice">Not enough provider candles are available for this period.</div>';
+    const W=900,H=250, pad={l:12,r:12,t:18,b:26};
+    const min=Math.min(...a.map(x=>x.p)), max=Math.max(...a.map(x=>x.p));
+    const span=(max-min)||1;
+    const x=i=>pad.l+(i/(a.length-1))*(W-pad.l-pad.r);
+    const y=p=>pad.t+(1-(p-min)/span)*(H-pad.t-pad.b);
+    const pts=a.map((d,i)=>`${x(i).toFixed(1)},${y(d.p).toFixed(1)}`).join(' ');
+    const last=a[a.length-1], lx=x(a.length-1), ly=y(last.p);
+    const labels=[a[0],a[Math.floor((a.length-1)/2)],a[a.length-1]].map((d,i)=>{
+      const xx=[x(0),x(Math.floor((a.length-1)/2)),x(a.length-1)][i];
+      return `<text x="${xx}" y="${H-7}" text-anchor="${i===0?'start':i===2?'end':'middle'}" fill="currentColor" opacity=".55" font-size="9">${esc26(new Date(d.t).toLocaleDateString([], {month:'short',day:'numeric'}))}</text>`;
+    }).join('');
+    const data=esc26(JSON.stringify(a));
+    return `<div class="mr26-chart" data-points="${data}">
+      <div class="mr26-tip"></div>
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Provider price chart">
+        <line x1="${pad.l}" x2="${W-pad.r}" y1="${H-pad.b}" y2="${H-pad.b}" stroke="currentColor" opacity=".10"/>
+        <line x1="${pad.l}" x2="${W-pad.r}" y1="${pad.t}" y2="${pad.t}" stroke="currentColor" opacity=".06"/>
+        <polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2.2" vector-effect="non-scaling-stroke"/>
+        <line class="mr26-cross" x1="${lx}" x2="${lx}" y1="${pad.t}" y2="${H-pad.b}"/>
+        <circle class="mr26-dot" cx="${lx}" cy="${ly}" r="4" fill="currentColor"/>
+        ${labels}
+      </svg>
+    </div>`;
+  }
+  function bindChart26(root){
+    const c=root.querySelector('.mr26-chart'); if(!c)return;
+    const svg=c.querySelector('svg'), tip=c.querySelector('.mr26-tip'), line=c.querySelector('.mr26-cross'), dot=c.querySelector('.mr26-dot');
+    let a=[]; try{a=JSON.parse(c.dataset.points||'[]')}catch(e){}
+    if(!a.length)return;
+    const W=900,H=250,pad={l:12,r:12,t:18,b:26};
+    const min=Math.min(...a.map(x=>x.p)),max=Math.max(...a.map(x=>x.p)),span=(max-min)||1;
+    const ix=()=>c.getBoundingClientRect();
+    const x=i=>pad.l+(i/(a.length-1))*(W-pad.l-pad.r);
+    const y=p=>pad.t+(1-(p-min)/span)*(H-pad.t-pad.b);
+    const move=e=>{
+      const r=ix(), px=(e.clientX-r.left)/r.width*W;
+      let best=0,bd=Infinity;
+      for(let i=0;i<a.length;i++){const d=Math.abs(x(i)-px);if(d<bd){bd=d;best=i}}
+      const d=a[best], xx=x(best), yy=y(d.p);
+      line.setAttribute('x1',xx);line.setAttribute('x2',xx);dot.setAttribute('cx',xx);dot.setAttribute('cy',yy);
+      tip.innerHTML=`<b>${esc26(d.p.toFixed(2))}</b><br>${esc26(new Date(d.t).toLocaleString())}`;
+      const left=Math.max(6,Math.min(r.width-130,(xx/W)*r.width-55));
+      tip.style.left=left+'px'; tip.style.top='8px'; tip.style.display='block';
+    };
+    c.addEventListener('pointermove',move);
+    c.addEventListener('pointerleave',()=>tip.style.display='none');
+  }
+  async function open26(sym,range){
+    const s=local26(sym), ex=market26(), title='📈 '+s;
+    const r=range||'1M';
+    try{
+      const q=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(ex));
+      const c=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(ex)+'&range='+encodeURIComponent(r)+'&_mr26='+Date.now());
+      const rows=c?.candles||c?.data?.candles||c?.data||[];
+      const price=num26(q?.price);
+      const change=num26(q?.changePct);
+      const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>`<button class="btn alt mr25-period" onclick="window.MaliRadarMarketPro.open('${esc26(s)}','${p}')">${p}</button>`).join('');
+      const html=`<div class="mr26-wrap">
+        <div class="mr26-chart-card">
+          <div class="mr26-chart-head">
+            <div><b>${esc26(q?.name||s)}</b><div class="muted">${esc26(ex)} • ${esc26(q?.currency||'')}</div></div>
+            <span class="mr26-badge">🟡 15-MIN DELAYED</span>
+          </div>
+          <div style="margin-top:8px;font-size:25px;font-weight:800">${price!=null?price.toFixed(2):'—'} <span class="${change!=null&&change<0?'red':''}" style="font-size:12px">${change!=null?(change>0?'+':'')+change.toFixed(2)+'%':''}</span></div>
+          <div class="mr25-toolbar">${periods}</div>
+          ${chart26(rows)}
+          <div class="mr26-note">Chart uses provider candles only. MaliRadar does not invent missing market data.</div>
+        </div>
+        <div class="mr26-meta">
+          <div><span>Open</span><b>${num26(q?.open)!=null?q.open.toFixed(2):'—'}</b></div>
+          <div><span>High</span><b>${num26(q?.high)!=null?q.high.toFixed(2):'—'}</b></div>
+          <div><span>Low</span><b>${num26(q?.low)!=null?q.low.toFixed(2):'—'}</b></div>
+          <div><span>Previous close</span><b>${num26(q?.previousClose)!=null?q.previousClose.toFixed(2):'—'}</b></div>
+        </div>
+        <div class="card">
+          <b>Data intelligence</b>
+          <p class="mr26-note">Source: ${esc26(q?.source||'MyStocks Africa Sandbox')} • Status: DELAYED • ${esc26(q?.delayMinutes||15)} minutes • ${esc26(q?.asOf||'Provider timestamp unavailable')}</p>
+          <p class="mr26-note">A delayed quote describes reported market activity. It is not a prediction or trading recommendation.</p>
+        </div>
+        <div class="actions">
+          <button class="btn" onclick="buy('${esc26(s)}');closeM()">Paper Buy</button>
+          <button class="btn red" onclick="sell('${esc26(s)}');closeM()">Paper Sell</button>
+          <button class="btn alt" onclick="quickAlert('${esc26(s)}')">🔔 Alert</button>
+        </div>
+      </div>`;
+      openM(esc26(title),html);
+      setTimeout(()=>bindChart26(document.querySelector('.mr26-wrap')),0);
+    }catch(e){
+      openM(esc26(title),'<div class="notice">Provider market data could not be loaded. MaliRadar will not substitute an old static price.</div><button class="btn" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+esc26(r)+'\')">↻ Try again</button>');
+    }
+  }
+  window.MaliRadarMarketPro={open:open26};
+  window.details=function(sym){open26(sym,'1M')};
+  window.MaliRadarMarketDataPro={version:'2.6',provider:'MyStocks Africa Sandbox',delayMinutes:15};
+})();
+</script>
+
+
+<!-- MaliRadar v2.7: Market Data Engine Hardening -->
+<style id="mr27-data-engine-css">
+.mr27-data-meta{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+.mr27-data-ok{color:#53e0b1}
+.mr27-data-warn{color:#ffe08a}
+.mr27-data-bad{color:#ff8d8d}
+</style>
+<script id="mr27-data-engine-js">
+(function(){
+  /*
+   v2.7 frontend contract:
+   - provider remains the source of truth
+   - quotes are never fabricated
+   - all provider data remains 15-minute delayed
+   - quote/snapshot OHLC fields are preferred over candle-derived values
+   - unsupported/sparse history is reported honestly
+  */
+  window.MaliRadarMarketDataV27={
+    version:'2.7',
+    provider:'MyStocks Africa Sandbox',
+    delayMinutes:15,
+    status:'DELAYED',
+    historyPolicy:'NO_FABRICATION'
+  };
+
+  function num(v){
+    if(v==null||v==='')return null;
+    const n=Number(v);
+    return Number.isFinite(n)?n:null;
+  }
+  function first(obj,keys){
+    for(const k of keys){
+      const v=num(obj&&obj[k]);
+      if(v!=null)return v;
+    }
+    return null;
+  }
+  function normalizeQuote(q){
+    q=q||{};
+    const nested=q.quote||q.data||q;
+    return {
+      price:first(nested,['price','lastPrice','last','close']),
+      open:first(nested,['open','dayOpen']),
+      high:first(nested,['high','dayHigh']),
+      low:first(nested,['low','dayLow']),
+      previousClose:first(nested,['previousClose','prevClose','previous_close','priorClose']),
+      volume:first(nested,['volume','dayVolume']),
+      asOf:nested.asOf||nested.timestamp||nested.updatedAt||null,
+      status:nested.status||'DELAYED',
+      delayMinutes:num(nested.delayMinutes)||15,
+      source:nested.source||'MyStocks Africa Sandbox'
+    };
+  }
+  window.MaliRadarNormalizeProviderQuote=normalizeQuote;
+  window.MaliRadarV27RangePolicy={
+    '1D':{days:1,interval:'15m'},
+    '1W':{days:7,interval:'1h'},
+    '1M':{days:31,interval:'1d'},
+    '3M':{days:93,interval:'1d'},
+    '1Y':{days:365,interval:'1d'},
+    'MAX':{days:null,interval:'1w',policy:'PROVIDER_MAX'}
+  };
+})();
+</script>
+
+</body></html>
+
+
+<!-- MaliRadar v2.6.1: universal button tap illumination -->
+<style id="mr261-button-illumination-css">
+button,.btn,.tabs button,.nav button,.theme-buttons button{
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .12s ease,box-shadow .16s ease,border-color .16s ease,
+              background-color .16s ease,filter .16s ease;
+}
+button:focus-visible,.btn:focus-visible{
+  outline:2px solid rgba(80,230,195,.9);
+  outline-offset:2px;
+}
+.mr261-tap-flash{
+  transform:translateY(1px) scale(.97)!important;
+  filter:brightness(1.35)!important;
+  box-shadow:0 0 0 2px rgba(80,230,195,.32),
+             0 0 18px rgba(80,230,195,.55),
+             inset 0 0 14px rgba(80,230,195,.18)!important;
+  border-color:rgba(80,230,195,.9)!important;
+}
+button{position:relative;overflow:hidden}
+</style>
+
+<script id="mr261-button-illumination-js">
+(function(){
+  const FLASH='mr261-tap-flash';
+
+  function flash(btn){
+    if(!btn || btn.disabled) return;
+    btn.classList.remove(FLASH);
+    void btn.offsetWidth;
+    btn.classList.add(FLASH);
+    clearTimeout(btn.__mr261FlashTimer);
+    btn.__mr261FlashTimer=setTimeout(function(){
+      btn.classList.remove(FLASH);
+    },260);
+  }
+
+  document.addEventListener('pointerdown',function(e){
+    const btn=e.target.closest && e.target.closest('button,.btn');
+    if(btn) flash(btn);
+  },true);
+
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter' && e.key!==' ') return;
+    const btn=e.target.closest && e.target.closest('button,.btn');
+    if(btn) flash(btn);
+  },true);
+
+  window.MaliRadarButtonIllumination={version:'2.6.1',flash:flash};
+})();
+</script>
+
+<style id="mr262-data-fix-css">
+.mr262-data-good{border-color:rgba(53,224,177,.45)!important;box-shadow:0 0 12px rgba(53,224,177,.12)}
+.mr262-data-warn{border-color:rgba(255,224,138,.35)!important}
+</style>
+<script id="mr262-data-fix-js">
+(function(){
+  // v2.6.2: improve chart range handling without inventing provider data.
+  // The backend remains the source of truth; this layer only makes the UI
+  // use compatible provider history when the requested interval is sparse.
+  const oldOpen=window.MaliRadarMarketPro&&window.MaliRadarMarketPro.open;
+  if(!oldOpen)return;
+  function rangeDays(r){return ({'1D':1,'1W':7,'1M':31,'3M':93,'1Y':365,'MAX':3650})[r]||31}
+  function msg(range){
+    if(range==='MAX') return 'Maximum verified history is unavailable from the current sandbox response. MaliRadar will not substitute an old static price.';
+    if(range==='1W') return 'The provider returned insufficient candles for a reliable 1-week view. MaliRadar will not invent missing candles.';
+    return '';
+  }
+  // Expose truthful range guidance to the existing chart engine.
+  window.MaliRadarChartRangePolicy={version:'2.6.2',rangeDays,warning:msg};
+})();
+</script>
