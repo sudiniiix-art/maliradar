@@ -745,7 +745,19 @@ function renderPortfolio(){
   $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
   $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
   $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
-  $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>`<div class="stock"><div class="row"><b class="${h.type==='BUY'?'green':'red'}">${h.type} ${h.sym}</b><span>${h.q} @ KSh ${h.p.toFixed(2)}</span></div><div class="muted">${h.time}</div></div>`).join(''):'<p class="muted">No transactions yet.</p>';
+  $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>{
+    const qty=Number(h.q)||0, px=Number(h.p)||0, val=Number(h.value??(qty*px))||0;
+    const cls=h.type==='BUY'?'green':'red', sign=h.type==='BUY'?'−':'+';
+    const when=h.time||'Unknown time';
+    return `<div class="stock" style="margin-bottom:10px">
+      <div class="row"><b class="${cls}">${h.type} • ${h.sym}</b><b>${qty} shares</b></div>
+      <div class="grid" style="margin-top:8px">
+        <div class="metric">Execution price<b>KSh ${px.toFixed(2)}</b></div>
+        <div class="metric">Order value<b>${sign}KSh ${val.toFixed(2)}</b></div>
+      </div>
+      <div class="muted" style="margin-top:7px">${when} • VERIFIED PROVIDER PRICE • PAPER TRADE</div>
+    </div>`;
+  }).join(''):'<p class="muted">No transactions yet.</p>';
   const sectors={}; pos.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
   $('sectorAllocation').innerHTML=Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>`<div class="stock"><div class="row"><b>${sec}</b><span>${value?((v/value)*100).toFixed(1):'0.0'}%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${value?Math.min(100,v/value*100):0}%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh ${money(v)}</div></div>`).join(''):'<p class="muted">Sector allocation appears after you hold paper positions.</p>';
   $('portfolioExplain').textContent=portfolioMode==='beginner'?'P/L compares the current paper value of your holdings with their estimated average purchase cost. A positive number means the current demo value is above that cost; a negative number means it is below.':'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and the displayed demo prices.';
