@@ -293,7 +293,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
   <div class="lb-card" style="margin-top:14px">
     <div class="row"><strong id="lbTitle">⭐ Learning XP • Global</strong><span class="muted" id="lbCount">8 participants</span></div>
     <div id="lbRows"></div>
-    <div class="lb-note">These are demonstration accounts. Simulated-profit and return figures are fictional paper-trading statistics, not real investment performance.</div>
+    <div class="lb-note">Demo participants are fictional. Your row uses your local paper portfolio and verified provider prices; it is not real-money performance.</div>
   </div>
 
   <div class="lb-grid">
@@ -337,10 +337,31 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     {name:"TradeLearner",xp:590,profit:3180,ret:3.18,trades:27,kenya:false,lessons:8,achievements:2}
   ];
   let metric="xp",scope="global";
+  function currentUser(){
+    const cash=Number(window.state?.cash??100000);
+    const hold=window.state?.hold||{};
+    const quotes=window.maliRadarProviderQuotes||{};
+    let value=cash;
+    Object.keys(hold).forEach(sym=>{
+      const key=String(sym).toUpperCase().split('.')[0];
+      const q=quotes[key];
+      const p=Number(q?.price);
+      if(Number.isFinite(p))value+=Number(hold[sym]||0)*p;
+    });
+    const profit=value-100000;
+    const ret=profit/100000*100;
+    const trades=Array.isArray(window.state?.history)?window.state.history.length:0;
+    const xp=Number(window.learnState?.xp||0);
+    return {name:"You",xp,profit,ret,trades,kenya:true,lessons:0,achievements:0,local:true};
+  }
   function rows(){
     let a=demo.slice();
+    const me=currentUser();
+    // The user's own paper-trading statistics are calculated from the current
+    // local portfolio and verified provider quotes; no price is fabricated.
     if(scope==="kenya")a=a.filter(x=>x.kenya);
     if(scope==="friends")a=a.slice(0,4);
+    if(scope!=="friends")a.push(me);
     const key=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
     a.sort((x,y)=>y[key]-x[key]); return a;
   }
@@ -360,9 +381,19 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     if(!box||!title)return;
     const a=rows(); title.textContent=label();
     document.getElementById("lbCount").textContent=a.length+" participants";
-    box.innerHTML=a.map((x,i)=>'<div class="lb-row"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+x.name[0]+'</div><div class="lb-name"><b>'+x.name+'</b><div class="muted">'+x.lessons+' lessons • '+x.achievements+' achievements'+(x.kenya?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+value(x)+'</b><div class="muted">'+x.trades+' total trades</div></div></div>').join("");
-    document.getElementById("myPosition").textContent="#—";
-    document.getElementById("myStat").textContent="Real user positions require cloud accounts and server-side leaderboard records. Current entries are demonstration data.";
+    box.innerHTML=a.map((x,i)=>'<div class="lb-row" style="'+(x.local?'border:1px solid rgba(80,220,190,.35);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+x.name[0]+'</div><div class="lb-name"><b>'+x.name+(x.local?' • YOU':'')+'</b><div class="muted">'+(x.local?'Verified local paper stats':'Demo participant')+(x.kenya?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+value(x)+'</b><div class="muted">'+x.trades+' total trades</div></div></div>').join("");
+    const me=currentUser();
+    const meKey=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
+    const myRank=a.slice().sort((x,y)=>y[meKey]-x[meKey]).findIndex(x=>x.local)+1;
+    document.getElementById("myPosition").textContent=myRank>0?"#"+myRank:"#—";
+    document.getElementById("myStat").textContent=metric==="profit"
+      ?"Your simulated P/L: KSh "+me.profit.toLocaleString()+" • Based on your current paper portfolio."
+      :metric==="return"
+      ?"Your simulated return: "+me.ret.toFixed(2)+"% • Starting capital: KSh 100,000."
+      :metric==="trades"
+      ?"Your recorded paper trades: "+me.trades+"."
+      :"Your current learning XP: "+me.xp+".";
+
   }
   document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
   document.querySelectorAll("#lbScopeTabs button").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
