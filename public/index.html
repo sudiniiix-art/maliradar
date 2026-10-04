@@ -539,7 +539,7 @@ renderNews();renderEvents();
  </div>
  <div id="saWorkspace" style="display:none;margin-top:14px">
   <div class="sa-grid">
-   <div class="sa-card"><div class="eyebrow">ASSET</div><h3>SCOM • Safaricom</h3><p>Demo market data only.</p></div>
+   <div class="sa-card"><div class="eyebrow">ASSET</div><h3>SCOM • Safaricom</h3><p>Verified MyStocks Africa data when available • 15 min delayed.</p></div>
    <div class="sa-card"><div class="eyebrow">TIMEFRAME</div><div class="sa-controls" id="saTimeframes"><button class="sa-btn primary">1D</button><button class="sa-btn">1W</button><button class="sa-btn">1M</button><button class="sa-btn">3M</button></div></div>
    <div class="sa-card"><div class="eyebrow">MODE</div><h3 id="saMode">Assist</h3><p id="saModeCopy">Condition explanation mode.</p></div>
   </div>
@@ -548,13 +548,13 @@ renderNews();renderEvents();
    <p id="saSignalCopy" class="muted">Analysis uses verified provider prices/candles when available. It describes observed conditions; it does not predict or recommend trades.</p>
    <div id="saReasons"></div>
    <div class="sa-grid" style="margin-top:12px">
-    <div class="sa-card"><div class="eyebrow">TREND</div><h3>Neutral</h3><p>Demo state. No live price series is being evaluated.</p></div>
-    <div class="sa-card"><div class="eyebrow">MOMENTUM</div><h3>Unavailable</h3><p>Requires verified historical market data.</p></div>
-    <div class="sa-card"><div class="eyebrow">NEWS CONTEXT</div><h3>Demo Feed</h3><p>News intelligence is currently demonstration content.</p></div>
+    <div class="sa-card"><div class="eyebrow">TREND</div><h3 id="saTrend">—</h3><p id="saTrendDetail">Waiting for verified historical candles.</p></div>
+    <div class="sa-card"><div class="eyebrow">MOMENTUM</div><h3 id="saMomentum">—</h3><p id="saMomentumDetail">Waiting for verified historical candles.</p></div>
+    <div class="sa-card"><div class="eyebrow">VERIFIED PRICE</div><h3 id="saPrice">—</h3><p id="saPriceDetail">Waiting for verified provider quote.</p></div>
    </div>
-   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN DEMO ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD ANALYSIS SNAPSHOT</button></div>
+   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD ANALYSIS SNAPSHOT</button></div>
   </div>
-  <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Signal History</strong><span class="sa-pill">DEMO</span></div><div id="saHistory"></div></div>
+  <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Signal History</strong><span class="sa-pill">PROVIDER</span></div><div id="saHistory"></div></div>
  </div>
 </section>
 
