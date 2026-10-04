@@ -1599,6 +1599,16 @@ function deleteTrustData(){
   const oldSet=window.setMaliRegion;if(oldSet)window.setMaliRegion=function(id){Object.keys(store).forEach(k=>delete store[k]);const r=oldSet.apply(this,arguments);setTimeout(()=>load(true),250);return r};
   window.addEventListener('maliRadarDirectoryReady',()=>{setTimeout(()=>load(true),50)});
   window.addEventListener('load',()=>{setTimeout(()=>load(false),700);setTimeout(()=>load(true),2200)});
+  // Paper Trading 2.0: keep portfolio P/L synchronized with fresh provider quotes.
+  // The provider is delayed, so this is intentionally "live-ish", not real-time.
+  let providerRefreshBusy=false;
+  async function refreshProviderQuotes(){
+    if(providerRefreshBusy)return;
+    providerRefreshBusy=true;
+    try{await load(true)}finally{providerRefreshBusy=false}
+  }
+  window.maliRadarRefreshProviderQuotes=refreshProviderQuotes;
+  setInterval(refreshProviderQuotes,60000);
 })();
 </script>
 
