@@ -2630,3 +2630,116 @@ button{position:relative;overflow:hidden}
   else setTimeout(boot,300);
 })();
 </script>
+
+<!-- MaliRadar v4.5: Provider-backed Watchlist & Radar -->
+<style id="mr45-watch-css">
+.mr45-watch{margin-top:12px}
+.mr45-add{display:flex;gap:8px;margin-top:10px}
+.mr45-add select,.mr45-add input{flex:1;min-width:0;background:#09151c;border:1px solid var(--line);border-radius:10px;padding:10px;color:var(--text);outline:0}
+.mr45-list{display:grid;gap:8px;margin-top:10px}
+.mr45-row{padding:12px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.02)}
+.mr45-row .mr45-top{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.mr45-price{font-size:18px;font-weight:900}
+.mr45-change{font-size:11px;margin-top:3px}
+.mr45-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.mr45-actions button{padding:7px 9px;border-radius:9px}
+.mr45-empty{padding:14px;border:1px dashed var(--line);border-radius:12px;color:var(--muted);font-size:12px}
+.mr45-quality{font-size:9px;padding:4px 7px;border-radius:999px;border:1px solid rgba(255,224,138,.25);color:#ffe08a}
+</style>
+<script id="mr45-watch-js">
+(function(){
+  const KEY='maliradar_provider_watchlist_v2';
+  const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const local=s=>String(s||'').toUpperCase().split('.')[0];
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const ex=()=>{try{const r=window.getMaliRegion?window.getMaliRegion():{id:'ke'};return ({ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'})[r.id]||'NSE'}catch(e){return 'NSE'}};
+  const suffix={NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'};
+  function load(){try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch(e){return[]}}
+  function save(x){localStorage.setItem(KEY,JSON.stringify(x))}
+  function quotes(){return window.maliRadarProviderQuotes||{}}
+  function getQuote(sym){
+    const s=local(sym);
+    for(const [k,q] of Object.entries(quotes())) if(local(k)===s||local(q&&q.symbol)===s||local(q&&q.localSymbol)===s) return q;
+    return null;
+  }
+  function rows(){
+    const out=[],seen=new Set();
+    Object.values(quotes()).forEach(q=>{
+      const s=local(q&& (q.localSymbol||q.symbol));
+      if(!s||seen.has(s))return;
+      seen.add(s);out.push(q);
+    });
+    return out.sort((a,b)=>String(a.name||a.localSymbol||a.symbol).localeCompare(String(b.name||b.localSymbol||b.symbol)));
+  }
+  function fmt(q){
+    if(!q||q.price==null)return '—';
+    const cur=String(q.currency||'KES').toUpperCase();
+    return cur==='KES'?'KSh '+Number(q.price).toFixed(2):cur+' '+Number(q.price).toFixed(2);
+  }
+  function change(q){
+    const n=num(q&&q.changePct);
+    if(n==null)return '<span class="muted">Move unavailable</span>';
+    return '<span class="'+(n>0?'green':n<0?'red':'muted')+'">'+(n>0?'+':'')+n.toFixed(2)+'%</span>';
+  }
+  function ensureCard(){
+    const market=document.getElementById('markets');
+    if(!market||document.getElementById('mr45WatchCard'))return;
+    const card=document.createElement('div');
+    card.className='card mr45-watch';card.id='mr45WatchCard';
+    card.innerHTML='<div class="row"><div><b>⭐ My Radar Watchlist</b><div class="muted">Provider-backed personal radar</div></div><span class="badge">15-MIN DELAYED</span></div>'+
+      '<div class="mr45-add"><select id="mr45Symbol"></select><button class="btn" onclick="MaliRadarWatch.addSelected()">Add</button></div>'+
+      '<div class="mr44-status" id="mr45Status">Provider directory is loading…</div>'+
+      '<div class="mr45-list" id="mr45List"></div>'+
+      '<p class="notice">Watchlist prices and moves come only from the verified provider quote store. Missing data stays unavailable; MaliRadar never invents a price.</p>';
+    market.appendChild(card);
+  }
+  function renderSelect(){
+    const sel=document.getElementById('mr45Symbol');if(!sel)return;
+    const list=rows(),saved=new Set(load().map(local));
+    sel.innerHTML=list.length?list.map(q=>{
+      const s=local(q.localSymbol||q.symbol);
+      return '<option value="'+esc(s)+'">'+esc(q.name||s)+' — '+esc(s)+(saved.has(s)?' • added':'')+'</option>';
+    }).join(''):'<option value="">Provider directory unavailable</option>';
+  }
+  function render(){
+    ensureCard();renderSelect();
+    const list=document.getElementById('mr45List'),status=document.getElementById('mr45Status');
+    if(!list)return;
+    const items=load();
+    status.textContent=items.length?'Provider-backed monitoring • '+items.length+' symbol'+(items.length===1?'':'s')+' • delayed quotes.':'No symbols saved yet — add stocks from the provider directory.';
+    list.innerHTML=items.length?items.map(s=>{
+      const q=getQuote(s),p=q&&q.price!=null?fmt(q):'Price unavailable';
+      const name=q&&q.name||s,quality=q&&q.price!=null?'VERIFIED QUOTE':'NO VERIFIED PRICE';
+      return '<div class="mr45-row"><div class="mr45-top"><div><b>'+esc(name)+'</b><div class="muted">'+esc(s)+' • '+esc(q&&q.exchange||ex())+'</div></div><div style="text-align:right"><div class="mr45-price">'+esc(p)+'</div><div class="mr45-change">'+change(q)+'</div></div></div><div class="actions"><span class="mr45-quality">'+quality+'</span><span class="muted">'+esc(q&&q.delayMinutes||15)+' min delayed</span></div><div class="mr45-actions"><button class="btn alt" onclick="MaliRadarWatch.open(''+esc(s)+'')">Details</button><button class="btn alt" onclick="quickAlert(''+esc(s)+'')">🔔 Alert</button><button class="btn alt" onclick="MaliRadarWatch.remove(''+esc(s)+'')">Remove</button></div></div>';
+    }).join(''):'<div class="mr45-empty">Your watchlist is empty. Add a provider-backed company above.</div>';
+  }
+  function add(sym){
+    const s=local(sym);if(!s)return;
+    const items=load();
+    if(!items.map(local).includes(s)){items.push(s);save(items)}
+    render();
+  }
+  function remove(sym){save(load().filter(x=>local(x)!==local(sym)));render()}
+  function open(sym){
+    if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==='function')return window.MaliRadarMarketPro.open(sym,'1M');
+    if(typeof window.details==='function')return window.details(sym);
+  }
+  async function refresh(){
+    const items=load();if(!items.length){render();return}
+    const symbols=items.map(s=>String(s).toUpperCase().includes('.')?s:s+(suffix[ex()]||''));
+    try{
+      const r=await fetch('/api/market-data/quotes?market='+encodeURIComponent(ex())+'&symbols='+encodeURIComponent(symbols.join(','))+'&_mr45='+Date.now(),{cache:'no-store',headers:{Accept:'application/json'}});
+      const j=await r.json();
+      (j&&j.quotes||[]).forEach(q=>{
+        const s=local(q.localSymbol||q.symbol);
+        if(window.maliRadarProviderQuotes)window.maliRadarProviderQuotes[s]=q;
+      });
+    }catch(e){}
+    render();
+  }
+  function addSelected(){const el=document.getElementById('mr45Symbol');if(el&&el.value)add(el.value)}
+  window.MaliRadarWatch={version:'2.0',add,addSelected,remove,open,refresh,render};
+  function boot(){ensureCard();render();setTimeout(refresh,700);setInterval(refresh,60000)}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(boot,500));else setTimeout(boot,500);
+})();
+</script>
