@@ -775,11 +775,11 @@ async function renderPortfolioChart(current){
   // Build a truthful historical portfolio curve from provider candles.
   // Each selected period now requests a different provider range/interval.
   if(!holdings.length){
-    el.innerHTML=`<div class="mr27-history-card"><b>${esc26(range)} • PORTFOLIO PERFORMANCE</b><div>No paper holdings yet. Buy a verified provider-priced asset to create a portfolio history.</div></div>`;
+    el.innerHTML=`<div class="mr27-history-card"><b>${String(range).replace(/</g,"&lt;")} • PORTFOLIO PERFORMANCE</b><div>No paper holdings yet. Buy a verified provider-priced asset to create a portfolio history.</div></div>`;
     return;
   }
 
-  el.innerHTML=`<div class="mr27-history-card"><b>Loading ${esc26(range)} portfolio history…</b><div>Calculating portfolio value from MyStocks Africa Sandbox candles. No synthetic prices are used.</div></div>`;
+  el.innerHTML=`<div class="mr27-history-card"><b>Loading ${String(range).replace(/</g,"&lt;")} portfolio history…</b><div>Calculating portfolio value from MyStocks Africa Sandbox candles. No synthetic prices are used.</div></div>`;
 
   const ex=(window.getMaliRegion?window.getMaliRegion():{id:'ke'}).id;
   const market=({ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'}[ex]||'NSE');
@@ -796,7 +796,7 @@ async function renderPortfolioChart(current){
 
     const usable=responses.filter(x=>x.rows.length>=1);
     if(!usable.length){
-      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>${esc26(range)} history unavailable</b><div>MyStocks Africa Sandbox returned no usable historical candles for the current paper holdings. MaliRadar will not reuse static prices.</div></div>`;
+      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>${String(range).replace(/</g,"&lt;")} history unavailable</b><div>MyStocks Africa Sandbox returned no usable historical candles for the current paper holdings. MaliRadar will not reuse static prices.</div></div>`;
       return;
     }
 
@@ -824,7 +824,7 @@ async function renderPortfolioChart(current){
     }
 
     if(points.length<2){
-      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>Not enough provider history</b><div>The selected ${esc26(range)} range does not contain enough verified candle points to draw a portfolio curve.</div></div>`;
+      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>Not enough provider history</b><div>The selected ${String(range).replace(/</g,"&lt;")} range does not contain enough verified candle points to draw a portfolio curve.</div></div>`;
       return;
     }
 
@@ -836,22 +836,22 @@ async function renderPortfolioChart(current){
     const start=points[0],end=points[points.length-1],delta=end.value-start.value,pct=start.value?delta/start.value*100:0;
     const labels=[points[0],points[Math.floor((points.length-1)/2)],points[points.length-1]].map((p,i)=>{
       const label=new Date(p.t).toLocaleDateString([], {month:'short',day:'numeric'});
-      return '<text x="'+x([0,Math.floor((points.length-1)/2),points.length-1][i]).toFixed(1)+'" y="'+(H-9)+'" text-anchor="'+(i===0?'start':i===2?'end':'middle')+'" fill="currentColor" opacity=".55" font-size="10">'+esc26(label)+'</text>';
+      return '<text x="'+x([0,Math.floor((points.length-1)/2),points.length-1][i]).toFixed(1)+'" y="'+(H-9)+'" text-anchor="'+(i===0?'start':i===2?'end':'middle')+'" fill="currentColor" opacity=".55" font-size="10">'+String(label).replace(/</g,"&lt;")+'</text>';
     }).join('');
 
-    el.innerHTML='<div class="mr26-chart" style="height:210px" data-points="'+esc26(JSON.stringify(points))+'">'+
+    el.innerHTML='<div class="mr26-chart" style="height:210px" data-points="'+JSON.stringify(points).replace(/&/g,"&amp;").replace(/"/g,"&quot;")+'">'+
       '<div class="mr26-tip"></div><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
       '<defs><linearGradient id="portfolioGlow" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#35e0b1"/><stop offset="1" stop-color="#35e0b1" stop-opacity="0"/></linearGradient></defs>'+
       '<g>'+[1,2,3,4].map(i=>'<line x1="0" y1="'+(i*H/5)+'" x2="'+W+'" y2="'+(i*H/5)+'" class="chart-grid"/>').join('')+'</g>'+
       '<path d="'+path+' L '+x(points.length-1)+' '+(H-pad.b)+' L '+x(0)+' '+(H-pad.b)+' Z" fill="url(#portfolioGlow)" opacity=".12"/>'+
       '<path d="'+path+'" class="chart-line"/><circle cx="'+x(points.length-1)+'" cy="'+y(end.value)+'" r="5" class="price-dot"/>'+labels+'</svg>'+
-      '<div style="position:absolute;top:9px;left:10px" class="muted">'+esc26(range)+' • PROVIDER PERFORMANCE</div>'+
+      '<div style="position:absolute;top:9px;left:10px" class="muted">'+String(range).replace(/</g,"&lt;")+' • PROVIDER PERFORMANCE</div>'+
       '<div style="position:absolute;top:9px;right:10px" class="'+(delta>=0?'green':'red')+'">'+(delta>=0?'+':'')+'KSh '+money(delta)+' ('+(pct>=0?'+':'')+pct.toFixed(2)+'%)</div>'+
       '<div style="position:absolute;bottom:8px;right:10px" class="muted">KSh '+money(end.value)+'</div></div>'+
       '<div class="mr26-note">Portfolio curve uses verified MyStocks Africa Sandbox candles for the selected range and your paper transactions. Prices are provider data only; missing history is not fabricated.</div>';
   }catch(e){
     if(token!==portfolioChartToken)return;
-    el.innerHTML='<div class="mr27-history-card mr27-warn"><b>Portfolio history unavailable</b><div>'+esc26(e?.message||'Provider history request failed')+'. MaliRadar will not invent missing data.</div></div>';
+    el.innerHTML='<div class="mr27-history-card mr27-warn"><b>Portfolio history unavailable</b><div>'+String(e?.message||"Provider history request failed").replace(/</g,"&lt;")+'. MaliRadar will not invent missing data.</div></div>';
   }
 }
 function universalSearch(){
