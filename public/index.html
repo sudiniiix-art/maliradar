@@ -1599,7 +1599,13 @@ function deleteTrustData(){
     const r=range||'1M';
     try{
       const q=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(ex));
-      const c=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(ex)+'&range='+encodeURIComponent(r)+'&_mr26='+Date.now());
+      let c={candles:[],status:'UNAVAILABLE',interval:r};
+      let candleError='';
+      try{
+        c=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'/candles?market='+encodeURIComponent(ex)+'&range='+encodeURIComponent(r)+'&_mr26='+Date.now());
+      }catch(candleErr){
+        candleError=String(candleErr?.message||'Historical candles unavailable');
+      }
       const rows=c?.candles||c?.data?.candles||c?.data||[];
       const price=num26(q?.price);
       const change=num26(q?.changePct);
@@ -1613,7 +1619,7 @@ function deleteTrustData(){
           <div style="margin-top:8px;font-size:25px;font-weight:800">${price!=null?price.toFixed(2):'—'} <span class="${change!=null&&change<0?'red':''}" style="font-size:12px">${change!=null?(change>0?'+':'')+change.toFixed(2)+'%':''}</span></div>
           <div class="mr25-toolbar">${periods}</div>
           ${chart26(rows,c,r)}
-          <div class="mr26-note">Chart uses provider candles only. MaliRadar does not invent missing market data.</div>
+          <div class="mr26-note">${rows.length?`Chart uses provider candles only. MaliRadar does not invent missing market data.`:`Historical chart data is currently unavailable from the provider for this range. The verified stock quote above remains valid.`}</div>
           <div class="mr27-history-meta">Range: ${esc26(r)} • Provider interval: ${esc26(c?.interval||((window.MaliRadarV27RangePolicy||{})[r]?.interval)||"provider supplied")} • Candles returned: ${rows.length}</div>
           ${r==="MAX" && rows.length>0 ? '<div class="mr27-history-card mr27-warn"><b>Maximum provider history available</b><div>The sandbox currently returned a limited weekly history for MAX. Older history was not supplied, so MaliRadar will not fabricate it.</div></div>' : ""}
           ${r==="1D" && String(c?.status||"").toUpperCase()==="UNAVAILABLE" ? '<div class="mr27-history-card mr27-warn"><b>Intraday data unavailable</b><div>This provider sandbox does not currently supply usable 1D intraday candles.</div></div>' : ""}
