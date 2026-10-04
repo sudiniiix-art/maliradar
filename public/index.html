@@ -204,17 +204,32 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 </script>
 <div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v2.8</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready • DEMO DATA</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
 <section id="home" class="screen active" data-tour="home"><div class="card hero" data-tour-target="homeHero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">DEMO DATA</span></div><div class="grid"><div class="metric">Cash<b>KSh <span id="cash">100,000</span></b></div><div class="metric">Total P/L<b id="pl">KSh 0</b></div></div></div><div class="card"><div class="row"><div><b>Market Radar</b></div><span class="muted">Illustrative</span></div><div id="radar"></div></div><div class="card"><b>Market Status</b><div id="homeMarketStatus"></div><p class="notice">Market status follows the device clock. Prices in this prototype are DEMO DATA until a legitimate market-data source is integrated.</p></div></section>
-<section id="markets" class="screen" data-tour="markets"><div class="card" data-tour-target="marketsCard"><div class="row"><b>Markets</b><span class="muted">NSE demo universe</span></div><div id="marketStatusBar"></div><div class="card">
-  <div class="row"><b>All NSE Securities</b><span id="universeCount" class="muted"></span></div>
-  <div class="actions">
-    <button class="btn alt" onclick="setMarketFilter('all')">All</button>
-    <button class="btn alt" onclick="setMarketFilter('Banking')">Banking</button>
-    <button class="btn alt" onclick="setMarketFilter('Energy')">Energy</button>
-    <button class="btn alt" onclick="setMarketFilter('Agriculture')">Agriculture</button>
-    <button class="btn alt" onclick="setMarketFilter('Insurance')">Insurance</button>
-    <button class="btn alt" onclick="setMarketFilter('Manufacturing')">Manufacturing</button>
+<section id="markets" class="screen" data-tour="markets"><div class="card" data-tour-target="marketsCard">
+  <div class="row"><div><b>Markets</b><div class="muted">Provider-backed market directory</div></div><span class="badge">🟡 15-MIN DELAYED</span></div>
+  <div id="marketStatusBar"></div>
+  <div class="card">
+    <div class="row"><b>All NSE Securities</b><span id="universeCount" class="muted"></span></div>
+    <div class="formline">
+      <input id="marketDirectorySearch" type="search" placeholder="Search company or symbol…" oninput="window.maliRadarDirectorySearch(this.value)">
+      <select id="marketDirectorySort" onchange="window.maliRadarDirectorySort(this.value)">
+        <option value="name">Name A–Z</option>
+        <option value="symbol">Symbol A–Z</option>
+        <option value="changeDesc">Top gainers</option>
+        <option value="changeAsc">Top losers</option>
+        <option value="priceDesc">Highest price</option>
+        <option value="priceAsc">Lowest price</option>
+      </select>
+    </div>
+    <div class="actions">
+      <button class="btn alt" onclick="window.maliRadarDirectoryStatus('all')">All</button>
+      <button class="btn alt" onclick="window.maliRadarDirectoryStatus('verified')">Verified</button>
+      <button class="btn alt" onclick="window.maliRadarDirectoryStatus('unavailable')">No verified price</button>
+      <button class="btn alt" onclick="window.maliRadarProviderRefreshMarkets(true)">↻ Refresh</button>
+    </div>
+    <p id="marketDirectoryMeta" class="notice" style="margin-top:9px">Loading the provider directory…</p>
   </div>
-</div><div id="list"></div></div></section>
+  <div id="list"></div>
+</div></section>
 <section id="portfolio" class="screen" data-tour="portfolio">
 <div class="card hero" data-tour-target="portfolioHero"><div class="row"><div><div class="muted">Paper Portfolio</div><div class="big">KSh <span id="pv">100,000</span></div></div><span class="badge">DEMO DATA</span></div>
 <div class="row" style="margin-top:7px"><span id="todayMove" class="green">Today: KSh 0 (0.00%)</span><span id="totalMove" class="muted">Total P/L: KSh 0 (0.00%)</span></div>
@@ -1854,7 +1869,30 @@ function deleteTrustData(){
   function apply(q){if(!q||!q.symbol)return;store[local(q.symbol)]=q;const r=row(q.localSymbol||q.symbol);if(r&&q.price!=null){r[1]=q.name||r[1];r[2]=q.exchange||r[2];r[3]=q.price;r[4]=q.changePct} }
   async function batch(symbols){if(!symbols.length)return[];const qs=symbols.map(x=>local(x));const out=[];for(let i=0;i<qs.length;i+=50){const chunk=qs.slice(i,i+50);const j=await api('/api/market-data/quotes?market='+encodeURIComponent(market())+'&symbols='+encodeURIComponent(chunk.join(','))+'&_mr='+Date.now());const arr=Array.isArray(j?.quotes)?j.quotes:[];arr.forEach(x=>{const q=norm(x,x.symbol);apply(q);out.push(q)})}return out}
   function renderBar(total){const b=document.getElementById('mr243StatusBar')||document.getElementById('mrProviderStatus');if(!b)return;const all=stocks();const verified=all.filter(x=>{const q=store[local(x[0])];return q&&q.price!=null}).length;b.innerHTML='<span class="mr243-badge ok">🟡 15-min delayed</span><span class="mr243-badge">'+verified+' verified</span><span class="mr243-badge">'+all.length+' securities</span><button class="btn alt" onclick="window.maliRadarProviderRefreshMarkets(true)">↻ Refresh</button>'}
-  function renderMarkets(){const el=document.getElementById('list');if(!el)return;const all=stocks();let verified=0;el.innerHTML=all.map(x=>{const k=local(x[0]),q=store[k],has=q&&q.price!=null;if(has)verified++;const price=has?fmt(q.price,q.currency):'Price unavailable';const move=has&&q.changePct!=null?(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%':'—';const cls=has&&q.changePct!=null?(q.changePct>=0?'green':'red'):'muted';const safe=esc(k);return '<div class="stock"><div class="row"><div><b>'+esc(q?.name||x[1])+'</b><div class="muted">'+safe+' • '+esc(q?.exchange||x[2])+'</div></div><div style="text-align:right"><b>'+esc(price)+'</b><div class="'+cls+'">'+esc(move)+'</div></div></div><div class="row" style="margin-top:7px"><span class="mr243-badge '+(has?'ok':'err')+'">'+(has?'🟡 15-min delayed':'⚪ no verified price')+'</span><span class="muted">'+(q?.asOf?'As of '+esc(q.asOf):'MyStocks provider')+'</span></div><div class="actions"><button class="btn" onclick="details(\''+safe+'\')">View</button>'+(has?'<button class="btn" onclick="buy(\''+safe+'\')">Paper Buy</button><button class="btn red" onclick="sell(\''+safe+'\')">Paper Sell</button>':'')+'<button class="btn alt" onclick="toggleWatch(\''+safe+'\')">'+(state.watch.includes(k)?'★ Watching':'☆ Watch')+'</button><button class="btn alt" onclick="quickAlert(\''+safe+'\')">🔔 Alert</button></div></div>'}).join('')||'<p class="muted">No securities in this market.</p>';renderBar(all.length);const c=document.querySelector('.v21-dir-count');if(c)c.textContent='Directory: '+all.length+' securities • 🟡 15-min delayed provider bridge';const st=document.getElementById('status');if(st)st.textContent='MaliRadar system online • '+market()+' • 15-MIN DELAYED'}
+  let directoryQuery='',directoryStatus='all',directorySort='name';
+  function directoryRows(){
+    const all=stocks().slice();
+    const q=directoryQuery.trim().toLowerCase();
+    let rows=all.filter(x=>{
+      const k=local(x[0]),provider=store[k],name=String(provider?.name||x[1]||'').toLowerCase();
+      const has=!!(provider&&provider.price!=null);
+      if(q&&!((k+' '+name).includes(q)))return false;
+      if(directoryStatus==='verified'&&!has)return false;
+      if(directoryStatus==='unavailable'&&has)return false;
+      return true;
+    });
+    rows.sort((a,b)=>{
+      const qa=store[local(a[0])],qb=store[local(b[0])];
+      if(directorySort==='symbol')return local(a[0]).localeCompare(local(b[0]));
+      if(directorySort==='changeDesc')return Number(qb?.changePct??-Infinity)-Number(qa?.changePct??-Infinity);
+      if(directorySort==='changeAsc')return Number(qa?.changePct??Infinity)-Number(qb?.changePct??Infinity);
+      if(directorySort==='priceDesc')return Number(qb?.price??-Infinity)-Number(qa?.price??-Infinity);
+      if(directorySort==='priceAsc')return Number(qa?.price??Infinity)-Number(qb?.price??Infinity);
+      return String(qa?.name||a[1]||a[0]).localeCompare(String(qb?.name||b[1]||b[0]));
+    });
+    return rows;
+  }
+  function renderMarkets(){const el=document.getElementById('list');if(!el)return;const all=stocks(),rows=directoryRows();let verified=0;all.forEach(x=>{const q=store[local(x[0])];if(q&&q.price!=null)verified++});el.innerHTML=rows.map(x=>{const k=local(x[0]),q=store[k],has=q&&q.price!=null;const price=has?fmt(q.price,q.currency):'Price unavailable';const move=has&&q.changePct!=null?(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%':'—';const cls=has&&q.changePct!=null?(q.changePct>=0?'green':'red'):'muted';const safe=esc(k);return '<div class="stock"><div class="row"><div><b>'+esc(q?.name||x[1])+'</b><div class="muted">'+safe+' • '+esc(q?.exchange||x[2])+'</div></div><div style="text-align:right"><b>'+esc(price)+'</b><div class="'+cls+'">'+esc(move)+'</div></div></div><div class="row" style="margin-top:7px"><span class="mr243-badge '+(has?'ok':'err')+'">'+(has?'🟡 15-min delayed':'⚪ no verified price')+'</span><span class="muted">'+(q?.asOf?'As of '+esc(q.asOf):'MyStocks provider')+'</span></div><div class="actions"><button class="btn" onclick="details(\''+safe+'\')">View</button>'+(has?'<button class="btn" onclick="buy(\''+safe+'\')">Paper Buy</button><button class="btn red" onclick="sell(\''+safe+'\')">Paper Sell</button>':'')+'<button class="btn alt" onclick="toggleWatch(\''+safe+'\')">'+(state.watch.includes(k)?'★ Watching':'☆ Watch')+'</button><button class="btn alt" onclick="quickAlert(\''+safe+'\')">🔔 Alert</button></div></div>'}).join('')||'<p class="muted">No securities match the current directory filters.</p>';renderBar(all.length);const meta=document.getElementById('marketDirectoryMeta');if(meta)meta.textContent=(directoryQuery||directoryStatus!=='all'?rows.length+' shown • ':'')+verified+' verified prices • '+all.length+' provider securities';if(document.getElementById('universeCount'))document.getElementById('universeCount').textContent=all.length+' provider securities';const c=document.querySelector('.v21-dir-count');if(c)c.textContent='Directory: '+all.length+' securities • 🟡 15-min delayed provider bridge';const st=document.getElementById('status');if(st)st.textContent='MaliRadar system online • '+market()+' • 15-MIN DELAYED'}
   function renderRadar(){const el=document.getElementById('radar');if(!el)return;const watch=Array.isArray(state.watch)?state.watch:[];const arr=watch.map(k=>{const x=row(k);return x?{x,q:store[local(k)]}:null}).filter(Boolean);if(!arr.length){el.innerHTML='<p class="muted">Your watchlist is empty. Add stocks from Markets.</p>';return}el.innerHTML=arr.map(({x,q})=>{const has=q&&q.price!=null;const move=has&&q.changePct!=null?(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%':'—';const cls=has&&q.changePct!=null?(q.changePct>=0?'green':'red'):'muted';return '<div class="stock"><div class="row"><div><b>'+esc(q?.name||x[1])+'</b><div class="muted">'+esc(local(x[0]))+' • '+esc(q?.exchange||x[2])+'</div></div><span class="'+cls+'">'+esc(move)+'</span></div><div class="muted">'+esc(has?fmt(q.price,q.currency):'Price unavailable')+' • '+(has?'🟡 15-min delayed':'⚪ no verified price')+'</div><div class="actions"><button class="btn" onclick="details(\''+esc(local(x[0]))+'\')">View</button><button class="btn alt" onclick="toggleWatch(\''+esc(local(x[0]))+'\')">★ Watching</button></div></div>'}).join('')}
   async function candles(sym,range){try{const j=await api('/api/market-data/stock/'+encodeURIComponent(sym)+'/candles?market='+encodeURIComponent(market())+'&range='+encodeURIComponent(range||'1M')+'&_mr='+Date.now());const a=j?.candles||j?.data?.candles||j?.data||j?.results||[];return Array.isArray(a)?a:[]}catch(e){return[]}}
   async function openDetail(sym,range){const k=local(sym),x=row(k)||[k,k,market(),null,null];let q=store[k];openM(esc(q?.name||x[1]),'<p class="notice">Loading provider-backed stock intelligence…</p>');try{if(!q||q.price==null){const got=await batch([k]);q=store[k]||got.find(z=>local(z.symbol)===k)}if(!q||q.price==null)throw Error('No verified price');const move=q.changePct==null?'—':(q.changePct>=0?'▲ ':'▼ ')+Math.abs(q.changePct).toFixed(2)+'%',cls=q.changePct==null?'muted':q.changePct>=0?'green':'red';const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>'<button class="btn alt '+(p===(range||'1M')?'selected':'')+'" onclick="MaliRadarProviderDetail.open(\''+esc(k)+'\',\''+p+'\')">'+p+'</button>').join('');let chart='<div class="mr-data-chart" style="display:flex;align-items:center;justify-content:center"><span class="muted">Loading historical candles…</span></div>';const pts=(await candles(k,range||'1M')).map(c=>({t:c?.time||c?.timestamp||c?.date||c?.datetime,v:num(c?.close??c?.price??c?.c)})).filter(p=>p.t&&p.v!=null);if(pts.length>1){const vals=pts.map(p=>p.v),mn=Math.min(...vals),mx=Math.max(...vals),sp=Math.max(1e-9,mx-mn),d=pts.map((p,i)=>(i?'L':'M')+(22+i*716/(pts.length-1)).toFixed(1)+' '+(208-(p.v-mn)/sp*186).toFixed(1)).join(' ');chart='<div class="mr-data-chart"><svg viewBox="0 0 760 230" preserveAspectRatio="none"><path class="candle-line" d="'+d+'"/><circle class="last-dot" cx="738" cy="'+(208-(pts[pts.length-1].v-mn)/sp*186)+'" r="5"/></svg></div>'}openM(esc(q.name||x[1]),'<div class="mr-data-head"><div><b>'+esc(k)+' • '+esc(q.exchange||market())+'</b><div class="muted">Provider-backed stock intelligence</div></div><span class="mr-data-badge ok">🟡 15-MIN DELAYED</span></div><div class="big">'+esc(fmt(q.price,q.currency))+'</div><div class="'+cls+'">'+esc(move)+'</div><div class="periods">'+periods+'</div>'+chart+'<div class="mr-data-meta"><div><span class="muted">Market</span><b>'+esc(q.exchange||market())+'</b></div><div><span class="muted">Currency</span><b>'+esc(q.currency||'Provider not supplied')+'</b></div><div><span class="muted">As of</span><b>'+esc(q.asOf||'Provider timestamp unavailable')+'</b></div><div><span class="muted">Delay</span><b>'+esc(String(q.delayMinutes||15))+' min</b></div></div><p class="mr-data-source">Source: '+esc(q.source||'MyStocks Africa Sandbox')+' • same provider quote used by Markets and Home Watchlist.</p><div class="actions"><button class="btn" onclick="buy(\''+esc(k)+'\');closeM()">Paper Buy</button><button class="btn red" onclick="sell(\''+esc(k)+'\');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert(\''+esc(k)+'\')">🔔 Alert</button></div>')}catch(e){openM(esc(x[1]),'<div class="mr-data-head"><div><b>'+esc(k)+' • '+esc(x[2])+'</b><div class="muted">Provider-backed stock intelligence</div></div><span class="mr243-badge err">⚪ NO VERIFIED PRICE</span></div><p class="notice">MyStocks did not return a verified price for this security. MaliRadar will not substitute an old prototype/static price.</p><button class="btn" onclick="MaliRadarProviderDetail.open(\''+esc(k)+'\',\''+(range||'1M')+'\')">↻ Try again</button>')}}
@@ -1875,6 +1913,9 @@ function deleteTrustData(){
       renderRadar();
     }
   }
+  window.maliRadarDirectorySearch=function(value){directoryQuery=String(value||'');renderMarkets()};
+  window.maliRadarDirectorySort=function(value){directorySort=String(value||'name');renderMarkets()};
+  window.maliRadarDirectoryStatus=function(value){directoryStatus=String(value||'all');renderMarkets()};
   window.maliRadarProviderQuotes=store;window.maliRadarProviderRefreshMarkets=load;window.MaliRadarProviderDetail={open:openDetail};window.details=s=>openDetail(s,'1M');window.renderMarkets=renderMarkets;window.renderRadar=renderRadar;
   const oldSet=window.setMaliRegion;if(oldSet)window.setMaliRegion=function(id){Object.keys(store).forEach(k=>delete store[k]);const r=oldSet.apply(this,arguments);setTimeout(()=>load(true),250);return r};
   window.addEventListener('maliRadarDirectoryReady',()=>{setTimeout(()=>load(true),50)});
