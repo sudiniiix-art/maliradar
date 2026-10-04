@@ -1,90 +1,125 @@
-/* MaliRadar v2.3 — MyStocks Africa Sandbox market-data routes
-   Add this module to the existing Express server. It does NOT replace your existing routes.
-   Required Render environment variable: MYSTOCKS_API_KEY=sk_sandbox_...
-   Keep the key server-side. Never put it in index.html or GitHub.
-*/
-const MYSTOCKS_SANDBOX_BASE = 'https://mystocks.africa/api/sandbox/v1/partner';
-const REGION_TO_EXCHANGE = {ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'};
-const LOCAL_TO_SUFFIX = {NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'};
+const BASE = 'https://mystocks.africa/api/sandbox/v1/partner';
+const SUFFIX = {NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'};
 
-function msNumber(v){
-  return typeof v === 'number' && Number.isFinite(v)
-    ? v
-    : (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null)
+function num(v){
+  if(v === null || v === undefined || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
 }
 
-function msList(body){
+function rows(body){
   if(Array.isArray(body)) return body;
-  return body?.stocks || body?.data || body?.results || body?.items || [];
+  if(Array.isArray(body?.stocks)) return body.stocks;
+  if(Array.isArray(body?.quotes)) return body.quotes;
+  if(Array.isArray(body?.data)) return body.data;
+  if(Array.isArray(body?.results)) return body.results;
+  if(Array.isArray(body?.items)) return body.items;
+
+  if(body?.data && typeof body.data === 'object'){
+    return Object.entries(body.data).map(([symbol,v]) => ({
+      ...(v || {}),
+      symbol: v?.symbol || symbol
+    }));
+  }
+
+  return [];
 }
 
-function msOne(body){
-  return body?.stock || body?.data || body?.result || body;
-}
+function norm(x){
+  const q = x?.quote || {};
 
-function msNormalize(x){
-  const symbol = String(x?.symbol || x?.ticker || x?.code || '');
-  const price = msNumber(
-    x?.price ?? x?.lastPrice ?? x?.last ?? x?.close ?? x?.quote?.price
+  const symbol = String(
+    x?.symbol ||
+    x?.ticker ||
+    x?.code ||
+    ''
   );
-  const changePct = msNumber(
+
+  const price = num(
+    x?.price ??
+    x?.lastPrice ??
+    x?.last ??
+    x?.close ??
+    q?.price ??
+    q?.lastPrice ??
+    q?.last ??
+    q?.close
+  );
+
+  const changePct = num(
     x?.changePct ??
     x?.changePercent ??
     x?.percentChange ??
-    x?.quote?.changePct ??
-    x?.quote?.changePercent
+    q?.changePct ??
+    q?.changePercent ??
+    q?.percentChange
   );
-  const asOf =
-    x?.asOf ||
-    x?.timestamp ||
-    x?.quote?.asOf ||
-    x?.updatedAt ||
-    null;
 
   return {
     symbol,
     localSymbol: symbol.split('.')[0],
-    name: x?.name || x?.companyName || x?.company?.name || symbol,
+    name: x?.name || x?.companyName || symbol,
     exchange: x?.exchange || x?.market || null,
-    currency: x?.currency || null,
+    currency: x?.currency || q?.currency || null,
     price,
     changePct,
-    asOf,
-    delayMinutes:
-      msNumber(x?.delayMinutes ?? x?.quote?.delayMinutes) ?? 15,
-    stale: Boolean(x?.stale ?? x?.quote?.stale),
-    status: price == null ? 'UNAVAILABLE' : 'DELAYED',
+    asOf:
+      x?.asOf ||
+      x?.timestamp ||
+      x?.updatedAt ||
+      q?.asOf ||
+      q?.timestamp ||
+      null,
+    delayMinutes: 15,
+    stale: Boolean(x?.stale ?? q?.stale),
+    status: price === null ? 'UNAVAILABLE' : 'DELAYED',
     source: 'MyStocks Africa Sandbox'
   };
 }
 
-async function msFetch(path, params = {}){
+function qualified(symbol, exchange){
+  const s = String(symbol || '').trim().toUpperCase();
+
+  return s.includes('.')
+    ? s
+    : s + (SUFFIX[exchange] || '');
+}
+
+async function fetchMS(path, params = {}){
   const key = process.env.MYSTOCKS_API_KEY;
 
   if(!key){
-    const e = new Error('MYSTOCKS_API_KEY is not configured');
-    e.code = 'MYSTOCKS_KEY_MISSING';
+    const e = new Error(
+      'MYSTOCKS_API_KEY is not configured'
+    );
+
     e.status = 503;
     throw e;
   }
 
-  const u = new URL(MYSTOCKS_SANDBOX_BASE + path);
+  const u = new URL(BASE + path);
 
-  for(const [k,v] of Object.entries(params)){
-    if(v !== undefined && v !== null && v !== ''){
+  Object.entries(params).forEach(([k,v]) => {
+    if(
+      v !== undefined &&
+      v !== null &&
+      v !== ''
+    ){
       u.searchParams.set(k, String(v));
     }
-  }
+  });
 
-  const r = await fetch(u,{
-    headers:{
-      Authorization:`Bearer ${key}`,
-      Accept:'application/json'
+  const r = await fetch(u, {
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'x-api-key': key,
+      Accept: 'application/json'
     }
   });
 
   const text = await r.text();
-  let body = null;
+
+  let body = {};
 
   try{
     body = JSON.parse(text);
@@ -96,323 +131,408 @@ async function msFetch(path, params = {}){
       body?.error ||
       `MyStocks HTTP ${r.status}`
     );
+
     e.status = r.status;
-    e.provider = body;
     throw e;
   }
 
   return body;
 }
 
-function providerSymbol(local,exchange){
-  const s = String(local || '');
+function find(body, symbol){
+  const want = String(symbol).toUpperCase();
 
-  if(s.includes('.')) return s;
+  const converted = rows(body).map(norm);
 
-  return s + (LOCAL_TO_SUFFIX[exchange] || '');
+  return (
+    converted.find(
+      x =>
+        String(x.symbol).toUpperCase() === want
+    ) ||
+    converted.find(
+      x =>
+        String(x.localSymbol).toUpperCase() ===
+        want.split('.')[0]
+    ) ||
+    null
+  );
 }
 
 function registerMaliRadarMarketDataRoutes(app){
 
-  app.get('/api/market-data/status',(req,res)=>
-    res.json({
-      configured:Boolean(process.env.MYSTOCKS_API_KEY),
-      environment:'sandbox',
-      state:process.env.MYSTOCKS_API_KEY ? 'READY' : 'DEMO',
-      source:'MyStocks Africa Sandbox',
-      delayMinutes:15
+  app.get(
+    '/api/market-data/status',
+    (req,res) => res.json({
+      configured:
+        Boolean(process.env.MYSTOCKS_API_KEY),
+
+      environment:
+        'sandbox',
+
+      state:
+        process.env.MYSTOCKS_API_KEY
+          ? 'READY'
+          : 'DEMO',
+
+      source:
+        'MyStocks Africa Sandbox',
+
+      delayMinutes:
+        15
     })
   );
 
-  app.get('/api/market-data/stocks',async(req,res)=>{
-    const exchange =
-      String(req.query.market || 'NSE').toUpperCase();
 
-    try{
-      const body = await msFetch('/stocks',{
-        limit:req.query.limit || 1000,
-        search:req.query.search || undefined
-      });
+  app.get(
+    '/api/market-data/stocks',
+    async(req,res) => {
 
-      const rows = msList(body)
-        .map(msNormalize)
-        .filter(
-          x =>
-            !x.exchange ||
-            String(x.exchange).toUpperCase() === exchange
-        );
+      const exchange =
+        String(
+          req.query.market || 'NSE'
+        ).toUpperCase();
 
-      res.set('Cache-Control','private, max-age=60');
-
-      res.json({
-        market:exchange,
-        state:rows.some(x => x.price != null)
-          ? 'DELAYED'
-          : 'UNAVAILABLE',
-        source:'MyStocks Africa Sandbox',
-        delayMinutes:15,
-        asOf:rows.find(x => x.asOf)?.asOf || null,
-        stocks:rows
-      });
-
-    }catch(e){
-      res.status(e.status || 502).json({
-        error:e.message,
-        code:e.code || 'MYSTOCKS_ERROR',
-        source:'MyStocks Africa Sandbox'
-      });
-    }
-  });
-
-  app.get('/api/market-data/stock/:symbol',async(req,res)=>{
-    const exchange =
-      String(req.query.market || 'NSE').toUpperCase();
-
-    const symbol =
-      providerSymbol(req.params.symbol,exchange);
-
-    try{
-      const body =
-        await msFetch('/stocks/' + encodeURIComponent(symbol));
-
-      res.json(msNormalize(msOne(body)));
-
-    }catch(e){
-      res.status(e.status || 502).json({
-        error:e.message,
-        code:e.code || 'MYSTOCKS_ERROR'
-      });
-    }
-  });
-
-  app.get('/api/market-data/stock/:symbol/candles',async(req,res)=>{
-    const exchange =
-      String(req.query.market || 'NSE').toUpperCase();
-
-    const symbol =
-      providerSymbol(req.params.symbol,exchange);
-
-    try{
-      const body =
-        await msFetch(
-          '/stocks/' +
-          encodeURIComponent(symbol) +
-          '/candles',
-          {
-            range:req.query.range || '1M'
-          }
-        );
-
-      const candles =
-        body?.candles ||
-        body?.data?.candles ||
-        body?.data ||
-        body?.results ||
-        [];
-
-      res.json({
-        symbol,
-        range:req.query.range || '1M',
-        source:'MyStocks Africa Sandbox',
-        delayMinutes:15,
-        candles
-      });
-
-    }catch(e){
-      res.status(e.status || 502).json({
-        error:e.message,
-        code:e.code || 'MYSTOCKS_ERROR'
-      });
-    }
-  });
-}
-
-module.exports = {
-  registerMaliRadarMarketDataRoutes
-};  // Individual stock quote route.
-  // The frontend can keep using this route for Stock Detail.
-  // It now uses /market/quotes first, which is the important fix.
-
-  app.get('/api/market-data/stock/:symbol', async (req,res) => {
-    const exchange = String(
-      req.query.market || 'NSE'
-    ).toUpperCase();
-
-    const local = String(
-      req.params.symbol || ''
-    ).trim().toUpperCase();
-
-    if(!local){
-      return res.status(400).json({
-        error: 'Missing stock symbol'
-      });
-    }
-
-    const qualified = providerSymbol(
-      local,
-      exchange
-    );
-
-    try{
-      // Preferred quote endpoint.
       try{
-        const body = await msFetch('/market/quotes', {
-          symbols: qualified
+
+        const body =
+          await fetchMS(
+            '/stocks',
+            {
+              limit:
+                Math.min(
+                  Number(
+                    req.query.limit || 200
+                  ),
+                  200
+                ),
+
+              search:
+                req.query.search ||
+                undefined,
+
+              exchange
+            }
+          );
+
+        const stocks =
+          rows(body)
+            .map(norm)
+            .filter(
+              x =>
+                !x.exchange ||
+                String(
+                  x.exchange
+                ).toUpperCase() === exchange
+            );
+
+        res.json({
+          market: exchange,
+
+          state:
+            stocks.some(
+              x => x.price !== null
+            )
+              ? 'DELAYED'
+              : 'UNAVAILABLE',
+
+          source:
+            'MyStocks Africa Sandbox',
+
+          delayMinutes: 15,
+
+          asOf:
+            stocks.find(
+              x => x.asOf
+            )?.asOf || null,
+
+          stocks
         });
 
-        const quote = findQuote(
-          body,
-          qualified
+      }catch(e){
+
+        res.status(
+          e.status || 502
+        ).json({
+          error: e.message,
+          source:
+            'MyStocks Africa Sandbox'
+        });
+      }
+    }
+  );
+
+
+  app.get(
+    '/api/market-data/quotes',
+    async(req,res) => {
+
+      const exchange =
+        String(
+          req.query.market || 'NSE'
+        ).toUpperCase();
+
+      const list =
+        String(
+          req.query.symbols || ''
+        )
+        .split(',')
+        .map(x => x.trim())
+        .filter(Boolean)
+        .slice(0,50);
+
+      if(!list.length){
+        return res.status(400).json({
+          error:
+            'symbols is required'
+        });
+      }
+
+      try{
+
+        const symbols =
+          list.map(
+            x => qualified(x,exchange)
+          );
+
+        const body =
+          await fetchMS(
+            '/market/quotes',
+            {
+              symbols:
+                symbols.join(',')
+            }
+          );
+
+        const got =
+          rows(body).map(norm);
+
+        const quotes =
+          symbols.map(
+            s =>
+              got.find(
+                x =>
+                  x.symbol.toUpperCase() ===
+                  s.toUpperCase()
+              ) ||
+
+              got.find(
+                x =>
+                  x.localSymbol.toUpperCase() ===
+                  s.split('.')[0].toUpperCase()
+              ) ||
+
+              norm({
+                symbol: s
+              })
+          );
+
+        res.json({
+          market: exchange,
+
+          state:
+            quotes.some(
+              x => x.price !== null
+            )
+              ? 'DELAYED'
+              : 'UNAVAILABLE',
+
+          source:
+            'MyStocks Africa Sandbox',
+
+          delayMinutes: 15,
+
+          quotes
+        });
+
+      }catch(e){
+
+        res.status(
+          e.status || 502
+        ).json({
+          error: e.message,
+          source:
+            'MyStocks Africa Sandbox'
+        });
+      }
+    }
+  );
+
+
+  app.get(
+    '/api/market-data/stock/:symbol',
+    async(req,res) => {
+
+      const exchange =
+        String(
+          req.query.market || 'NSE'
+        ).toUpperCase();
+
+      const symbol =
+        qualified(
+          req.params.symbol,
+          exchange
         );
 
-        if(quote && quote.price != null){
-          return res.json({
-            ...quote,
-            symbol: quote.symbol || qualified,
-            localSymbol: quote.localSymbol || local,
-            exchange: quote.exchange || exchange,
-            delayMinutes: 15,
-            status: 'DELAYED',
-            source: 'MyStocks Africa Sandbox'
-          });
+      try{
+
+        try{
+
+          const body =
+            await fetchMS(
+              '/market/quotes',
+              {
+                symbols: symbol
+              }
+            );
+
+          const quote =
+            find(body,symbol);
+
+          if(
+            quote &&
+            quote.price !== null
+          ){
+            return res.json(quote);
+          }
+
+        }catch(_e){
+          // Try the compatibility endpoint below.
         }
-      }catch(quoteError){
-        // Continue to compatibility fallback below.
+
+
+        const body =
+          await fetchMS(
+            '/stocks/' +
+            encodeURIComponent(symbol)
+          );
+
+        const stock =
+          norm(
+            body?.stock ||
+            body?.data ||
+            body?.result ||
+            body
+          );
+
+        stock.symbol =
+          stock.symbol || symbol;
+
+        stock.localSymbol =
+          stock.localSymbol ||
+          symbol.split('.')[0];
+
+        stock.exchange =
+          stock.exchange ||
+          exchange;
+
+        res.json(stock);
+
+      }catch(e){
+
+        res.status(
+          e.status || 502
+        ).json({
+
+          symbol,
+
+          localSymbol:
+            symbol.split('.')[0],
+
+          exchange,
+
+          price: null,
+
+          changePct: null,
+
+          asOf: null,
+
+          delayMinutes: 15,
+
+          stale: false,
+
+          status:
+            'UNAVAILABLE',
+
+          source:
+            'MyStocks Africa Sandbox',
+
+          error:
+            e.message
+        });
       }
-
-      // Compatibility fallback.
-      const body = await msFetch(
-        '/stocks/' + encodeURIComponent(qualified)
-      );
-
-      const stock = normalizeQuoteResponse(
-        body,
-        qualified
-      );
-
-      stock.localSymbol =
-        stock.localSymbol || local;
-
-      stock.exchange =
-        stock.exchange || exchange;
-
-      stock.delayMinutes = 15;
-      stock.source = 'MyStocks Africa Sandbox';
-
-      if(stock.price == null){
-        stock.status = 'UNAVAILABLE';
-      }else{
-        stock.status = 'DELAYED';
-      }
-
-      return res.json(stock);
-
-    }catch(e){
-      return res.status(e.status || 502).json({
-        symbol: qualified,
-        localSymbol: local,
-        exchange,
-        currency: null,
-        price: null,
-        changePct: null,
-        asOf: null,
-        delayMinutes: 15,
-        stale: false,
-        status: 'UNAVAILABLE',
-        source: 'MyStocks Africa Sandbox',
-        error: e.message,
-        code: e.code || 'MYSTOCKS_STOCK_ERROR'
-      });
     }
-  });
+  );
 
-
-  // Candle/history route.
-  // This route is deliberately isolated from the quote route.
-  // A candle failure must NEVER make a valid quote disappear.
 
   app.get(
     '/api/market-data/stock/:symbol/candles',
-    async (req,res) => {
-      const exchange = String(
-        req.query.market || 'NSE'
-      ).toUpperCase();
+    async(req,res) => {
 
-      const local = String(
-        req.params.symbol || ''
-      ).trim().toUpperCase();
-
-      const qualified = providerSymbol(
-        local,
-        exchange
-      );
-
-      try{
-        const range = String(
-          req.query.range || '1M'
+      const exchange =
+        String(
+          req.query.market || 'NSE'
         ).toUpperCase();
 
-        const now = new Date();
-        let days = 30;
-
-        if(range === '1D') days = 1;
-        else if(range === '1W') days = 7;
-        else if(range === '1M') days = 30;
-        else if(range === '3M') days = 90;
-        else if(range === '1Y') days = 365;
-        else if(range === 'MAX') days = 1825;
-
-        const from = new Date(
-          now.getTime() -
-          days * 24 * 60 * 60 * 1000
+      const symbol =
+        qualified(
+          req.params.symbol,
+          exchange
         );
 
-        const body = await msFetch(
-          '/stocks/' +
-          encodeURIComponent(qualified) +
-          '/candles',
-          {
-            from: from.toISOString(),
-            to: now.toISOString(),
-            interval:
-              range === '1D'
-                ? '5m'
-                : range === '1W'
-                  ? '15m'
-                  : '1d'
-          }
-        );
+      try{
+
+        const body =
+          await fetchMS(
+            '/stocks/' +
+            encodeURIComponent(symbol) +
+            '/candles',
+            {
+              range:
+                req.query.range || '1M'
+            }
+          );
 
         res.json({
-          symbol: qualified,
-          localSymbol: local,
-          market: exchange,
-          range,
-          source: 'MyStocks Africa Sandbox',
+
+          symbol,
+
+          range:
+            req.query.range || '1M',
+
+          source:
+            'MyStocks Africa Sandbox',
+
           delayMinutes: 15,
+
           candles:
             body?.candles ||
             body?.data ||
             body?.results ||
-            body?.items ||
-            (Array.isArray(body) ? body : [])
+            []
         });
 
       }catch(e){
-        // Chart data can be unavailable without
-        // invalidating the stock quote.
-        res.status(e.status || 502).json({
-          symbol: qualified,
-          localSymbol: local,
-          market: exchange,
-          range: String(
-            req.query.range || '1M'
-          ).toUpperCase(),
-          source: 'MyStocks Africa Sandbox',
+
+        res.status(
+          e.status || 502
+        ).json({
+
+          symbol,
+
+          range:
+            req.query.range || '1M',
+
+          source:
+            'MyStocks Africa Sandbox',
+
           delayMinutes: 15,
+
           candles: [],
+
           unavailable: true,
-          error: e.message
+
+          error:
+            e.message
         });
       }
     }
@@ -422,5 +542,3 @@ module.exports = {
 module.exports = {
   registerMaliRadarMarketDataRoutes
 };
-
-     
