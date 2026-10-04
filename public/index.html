@@ -398,6 +398,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     if(!box||!title)return;
     const a=rows(); title.textContent=label();
     document.getElementById("lbCount").textContent=a.length+" participants";
+    renderPodium(a);
     box.innerHTML=a.map((x,i)=>'<div class="lb-row" style="'+(x.local?'border:1px solid rgba(80,220,190,.35);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+x.name[0]+'</div><div class="lb-name"><b>'+x.name+(x.local?' • YOU':'')+'</b><div class="muted">'+(x.local?'Verified local paper stats':'Demo participant')+(x.kenya?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+value(x)+'</b><div class="muted">'+x.trades+' total trades</div></div></div>').join("");
     const me=currentUser();
     const meKey=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
