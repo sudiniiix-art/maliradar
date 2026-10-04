@@ -1598,7 +1598,9 @@ function deleteTrustData(){
     const s=local26(sym), ex=market26(), title='📈 '+s;
     const r=range||'1M';
     try{
-      const q=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(ex));
+      const qj=await api26('/api/market-data/quotes?market='+encodeURIComponent(ex)+'&symbols='+encodeURIComponent(s)+'&_mr26='+Date.now());
+      const q=Array.isArray(qj?.quotes)?(qj.quotes.find(x=>String(x?.symbol||'').toUpperCase()===String(s).toUpperCase())||qj.quotes[0]):null;
+      if(!q || num26(q?.price)==null) throw new Error('No verified quote returned for '+s);
       let c={candles:[],status:'UNAVAILABLE',interval:r};
       let candleError='';
       try{
