@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v2.9</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v3.0</title><style>
 :root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
 .alert-item{padding:12px 0;border-top:1px solid var(--line)}
 .alert-item:first-child{border-top:0}
@@ -268,7 +268,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 <div class="card"><div class="row"><b>👤 Profile</b><span class="muted">v1.7</span></div><div class="profile-form"><label>Username</label><input id="profileUsername" maxlength="20" placeholder="Choose a username"><label>Avatar emoji</label><input id="profileAvatarInput" maxlength="2" placeholder="👤"><button class="btn" onclick="saveProfile()">Save Profile</button></div></div>
 <div class="card"><div class="row"><b>🎨 Appearance</b><span class="muted">Choose your view</span></div><div class="theme-buttons"><button id="themeDark" onclick="setTheme('dark')">🌙 Dark</button><button id="themeLight" onclick="setTheme('light')">☀️ Light</button><button id="themeSystem" onclick="setTheme('system')">📱 System</button></div></div>
 
-<div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL DEMO</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
+<div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL PROVIDER</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
 <div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
 <div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local demo</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
 <div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Guided Tour<button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></button></div>
@@ -544,15 +544,15 @@ renderNews();renderEvents();
    <div class="sa-card"><div class="eyebrow">MODE</div><h3 id="saMode">Assist</h3><p id="saModeCopy">Condition explanation mode.</p></div>
   </div>
   <div class="sa-signal" style="margin-top:14px">
-   <div class="eyebrow">CURRENT DEMO ANALYSIS</div><h3 id="saSignalTitle">MARKET CONDITIONS: NEUTRAL</h3>
-   <p id="saSignalCopy" class="muted">Smart Assist is currently using demonstration inputs. Once a legitimate market-data feed is connected, this panel will analyze the selected asset and timeframe.</p>
+   <div class="eyebrow">PROVIDER-BACKED ANALYSIS</div><h3 id="saSignalTitle">LOADING MARKET CONDITIONS…</h3>
+   <p id="saSignalCopy" class="muted">Analysis uses verified provider prices/candles when available. It describes observed conditions; it does not predict or recommend trades.</p>
    <div id="saReasons"></div>
    <div class="sa-grid" style="margin-top:12px">
     <div class="sa-card"><div class="eyebrow">TREND</div><h3>Neutral</h3><p>Demo state. No live price series is being evaluated.</p></div>
     <div class="sa-card"><div class="eyebrow">MOMENTUM</div><h3>Unavailable</h3><p>Requires verified historical market data.</p></div>
     <div class="sa-card"><div class="eyebrow">NEWS CONTEXT</div><h3>Demo Feed</h3><p>News intelligence is currently demonstration content.</p></div>
    </div>
-   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN DEMO ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD DEMO SIGNAL</button></div>
+   <div class="sa-controls"><button class="sa-btn primary" id="saRunBtn">RUN DEMO ANALYSIS</button><button class="sa-btn" id="saRecordBtn">RECORD ANALYSIS SNAPSHOT</button></div>
   </div>
   <div class="sa-card" style="margin-top:14px"><div class="row"><strong>📜 Signal History</strong><span class="sa-pill">DEMO</span></div><div id="saHistory"></div></div>
  </div>
@@ -563,10 +563,36 @@ renderNews();renderEvents();
  const levels={assist:["Assist","Condition explanation mode."],signal:["Signal","Potential signal mode. Signals are demonstrations, not instructions."],auto:["Auto-Assist","Paper-only automatic preparation mode."]};
  let level="assist",tf="1D";
  let hist=JSON.parse(localStorage.getItem("maliradar_smart_assist_history")||"[]");
- function reasons(){document.getElementById("saReasons").innerHTML=["Price trend: demonstration input only.","Momentum: no verified live feed connected.","Volume: unavailable in this prototype.","News context: demo feed only."].map(x=>'<div class="sa-reason">◈ '+x+"</div>").join("")}
+ async function analyze(){
+  try{
+   const q=(window.maliRadarProviderQuotes||{})["SCOM"],p=Number(q?.price);
+   if(!Number.isFinite(p))throw new Error("Verified SCOM quote unavailable");
+   const range=tf==="1D"?"1D":tf==="1W"?"1W":tf==="1M"?"1M":"3M";
+   const j=await fetch("/api/market-data/stock/SCOM/candles?market=NSE&range="+range+"&_sa="+Date.now(),{cache:"no-store"}).then(x=>x.json());
+   const rows=(j?.candles||[]).map(c=>({t:new Date(c.time||c.timestamp||c.date).getTime(),p:Number(c.close??c.c??c.price)})).filter(x=>Number.isFinite(x.t)&&Number.isFinite(x.p)).sort((x,y)=>x.t-y.t);
+   if(!rows.length)throw new Error("Verified historical candles unavailable");
+   const first=rows[0].p,last=rows[rows.length-1].p,recent=rows.slice(-Math.min(5,rows.length)),prev=recent[0].p;
+   const change=first?((last-first)/first)*100:0,momentum=prev?((last-prev)/prev)*100:0;
+   const trend=change>0.5?"UPTREND":change<-0.5?"DOWNTREND":"SIDEWAYS";
+   const mom=momentum>0.5?"POSITIVE":momentum<-0.5?"NEGATIVE":"MIXED";
+   document.getElementById("saTrend").textContent=trend;
+   document.getElementById("saTrendDetail").textContent="Observed change across "+rows.length+" candles: "+change.toFixed(2)+"%.";
+   document.getElementById("saMomentum").textContent=mom;
+   document.getElementById("saMomentumDetail").textContent="Recent observed move: "+momentum.toFixed(2)+"%.";
+   document.getElementById("saPrice").textContent="KSh "+p.toFixed(2);
+   document.getElementById("saPriceDetail").textContent="Verified provider quote • "+(q.delayMinutes||15)+" min delayed.";
+   document.getElementById("saSignalTitle").textContent=level==="assist"?"MARKET CONDITIONS: "+trend:level==="signal"?"OBSERVED SETUP: "+trend+" / "+mom:"AUTO-ASSIST: PAPER OBSERVATION";
+   document.getElementById("saSignalCopy").textContent="Observed provider data only. This is descriptive analysis, not a prediction, financial advice, or trade instruction.";
+   document.getElementById("saReasons").innerHTML=["Price: KSh "+p.toFixed(2)+" from verified provider quote.","Trend: "+trend+" over "+range+" candles.","Momentum: "+mom+" from recent observed candles.","Data quality: provider-backed; data may be delayed or unavailable."].map(x=>'<div class="sa-reason">◈ '+x+"</div>").join("");
+  }catch(e){
+   document.getElementById("saSignalTitle").textContent="ANALYSIS UNAVAILABLE";
+   document.getElementById("saSignalCopy").textContent="MaliRadar will not invent prices or historical candles. Try again when verified provider data is available.";
+   document.getElementById("saReasons").innerHTML='<div class="sa-reason">◈ '+String(e.message||e)+'</div>';
+  }
+ }
  function history(){let b=document.getElementById("saHistory");if(!hist.length){b.innerHTML='<div class="muted" style="padding:14px 0">No demo signals recorded yet.</div>';return}b.innerHTML=hist.slice().reverse().map(x=>'<div class="sa-history-row"><span>'+x.time+'</span><span class="sa-pill">'+x.signal+'</span><span>SCOM • '+x.tf+'</span><span>DEMO</span></div>').join("")}
  function setLevel(l){level=l;document.querySelectorAll(".sa-choice").forEach(x=>x.classList.toggle("selected",x.dataset.level===l));document.getElementById("saMode").textContent=levels[l][0];document.getElementById("saModeCopy").textContent=levels[l][1]}
- function run(){document.getElementById("saSignalTitle").textContent=level==="assist"?"MARKET CONDITIONS: NEUTRAL":level==="signal"?"POTENTIAL SIGNAL: HOLD / MONITOR":"PAPER AUTO-ASSIST: WAITING";document.getElementById("saSignalCopy").textContent="Demonstration result only. Production analysis requires verified data, defined methodology and monitored model performance.";reasons()}
+ function run(){analyze()}
  document.querySelectorAll(".sa-choice").forEach(x=>x.addEventListener("click",()=>setLevel(x.dataset.level)));
  document.getElementById("saActivateBtn").addEventListener("click",()=>{document.getElementById("saActivation").style.display="none";document.getElementById("saWorkspace").style.display="block";run();history()});
  document.getElementById("saRunBtn").addEventListener("click",run);
