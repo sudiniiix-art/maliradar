@@ -1591,6 +1591,13 @@ function deleteTrustData(){
 })();
 </script>
 
+<style id="mr28-candlestick-css">
+.mr28-wick{stroke:currentColor;stroke-width:1.1;opacity:.85}
+.mr28-body{fill:var(--a);stroke:var(--a)}
+.mr28-down .mr28-body{fill:var(--r);stroke:var(--r)}
+.mr28-volume{fill:currentColor;opacity:.12}
+.mr28-down .mr28-volume{opacity:.10}
+</style>
 <style id="mr26-market-data-pro-css">
 .mr26-wrap{display:grid;gap:12px}
 .mr26-chart-card{padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.025)}
@@ -1632,7 +1639,9 @@ function deleteTrustData(){
     const a=(rows||[]).map(x=>({
       t:x.timestamp??x.time??x.date??x.datetime,
       p:num26(x.close??x.c??x.price),
-      o:num26(x.open??x.o), h:num26(x.high??x.h), l:num26(x.low??x.l),
+      o:num26(x.open??x.o),
+      h:num26(x.high??x.h),
+      l:num26(x.low??x.l),
       v:num26(x.volume??x.v)
     })).filter(x=>x.p!=null&&x.t!=null);
     if(a.length<2){
@@ -1640,53 +1649,88 @@ function deleteTrustData(){
       if(range==='MAX') return '<div class="mr27-history-card mr27-warn"><b>Maximum provider history available</b><div>The current sandbox returned no usable MAX candle series for this request.</div></div>';
       return '<div class="mr27-history-card mr27-warn"><b>Insufficient provider history</b><div>There are not enough candles for a reliable '+esc26(range||'selected')+' view. MaliRadar will not invent missing candles.</div></div>';
     }
-    const W=900,H=250, pad={l:12,r:12,t:18,b:26};
-    const min=Math.min(...a.map(x=>x.p)), max=Math.max(...a.map(x=>x.p));
-    const span=(max-min)||1;
+
+    const W=900,H=280,pad={l:12,r:12,t:18,b:30},volH=38,chartBottom=H-pad.b-volH;
+    const hasOHLC=a.filter(d=>d.o!=null&&d.h!=null&&d.l!=null).length>=2;
+    const values=hasOHLC?a.flatMap(d=>[d.h,d.l]).filter(v=>v!=null):a.map(d=>d.p);
+    const min=Math.min(...values), max=Math.max(...values), span=(max-min)||1;
     const x=i=>pad.l+(i/(a.length-1))*(W-pad.l-pad.r);
-    const y=p=>pad.t+(1-(p-min)/span)*(H-pad.t-pad.b);
-    const pts=a.map((d,i)=>`${x(i).toFixed(1)},${y(d.p).toFixed(1)}`).join(' ');
+    const y=p=>pad.t+(1-(p-min)/span)*(chartBottom-pad.t);
+    const volVals=a.map(d=>d.v).filter(v=>v!=null&&v>=0), maxVol=Math.max(...volVals,1);
+    const bodyW=Math.max(2,Math.min(12,(W-pad.l-pad.r)/a.length*.58));
+    let marks='';
+
+    if(hasOHLC){
+      a.forEach((d,i)=>{
+        if(d.o==null||d.h==null||d.l==null||d.p==null)return;
+        const xx=x(i), yo=y(d.o), yc=y(d.p), yh=y(d.h), yl=y(d.l);
+        const up=d.p>=d.o;
+        const top=Math.min(yo,yc), body=Math.max(1.5,Math.abs(yc-yo));
+        marks += '<g class="'+(up?'mr28-up':'mr28-down')+'">'+
+          '<line x1="'+xx.toFixed(1)+'" x2="'+xx.toFixed(1)+'" y1="'+yh.toFixed(1)+'" y2="'+yl.toFixed(1)+'" class="mr28-wick"/>'+
+          '<rect x="'+(xx-bodyW/2).toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bodyW.toFixed(1)+'" height="'+body.toFixed(1)+'" rx="1.2" class="mr28-body"/>'+
+          (d.v!=null?'<rect x="'+(xx-bodyW/2).toFixed(1)+'" y="'+(H-pad.b-(Math.max(0,d.v)/maxVol)*volH).toFixed(1)+'" width="'+bodyW.toFixed(1)+'" height="'+((Math.max(0,d.v)/maxVol)*volH).toFixed(1)+'" rx="1" class="mr28-volume"/>':'')+
+        '</g>';
+      });
+    }else{
+      const pts=a.map((d,i)=>x(i).toFixed(1)+','+y(d.p).toFixed(1)).join(' ');
+      marks='<polyline points="'+pts+'" fill="none" stroke="currentColor" stroke-width="2.2" vector-effect="non-scaling-stroke"/>';
+    }
+
     const last=a[a.length-1], lx=x(a.length-1), ly=y(last.p);
     const labels=[a[0],a[Math.floor((a.length-1)/2)],a[a.length-1]].map((d,i)=>{
       const xx=[x(0),x(Math.floor((a.length-1)/2)),x(a.length-1)][i];
-      return `<text x="${xx}" y="${H-7}" text-anchor="${i===0?'start':i===2?'end':'middle'}" fill="currentColor" opacity=".55" font-size="9">${esc26(new Date(d.t).toLocaleDateString([], {month:'short',day:'numeric'}))}</text>`;
+      return '<text x="'+xx+'" y="'+(H-7)+'" text-anchor="'+(i===0?'start':i===2?'end':'middle')+'" fill="currentColor" opacity=".55" font-size="9">'+esc26(new Date(d.t).toLocaleDateString([], {month:'short',day:'numeric'}))+'</text>';
     }).join('');
+
     const data=esc26(JSON.stringify(a));
-    return `<div class="mr26-chart" data-points="${data}">
-      <div class="mr26-tip"></div>
-      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="Provider price chart">
-        <line x1="${pad.l}" x2="${W-pad.r}" y1="${H-pad.b}" y2="${H-pad.b}" stroke="currentColor" opacity=".10"/>
-        <line x1="${pad.l}" x2="${W-pad.r}" y1="${pad.t}" y2="${pad.t}" stroke="currentColor" opacity=".06"/>
-        <polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2.2" vector-effect="non-scaling-stroke"/>
-        <line class="mr26-cross" x1="${lx}" x2="${lx}" y1="${pad.t}" y2="${H-pad.b}"/>
-        <circle class="mr26-dot" cx="${lx}" cy="${ly}" r="4" fill="currentColor"/>
-        ${labels}
-      </svg>
-    </div>`;
+    return '<div class="mr26-chart" data-points="'+data+'" data-has-ohlc="'+(hasOHLC?'1':'0')+'">'+
+      '<div class="mr26-tip"></div>'+
+      '<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-label="Provider price chart">'+
+        '<line x1="'+pad.l+'" x2="'+(W-pad.r)+'" y1="'+chartBottom+'" y2="'+chartBottom+'" stroke="currentColor" opacity=".10"/>'+
+        '<line x1="'+pad.l+'" x2="'+(W-pad.r)+'" y1="'+pad.t+'" y2="'+pad.t+'" stroke="currentColor" opacity=".06"/>'+
+        '<line x1="'+pad.l+'" x2="'+(W-pad.r)+'" y1="'+(H-pad.b-volH)+'" y2="'+(H-pad.b-volH)+'" stroke="currentColor" opacity=".05"/>'+
+        marks+
+        '<line class="mr26-cross" x1="'+lx+'" x2="'+lx+'" y1="'+pad.t+'" y2="'+chartBottom+'"/>'+
+        '<circle class="mr26-dot" cx="'+lx+'" cy="'+ly+'" r="4" fill="currentColor"/>'+
+        labels+
+      '</svg>'+
+    '</div>';
   }
+
   function bindChart26(root){
     const c=root.querySelector('.mr26-chart'); if(!c)return;
-    const svg=c.querySelector('svg'), tip=c.querySelector('.mr26-tip'), line=c.querySelector('.mr26-cross'), dot=c.querySelector('.mr26-dot');
+    const tip=c.querySelector('.mr26-tip'), line=c.querySelector('.mr26-cross'), dot=c.querySelector('.mr26-dot');
     let a=[]; try{a=JSON.parse(c.dataset.points||'[]')}catch(e){}
     if(!a.length)return;
-    const W=900,H=250,pad={l:12,r:12,t:18,b:26};
-    const min=Math.min(...a.map(x=>x.p)),max=Math.max(...a.map(x=>x.p)),span=(max-min)||1;
+    const W=900,H=280,pad={l:12,r:12,t:18,b:30},volH=38,chartBottom=H-pad.b-volH;
+    const hasOHLC=c.dataset.hasOhlc==='1';
+    const values=hasOHLC?a.flatMap(x=>[x.h,x.l]).filter(v=>v!=null):a.map(x=>x.p);
+    const min=Math.min(...values),max=Math.max(...values),span=(max-min)||1;
     const ix=()=>c.getBoundingClientRect();
     const x=i=>pad.l+(i/(a.length-1))*(W-pad.l-pad.r);
-    const y=p=>pad.t+(1-(p-min)/span)*(H-pad.t-pad.b);
+    const y=p=>pad.t+(1-(p-min)/span)*(chartBottom-pad.t);
     const move=e=>{
       const r=ix(), px=(e.clientX-r.left)/r.width*W;
       let best=0,bd=Infinity;
       for(let i=0;i<a.length;i++){const d=Math.abs(x(i)-px);if(d<bd){bd=d;best=i}}
       const d=a[best], xx=x(best), yy=y(d.p);
-      line.setAttribute('x1',xx);line.setAttribute('x2',xx);dot.setAttribute('cx',xx);dot.setAttribute('cy',yy);
-      tip.innerHTML=`<b>${esc26(d.p.toFixed(2))}</b><br>${esc26(new Date(d.t).toLocaleString())}`;
-      const left=Math.max(6,Math.min(r.width-130,(xx/W)*r.width-55));
+      line.setAttribute('x1',xx);line.setAttribute('x2',xx);
+      dot.setAttribute('cx',xx);dot.setAttribute('cy',yy);
+      const bits=[];
+      if(d.o!=null)bits.push('O '+d.o.toFixed(2));
+      if(d.h!=null)bits.push('H '+d.h.toFixed(2));
+      if(d.l!=null)bits.push('L '+d.l.toFixed(2));
+      bits.push('C '+d.p.toFixed(2));
+      if(d.v!=null)bits.push('Vol '+Number(d.v).toLocaleString());
+      tip.innerHTML='<b>'+esc26(d.p.toFixed(2))+'</b><br>'+esc26(bits.join(' • '))+'<br>'+esc26(new Date(d.t).toLocaleString());
+      const left=Math.max(6,Math.min(r.width-175,(xx/W)*r.width-80));
       tip.style.left=left+'px'; tip.style.top='8px'; tip.style.display='block';
     };
     c.addEventListener('pointermove',move);
     c.addEventListener('pointerleave',()=>tip.style.display='none');
   }
+
   async function open26(sym,range){
     const s=local26(sym), ex=market26(), title='📈 '+s;
     const r=range||'1M';
