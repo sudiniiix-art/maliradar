@@ -2469,3 +2469,164 @@ button{position:relative;overflow:hidden}
   window.MaliRadarChartRangePolicy={version:'2.7.1',rangeDays,warning:msg};
 })();
 </script>
+
+<!-- MaliRadar v4.4: Provider-backed Alert Command Center -->
+<style id="mr44-alert-css">
+.mr44-status{margin-top:8px;padding:9px 10px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025);font-size:10px;color:var(--muted);line-height:1.45}
+.mr44-provider{color:#53e0b1}.mr44-warn{color:#ffe08a}
+</style>
+<script id="mr44-alert-js">
+(function(){
+  const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const local=s=>String(s||"").toUpperCase().split(".")[0];
+  const ex=()=>{try{const r=window.getMaliRegion?window.getMaliRegion():{id:"ke"};return ({ke:"NSE",ng:"NGX",za:"JSE",gh:"GSE",eg:"EGX",ma:"CSE",tz:"DSE",ug:"USE",rw:"RSE",us:"US"})[r.id]||"NSE"}catch(e){return "NSE"}};
+  const suffix={NSE:".KE",NGX:".NG",JSE:".ZA",GSE:".GH",EGX:".EG",CSE:".MA",DSE:".TZ",USE:".UG",RSE:".RW"};
+  const providerSymbol=s=>String(s||"").toUpperCase().includes(".")?String(s).toUpperCase():local(s)+(suffix[ex()]||"");
+  function quote(sym){
+    const want=local(sym),store=window.maliRadarProviderQuotes||{};
+    for(const [k,q] of Object.entries(store)){
+      if(local(k)===want||local(q?.symbol)===want||local(q?.localSymbol)===want)return q;
+    }
+    return null;
+  }
+  function rows(){
+    const store=window.maliRadarProviderQuotes||{},out=[],seen=new Set();
+    for(const q of Object.values(store)){
+      const s=local(q?.localSymbol||q?.symbol);
+      if(!s||seen.has(s))continue;seen.add(s);out.push(q);
+    }
+    return out.sort((a,b)=>String(a?.name||a?.localSymbol||a?.symbol).localeCompare(String(b?.name||b?.localSymbol||b?.symbol)));
+  }
+  function fmtPrice(q){return q?.price==null?"—":((q.currency||"KES").toUpperCase()==="KES"?"KSh ":"")+Number(q.price).toFixed(2)}
+  function alertStockOptions(selected){
+    const rs=rows();
+    if(!rs.length)return '<option value="">Provider directory unavailable</option>';
+    return rs.map(q=>{
+      const s=local(q.localSymbol||q.symbol),label=(q.name||s)+" — "+s+(q.price!=null?" • "+fmtPrice(q):" • price unavailable");
+      return '<option value="'+esc(s)+'" '+(s===local(selected)?"selected":"")+'>'+esc(label)+'</option>';
+    }).join("");
+  }
+  function alertForm(type,sym){
+    const title=type==="price"?"Price Target Alert":type==="move"?"Percentage Movement Alert":"Crossing Alert";
+    let body="";
+    if(type==="price")body='<div class="formline"><select id="aSym">'+alertStockOptions(sym)+'</select></div><div class="formline"><select id="aDir"><option value="above">Rises to / above</option><option value="below">Falls to / below</option></select><input id="aValue" type="number" step="0.01" placeholder="Target price"></div>';
+    else if(type==="move")body='<div class="formline"><select id="aSym">'+alertStockOptions(sym)+'</select></div><div class="formline"><select id="aDir"><option value="up">Moves up by at least</option><option value="down">Moves down by at least</option></select><input id="aValue" type="number" step="0.01" min="0.01" placeholder="%"></div>';
+    else body='<div class="formline"><select id="aSym">'+alertStockOptions(sym)+'</select></div><div class="formline"><input id="aValue" type="number" step="0.01" placeholder="Crossing price"><select id="aDir"><option value="above">Crosses above</option><option value="below">Crosses below</option></select></div>';
+    const q=quote(sym);
+    openM("🔔 "+title,'<p class="notice"><b>Provider-backed alert.</b> The condition uses the latest verified quote available to MaliRadar. Provider data is delayed and alerts are not trading instructions.</p>'+body+'<div id="mr44AlertStatus" class="mr44-status">'+(q&&q.price!=null?("Current verified price: "+esc(fmtPrice(q))+" • "+esc(q.delayMinutes||15)+" min delayed."):"Provider price unavailable; the alert can be saved but will remain pending.")+'</div><div class="actions"><button class="btn" onclick="saveAlert(\''+type+'\')">Create Alert</button><button class="btn alt" onclick="closeM()">Cancel</button></div>');
+  }
+  function saveAlert(type){
+    const sym=(document.getElementById("aSym")||{}).value;
+    const dir=(document.getElementById("aDir")||{}).value;
+    const value=num((document.getElementById("aValue")||{}).value);
+    if(!sym||value==null||value<=0)return alert("Enter a valid provider-backed alert.");
+    const q=quote(sym);
+    state.alerts=Array.isArray(state.alerts)?state.alerts:[];
+    const current=num(q?.price),move=num(q?.changePct);
+    const item={id:Date.now()+Math.random(),type,sym:local(sym),dir,value,created:new Date().toLocaleString(),active:true,lastPrice:current,baselinePrice:current,lastMove:move,triggered:false,provider:true,exchange:ex(),delayMinutes:num(q?.delayMinutes)||15};
+    state.alerts.unshift(item);
+    if(typeof save==="function")save();
+    closeM();renderAlerts();
+    alert("Provider-backed alert created. It will trigger only when a later verified quote satisfies the condition.");
+  }
+  function conditionMet(a,q){
+    if(!q||q.price==null)return false;
+    const p=num(q.price),last=num(a.lastPrice);
+    if(a.type==="move"){const m=num(q.changePct);return a.dir==="up"?m!=null&&m>=a.value:m!=null&&m<=-a.value}
+    if(a.type==="cross"){
+      if(last==null)return false;
+      return a.dir==="above"?last<a.value&&p>=a.value:last>a.value&&p<=a.value;
+    }
+    return a.dir==="above"?p>=a.value:p<=a.value;
+  }
+  function severityFor(a,q){
+    const p=num(q?.price);
+    if(a.type==="move"&&a.value<=3)return "WATCH";
+    if(a.type==="price"&&p!=null&&Math.abs(a.value-p)<=Math.max(.01,p*.01))return "IMPORTANT";
+    return "INFO";
+  }
+  function description(a){
+    if(a.type==="price")return (a.dir==="above"?"Price at or above ":"Price at or below ")+a.value.toFixed(2);
+    if(a.type==="move")return (a.dir==="up"?"Move up ≥ ":"Move down ≤ ")+a.value.toFixed(2)+"%";
+    return "Crosses "+a.dir+" "+a.value.toFixed(2);
+  }
+  function renderAlerts(){
+    const active=(state.alerts||[]).filter(a=>a.active),hist=(state.alertHistory||[]).slice(0,12);
+    const ac=document.getElementById("activeAlertCount"),tc=document.getElementById("triggeredAlertCount");
+    if(ac)ac.textContent=active.length;if(tc)tc.textContent=hist.length;
+    const list=document.getElementById("alertList");
+    if(list)list.innerHTML=active.length?active.map(a=>{
+      const q=quote(a.sym),p=q?.price;
+      const sev=severityFor(a,q);
+      return '<div class="alert-item"><div class="row"><div><b>'+esc(q?.name||a.sym)+' — '+esc(a.sym)+'</b><div class="muted">'+esc(description(a))+' • '+(p==null?"price unavailable":esc(fmtPrice(q)))+'</div></div><span class="severity '+sev.toLowerCase()+'">'+sev+'</span></div><div class="muted" style="margin-top:5px">🟡 Provider-backed • '+esc(q?.delayMinutes||a.delayMinutes||15)+' min delayed</div><div class="actions"><button class="btn alt" onclick="deleteAlert(\''+esc(a.id)+'\')">Delete</button></div></div>';
+    }).join(""):"<p class='muted'>No active alerts. Create one from a provider-backed stock.</p>";
+    const ah=document.getElementById("alertHistory");
+    if(ah)ah.innerHTML=hist.length?hist.map(a=>{
+      const q=quote(a.sym);
+      return '<div class="alert-item"><div class="row"><b class="green">⚡ '+esc(q?.name||a.sym)+' triggered</b><span>'+esc(a.triggerPrice==null?"—":fmtPrice(Object.assign({},q,{price:a.triggerPrice})))+'</span></div><div class="muted">'+esc(description(a))+' • '+esc(a.triggeredAt||"")+'</div></div>';
+    }).join(""):"<p class='muted'>No triggered alerts yet.</p>";
+    const panel=document.getElementById("mr44AlertStatusPanel");
+    if(panel)panel.innerHTML=active.length?"🟡 Provider-backed monitoring • "+active.length+" active alert"+(active.length===1?"":"s")+" • checks latest verified quotes.":"⚪ No active provider-backed alerts.";
+  }
+  function showTriggered(a,q){
+    const sev=severityFor(a,q),p=num(q?.price);
+    openM("⚡ ALERT TRIGGERED",'<div class="card alert-trigger"><div class="row"><b>'+esc(q?.name||a.sym)+' ('+esc(a.sym)+')</b><span class="severity '+sev.toLowerCase()+'">'+sev+'</span></div><p class="notice">Condition: '+esc(description(a))+'</p><div class="big">'+esc(p==null?"Price unavailable":fmtPrice(q))+'</div><p class="notice">'+esc(a.triggeredAt||"")+'</p><p class="notice">Provider-backed informational alert. Data may be delayed. This is not a buy/sell instruction.</p></div><button class="btn" onclick="closeM()">ACKNOWLEDGE</button>');
+  }
+  function checkAlerts(){
+    let changed=false;
+    (state.alerts||[]).forEach(a=>{
+      if(!a.active)return;
+      const q=quote(a.sym);
+      if(!q||q.price==null){a.pending=true;return}
+      if(conditionMet(a,q)){
+        a.active=false;a.triggered=true;a.triggeredAt=new Date().toLocaleString();a.triggerPrice=num(q.price);
+        state.alertHistory=Array.isArray(state.alertHistory)?state.alertHistory:[];
+        state.alertHistory.unshift({...a});changed=true;showTriggered(a,q);
+      }
+      a.lastPrice=num(q.price);a.lastMove=num(q.changePct);
+    });
+    if(changed&&typeof save==="function")save();
+    renderAlerts();
+  }
+  async function refresh(){
+    const active=(state.alerts||[]).filter(a=>a.active);
+    if(!active.length){renderAlerts();return}
+    const syms=[...new Set(active.map(a=>providerSymbol(a.sym)))];
+    try{
+      const j=await fetch("/api/market-data/quotes?market="+encodeURIComponent(ex())+"&symbols="+encodeURIComponent(syms.join(","))+"&_mr44="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
+      const arr=Array.isArray((await j.json())?.quotes)?(await j.json()).quotes:[];
+    }catch(e){}
+  }
+  function refreshQuotes(){
+    const active=(state.alerts||[]).filter(a=>a.active),syms=[...new Set(active.map(a=>providerSymbol(a.sym)))];
+    if(!syms.length){renderAlerts();return Promise.resolve()}
+    return fetch("/api/market-data/quotes?market="+encodeURIComponent(ex())+"&symbols="+encodeURIComponent(syms.join(","))+"&_mr44="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}})
+      .then(r=>r.json()).then(j=>{
+        (j?.quotes||[]).forEach(q=>{
+          const s=local(q.localSymbol||q.symbol);
+          if(window.maliRadarProviderQuotes)window.maliRadarProviderQuotes[s]=q;
+        });
+        checkAlerts();
+      }).catch(()=>{renderAlerts()});
+  }
+  function patchUI(){
+    if(!document.getElementById("mr44AlertStatusPanel")){
+      const list=document.getElementById("alertList");
+      if(list){
+        const p=document.createElement("div");p.id="mr44AlertStatusPanel";p.className="mr44-status";list.parentElement.insertBefore(p,list);
+      }
+    }
+    renderAlerts();
+  }
+  window.alertStockOptions=alertStockOptions;window.alertForm=alertForm;window.saveAlert=saveAlert;window.checkAlerts=checkAlerts;window.renderAlerts=renderAlerts;window.severityFor=severityFor;
+  window.quickAlert=s=>alertForm("price",s);
+  window.createPriceAlert=()=>alertForm("price","SCOM");
+  window.createMoveAlert=()=>alertForm("move","SCOM");
+  window.createCrossAlert=()=>alertForm("cross","SCOM");
+  window.MaliRadarProviderAlerts={version:"2.0",refresh:refreshQuotes,check:checkAlerts};
+  function boot(){patchUI();setInterval(()=>{refreshQuotes()},60000)}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,300));
+  else setTimeout(boot,300);
+})();
+</script>
