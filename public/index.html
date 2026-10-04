@@ -1243,7 +1243,12 @@ function deleteTrustData(){
   function getSymbols(){
     try{
       const rows=typeof MaliRadarStocks==='function'?MaliRadarStocks():[];
-      return [...new Set((rows||[]).map(x=>String(x?.symbol||x?.ticker||x?.code||'').trim()).filter(Boolean))];
+      return [...new Set((rows||[]).map(x=>{
+        // Provider directory rows use the legacy array shape:
+        // [symbol,name,exchange,price,change]. Also support object rows.
+        if(Array.isArray(x)) return String(x[0]||'').trim();
+        return String(x?.symbol||x?.ticker||x?.code||'').trim();
+      }).filter(Boolean))];
     }catch(e){return []}
   }
   function renderCov(data,root){
