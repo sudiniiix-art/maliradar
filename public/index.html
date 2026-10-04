@@ -697,24 +697,38 @@ renderNews();renderEvents();
      ],unavailable:price==null,type:"watch"};
    }).filter(x=>x.symbol);
 
-   const candidates=base.filter(x=>x.price!=null).sort((a,b)=>Math.abs((b.day||0))-Math.abs((a.day||0))).slice(0,18);
+   const candidates=base.filter(x=>x.price!=null).sort((a,b)=>Math.abs((b.day||0))-Math.abs((a.day||0))).slice(0,24);
    for(let i=0;i<candidates.length;i+=4){
      const chunk=candidates.slice(i,i+4);
      const data=await Promise.all(chunk.map(x=>candles(x.symbol,tf)));
      data.forEach((arr,j)=>{
        const r=chunk[j];
-       if(!arr.length){r.reasons.push("Historical candles unavailable for this timeframe; score uses verified quote data only.");return}
-       const first=arr[0].p,last=arr[arr.length-1].p,recent=arr.slice(-Math.min(5,arr.length)),m0=recent[0]?.p;
+       if(!arr.length){
+         r.quality="MEDIUM";
+         r.reasons.push("Historical candles unavailable; score is based on verified quote fields only.");
+         return;
+       }
+       const first=arr[0].p,last=arr[arr.length-1].p,recent=arr.slice(-Math.min(6,arr.length)),m0=recent[0]?.p;
        const trendPct=first?((last-first)/first)*100:0;
        const momPct=m0?((last-m0)/m0)*100:0;
+       const positive=recent.filter((x,k)=>k===0||x.p>=recent[k-1].p).length;
+       const consistency=((positive/recent.length)*100);
        r.trend=trendPct>0.5?"UPTREND":trendPct<-0.5?"DOWNTREND":"SIDEWAYS";
        r.momentum=momPct>0.5?"POSITIVE":momPct<-0.5?"NEGATIVE":"MIXED";
-       r.score=Math.round(clamp(50+clamp(trendPct*3,-25,25)+clamp(momPct*4,-20,20)+clamp((r.day||0)*2,-10,10),0,100));
+       r.consistency=consistency;
+       const trendScore=clamp(trendPct*2.8,-22,22);
+       const momentumScore=clamp(momPct*3.5,-18,18);
+       const dayScore=clamp((r.day||0)*1.8,-12,12);
+       const rangeScore=r.pos!=null?clamp((r.pos-50)*0.18,-9,9):0;
+       const consistencyScore=clamp((consistency-50)*0.16,-8,8);
+       r.score=Math.round(clamp(50+trendScore+momentumScore+dayScore+rangeScore+consistencyScore,0,100));
+       r.quality=arr.length>=5?"HIGH":"MEDIUM";
        r.reasons=[
-         "Observed "+tf+" change: "+(trendPct>=0?"+":"")+trendPct.toFixed(2)+"% across "+arr.length+" candles.",
-         "Recent momentum: "+(momPct>=0?"+":"")+momPct.toFixed(2)+"%.",
+         "Trend: "+r.trend+" ("+(trendPct>=0?"+":"")+trendPct.toFixed(2)+"% over "+arr.length+" candles).",
+         "Momentum: "+r.momentum+" ("+(momPct>=0?"+":"")+momPct.toFixed(2)+"% recent move).",
+         "Consistency: "+Math.round(consistency)+"% of recent candles closed higher or flat.",
          r.day!=null?"Latest reported day move: "+(r.day>=0?"+":"")+r.day.toFixed(2)+"%.":"Daily change unavailable.",
-         "Provider candles only; data may be delayed."
+         "Evidence quality: "+r.quality+". Provider data may be delayed."
        ];
      });
      document.getElementById("saScanStatus").textContent="HISTORY "+Math.min(i+4,candidates.length)+"/"+candidates.length;
@@ -722,8 +736,10 @@ renderNews();renderEvents();
 
    base.forEach(r=>{
      if(r.unavailable){r.type="watch";r.label="UNAVAILABLE";return}
-     // Rank the entire verified market instead of hiding most securities behind WATCH.
-     // Thresholds are classifications, not probabilities of profit.
+     // A quote-only result cannot become a buy/sell recommendation: insufficient evidence.
+     if(r.quality==="MEDIUM" && r.trend==="QUOTE ONLY"){
+       r.type="watch";r.label="WATCH / QUOTE-ONLY";return;
+     }
      if(r.score>=75){r.type="buy";r.label="STRONG BUY SETUP"}
      else if(r.score>=65){r.type="buy";r.label="BUY SETUP"}
      else if(r.score<=25){r.type="sell";r.label="STRONG SELL / RISK"}
@@ -735,7 +751,7 @@ renderNews();renderEvents();
    document.getElementById("saSignalCopy").textContent="Whole-market scan complete. Setup labels are educational classifications from provider-backed observations, not predictions or financial advice.";
    document.getElementById("saRunBtn").disabled=false;
    render();
-   window.MaliRadarSmartScan={version:"4.1",market,range:tf,results:lastResults,scanned:lastResults.length};
+   window.MaliRadarSmartScan={version:"4.2",market,range:tf,results:lastResults,scanned:lastResults.length};
  }
 
  function setLevel(l){
