@@ -216,6 +216,12 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 </div>
 <div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div><div class="metric">Cash<b id="portfolioCash">KSh 100,000</b></div><div class="metric">Sectors<b id="sectorCount">0</b></div></div></div>
 <div class="card"><div class="row"><b>Portfolio Snapshot</b><span class="muted">Paper trading</span></div><div class="grid"><div class="metric">Largest Position<b id="largestPosition">—</b></div><div class="metric">Current Value<b id="currentValueMetric">KSh 100,000</b></div><div class="metric">Unrealized P/L<b id="unrealizedMetric">KSh 0</b></div><div class="metric">Avg Cost<b id="avgCostMetric">—</b></div></div></div>
+<div class="card"><div class="row"><b>Risk &amp; Analytics</b><span class="muted">Based on current paper portfolio</span></div><div class="grid">
+<div class="metric">Cash Allocation<b id="riskCash">—</b></div>
+<div class="metric">Largest Weight<b id="riskConcentration">—</b></div>
+<div class="metric">Best Performer<b id="riskBest">—</b></div>
+<div class="metric">Worst Performer<b id="riskWorst">—</b></div>
+</div><div id="riskSummary" class="intel-note" style="margin-top:10px">Build a paper position to see portfolio risk analytics.</div></div>
 <div class="card"><div class="row"><b>Holdings</b><button class="btn alt" onclick="togglePortfolioMode()" id="portfolioModeBtn">👶 Beginner</button></div><div id="holdings"></div><div id="portfolioExplain" class="intel-note" style="margin-top:10px">P/L compares your paper position value with its estimated cost basis. No real money is involved.</div></div>
 <div class="card"><div class="row"><b>Sector Allocation</b><span class="muted">By current value</span></div><div id="sectorAllocation"></div></div>
 <div class="card"><div class="row"><b>Transactions</b><span class="muted">Paper activity</span></div><div id="history"></div></div>
@@ -744,6 +750,23 @@ function renderPortfolio(){
   let largest=pos.slice().sort((a,b)=>b.value-a.value)[0];
   $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
   $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
+  // Risk analytics use only verified current position values and the paper cash balance.
+  const totalValue=Number(value)||0;
+  const cashPct=totalValue>0?(state.cash/totalValue*100):0;
+  const largestWeight=totalValue>0&&largest?(largest.value/totalValue*100):0;
+  const ranked=pos.slice().sort((a,b)=>b.pct-a.pct);
+  const best=ranked[0], worst=ranked[ranked.length-1];
+  if($('riskCash'))$('riskCash').textContent=cashPct.toFixed(1)+'%';
+  if($('riskConcentration'))$('riskConcentration').textContent=largest?largest.sym+' • '+largestWeight.toFixed(1)+'%':'—';
+  if($('riskBest'))$('riskBest').textContent=best?best.sym+' • '+(best.pct>=0?'+':'')+best.pct.toFixed(2)+'%':'—';
+  if($('riskWorst'))$('riskWorst').textContent=worst?worst.sym+' • '+(worst.pct>=0?'+':'')+worst.pct.toFixed(2)+'%':'—';
+  if($('riskSummary')){
+    let level='LOW';
+    if(largestWeight>60)level='HIGH';
+    else if(largestWeight>35)level='MEDIUM';
+    const note=largest?('Largest position is '+largest.sym+' at '+largestWeight.toFixed(1)+'% of portfolio. Cash is '+cashPct.toFixed(1)+'%.'):('No verified holdings yet.');
+    $('riskSummary').textContent='Concentration risk: '+level+'. '+note+' This is an educational portfolio metric, not financial advice.';
+  }
   $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a demo stock to build your portfolio.</p>';
   $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>{
     const qty=Number(h.q)||0, px=Number(h.p)||0, val=Number(h.value??(qty*px))||0;
