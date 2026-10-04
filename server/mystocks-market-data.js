@@ -661,12 +661,50 @@ function registerMaliRadarMarketDataRoutes(app) {
           .filter(({q}) => q.price == null);
 
         if (missing.length) {
+          // Second verification path: the provider's market snapshot bundles
+          // quote + daily-bar data and can resolve instruments that do not
+          // arrive with a usable value in the batch quote response.
+          try {
+            const snapshotBody = await msFetch('/market/snapshot', {
+              symbols: missing.map(({i}) => providerSymbols[i]).join(',')
+            });
+            const snapshotData = snapshotBody?.data || {};
+            missing.forEach(({i}) => {
+              const s = providerSymbols[i];
+              const raw = snapshotData[s] ||
+                snapshotData[s.toUpperCase()] ||
+                snapshotData[s.toLowerCase()];
+              const snap = normalize(raw?.quote || raw);
+              if (snap?.price != null) {
+                out[i] = {
+                  ...out[i],
+                  ...snap,
+                  symbol: snap.symbol || s,
+                  localSymbol: (snap.symbol || s).split('.')[0],
+                  exchange: snap.exchange || exchange,
+                  status: 'DELAYED',
+                  verificationMethod: 'MARKET_SNAPSHOT',
+                  verificationStatus: 'VERIFIED',
+                  source: 'MyStocks Africa Sandbox'
+                };
+              }
+            });
+          } catch {
+            // Continue to the individual detail fallback below.
+          }
+        }
+
+        const stillMissing = out
+          .map((q, i) => ({ q, i }))
+          .filter(({q}) => q.price == null);
+
+        if (stillMissing.length) {
           const concurrency = 5;
           let cursor = 0;
 
           const worker = async () => {
-            while (cursor < missing.length) {
-              const item = missing[cursor++];
+            while (cursor < stillMissing.length) {
+              const item = stillMissing[cursor++];
               try {
                 const detail = await msStockDetail(providerSymbols[item.i]);
 
@@ -693,7 +731,7 @@ function registerMaliRadarMarketDataRoutes(app) {
 
           await Promise.all(
             Array.from(
-              {length: Math.min(concurrency, missing.length)},
+              {length: Math.min(concurrency, stillMissing.length)},
               worker
             )
           );
