@@ -1,17 +1,9 @@
-/* MaliRadar v2.5.2 — MyStocks Africa Sandbox market-data bridge
-   DROP-IN REPLACEMENT for:
-   server/mystocks-market-data.js
+// MaliRadar v2.7 — MyStocks Africa Sandbox market-data bridge
 
-   IMPORTANT:
-   - Keep MYSTOCKS_API_KEY in Render.
-   - Do NOT put the API key in this file.
-   - Do NOT put the API key in index.html.
-*/
-
-const MYSTOCKS_SANDBOX_BASE =
+const BASE =
   'https://mystocks.africa/api/sandbox/v1/partner';
 
-const LOCAL_TO_SUFFIX = {
+const SUFFIX = {
   NSE: '.KE',
   NGX: '.NG',
   JSE: '.ZA',
@@ -23,74 +15,76 @@ const LOCAL_TO_SUFFIX = {
   RSE: '.RW'
 };
 
-function msNumber(v) {
-  return typeof v === 'number' && Number.isFinite(v)
-    ? v
-    : (
-        v != null &&
-        v !== '' &&
-        Number.isFinite(Number(v))
-          ? Number(v)
-          : null
-      );
-}
+const n = v => {
+  if (v == null || v === '') return null;
+  const x = Number(v);
+  return Number.isFinite(x) ? x : null;
+};
 
-function msList(body) {
-  if (Array.isArray(body)) return body;
+const list = b => {
+  if (Array.isArray(b)) return b;
+  return b?.stocks || b?.data || b?.results || b?.items || [];
+};
 
-  return (
-    body?.stocks ||
-    body?.data ||
-    body?.results ||
-    body?.items ||
-    []
-  );
-}
+const quoteList = b => {
+  if (Array.isArray(b)) return b;
 
-function msOne(body) {
-  if (!body) return {};
+  if (Array.isArray(b?.data))
+    return b.data;
 
-  if (body.stock) return body.stock;
-  if (body.result) return body.result;
+  if (Array.isArray(b?.quotes))
+    return b.quotes;
 
-  if (body.data && !Array.isArray(body.data)) {
-    return body.data;
-  }
+  if (Array.isArray(b?.results))
+    return b.results;
 
-  return body;
-}
+  if (Array.isArray(b?.items))
+    return b.items;
 
-function msQuoteList(body) {
-  if (!body) return [];
-
-  if (Array.isArray(body)) return body;
-  if (Array.isArray(body.data)) return body.data;
-  if (Array.isArray(body.quotes)) return body.quotes;
-  if (Array.isArray(body.results)) return body.results;
-  if (Array.isArray(body.items)) return body.items;
-
-  if (body.data && typeof body.data === 'object') {
-    return Object.entries(body.data).map(([symbol, value]) => ({
-      ...(value || {}),
-      symbol: value?.symbol || symbol
-    }));
+  if (b?.data && typeof b.data === 'object') {
+    return Object.entries(b.data).map(
+      ([symbol, v]) => ({
+        ...v,
+        symbol: v?.symbol || symbol
+      })
+    );
   }
 
   return [];
+};
+
+const one = b => {
+  if (!b) return {};
+  if (b.stock) return b.stock;
+  if (b.result) return b.result;
+
+  if (b.data && !Array.isArray(b.data))
+    return b.data;
+
+  return b;
+};
+
+function providerSymbol(symbol, exchange) {
+  symbol = String(symbol || '');
+
+  if (symbol.includes('.'))
+    return symbol;
+
+  return symbol + (SUFFIX[exchange] || '');
 }
 
-function msNormalize(x) {
+function normalize(x) {
+
   const q = x?.quote || {};
 
   const symbol = String(
     x?.symbol ||
     x?.ticker ||
     x?.code ||
-    x?.id ||
     ''
   );
 
-  const price = msNumber(
+  const price = n(
     x?.price ??
     x?.lastPrice ??
     x?.last ??
@@ -101,103 +95,139 @@ function msNormalize(x) {
     q?.close
   );
 
-  const changePct = msNumber(
-    x?.changePct ??
-    x?.changePercent ??
-    x?.percentChange ??
-    q?.changePct ??
-    q?.changePercent ??
-    q?.percentChange
-  );
-
-  const asOf =
-    x?.asOf ||
-    x?.timestamp ||
-    x?.lastPriceUpdate ||
-    q?.asOf ||
-    q?.timestamp ||
-    q?.lastPriceUpdate ||
-    x?.updatedAt ||
-    null;
-
   return {
+
     symbol,
-    localSymbol: symbol.split('.')[0],
+
+    localSymbol:
+      symbol.split('.')[0],
+
     name:
       x?.name ||
       x?.companyName ||
       x?.company?.name ||
       symbol,
+
     exchange:
       x?.exchange ||
       x?.market ||
       null,
+
     currency:
       x?.currency ||
       q?.currency ||
       null,
+
     price,
-    changePct,
-    asOf,
+
+    changePct:
+      n(
+        x?.changePct ??
+        x?.changePercent ??
+        x?.percentChange ??
+        q?.changePct ??
+        q?.changePercent ??
+        q?.percentChange
+      ),
+
+    open:
+      n(
+        x?.open ??
+        x?.dayOpen ??
+        q?.open
+      ),
+
+    high:
+      n(
+        x?.high ??
+        x?.dayHigh ??
+        q?.high
+      ),
+
+    low:
+      n(
+        x?.low ??
+        x?.dayLow ??
+        q?.low
+      ),
+
+    previousClose:
+      n(
+        x?.previousClose ??
+        x?.prevClose ??
+        x?.previous_close ??
+        q?.previousClose ??
+        q?.prevClose
+      ),
+
+    volume:
+      n(
+        x?.volume ??
+        x?.dayVolume ??
+        q?.volume
+      ),
+
+    asOf:
+      x?.asOf ||
+      x?.timestamp ||
+      x?.updatedAt ||
+      q?.asOf ||
+      q?.timestamp ||
+      null,
+
     delayMinutes:
-      msNumber(
+      n(
         x?.delayMinutes ??
         q?.delayMinutes
-      ) ?? 15,
-    stale: Boolean(
-      x?.stale ??
-      q?.stale
-    ),
+      ) || 15,
+
+    stale:
+      Boolean(
+        x?.stale ??
+        q?.stale
+      ),
+
     status:
       price == null
         ? 'UNAVAILABLE'
         : 'DELAYED',
+
     source:
       'MyStocks Africa Sandbox'
   };
 }
 
-function providerSymbol(local, exchange) {
-  const s = String(local || '');
-
-  if (s.includes('.')) {
-    return s;
-  }
-
-  return (
-    s +
-    (LOCAL_TO_SUFFIX[exchange] || '')
-  );
-}
-
 async function msFetch(path, params = {}) {
+
   const key =
     process.env.MYSTOCKS_API_KEY;
 
   if (!key) {
+
     const e = new Error(
       'MYSTOCKS_API_KEY is not configured'
     );
 
-    e.code =
-      'MYSTOCKS_KEY_MISSING';
-
     e.status = 503;
+    e.code = 'MYSTOCKS_KEY_MISSING';
 
     throw e;
   }
 
   const u =
-    new URL(
-      MYSTOCKS_SANDBOX_BASE + path
-    );
+    new URL(BASE + path);
 
-  for (const [k, v] of Object.entries(params)) {
+  for (
+    const [k, v]
+    of Object.entries(params)
+  ) {
+
     if (
       v !== undefined &&
       v !== null &&
       v !== ''
     ) {
+
       u.searchParams.set(
         k,
         String(v)
@@ -205,33 +235,35 @@ async function msFetch(path, params = {}) {
     }
   }
 
-  const r = await fetch(
-    u,
-    {
-      headers: {
-        Authorization:
-          `Bearer ${key}`,
+  const r =
+    await fetch(
+      u,
+      {
+        headers: {
 
-        'x-api-key':
-          key,
+          Authorization:
+            `Bearer ${key}`,
 
-        Accept:
-          'application/json'
+          'x-api-key':
+            key,
+
+          Accept:
+            'application/json'
+        }
       }
-    }
-  );
+    );
 
-  const text =
+  const txt =
     await r.text();
 
   let body = null;
 
   try {
-    body =
-      JSON.parse(text);
+    body = JSON.parse(txt);
   } catch {}
 
   if (!r.ok) {
+
     const e =
       new Error(
         body?.message ||
@@ -239,11 +271,8 @@ async function msFetch(path, params = {}) {
         `MyStocks HTTP ${r.status}`
       );
 
-    e.status =
-      r.status;
-
-    e.provider =
-      body;
+    e.status = r.status;
+    e.provider = body;
 
     throw e;
   }
@@ -251,121 +280,119 @@ async function msFetch(path, params = {}) {
   return body;
 }
 
-function quoteRows(body) {
-  return msQuoteList(body)
-    .map(msNormalize)
-    .filter(
-      x => x.symbol
+
+// =====================================
+// CANDLE HELPERS
+// =====================================
+
+function candlesFrom(body) {
+
+  const a =
+    body?.candles ||
+    body?.data?.candles ||
+    body?.data ||
+    body?.results ||
+    body?.bars ||
+    body?.history;
+
+  return Array.isArray(a)
+    ? a
+    : (
+      Array.isArray(body)
+        ? body
+        : []
     );
 }
 
-function findQuote(
-  body,
-  requestedSymbol
-) {
-  const rows =
-    quoteRows(body);
+function candleTime(c) {
 
-  const wanted =
-    String(
-      requestedSymbol || ''
-    ).toUpperCase();
+  const raw =
+    c?.timestamp ||
+    c?.time ||
+    c?.date ||
+    c?.datetime ||
+    c?.asOf;
 
-  return (
-    rows.find(
-      x =>
-        String(
-          x.symbol
-        ).toUpperCase() === wanted
-    ) ||
+  const t =
+    raw == null
+      ? NaN
+      : new Date(raw).getTime();
 
-    rows.find(
-      x =>
-        String(
-          x.localSymbol
-        ).toUpperCase() ===
-        wanted.split('.')[0]
-    ) ||
-
-    rows[0] ||
-
-    null
-  );
+  return Number.isFinite(t)
+    ? t
+    : null;
 }
 
-function normalizeQuoteResponse(
-  body,
-  requestedSymbol
-) {
-  const direct =
-    msNormalize(
-      msOne(body)
+function normalizeCandle(c) {
+
+  const t =
+    candleTime(c);
+
+  const close =
+    n(
+      c?.close ||
+      c?.price ||
+      c?.c
     );
 
   if (
-    direct.symbol ||
-    direct.price != null
+    t == null ||
+    close == null
   ) {
-    if (!direct.symbol) {
-      direct.symbol =
-        String(
-          requestedSymbol || ''
-        );
-    }
-
-    direct.localSymbol =
-      direct.symbol.split('.')[0];
-
-    return direct;
+    return null;
   }
 
-  return (
-    findQuote(
-      body,
-      requestedSymbol
-    ) ||
+  return {
 
-    msNormalize({
-      symbol:
-        requestedSymbol,
+    time:
+      new Date(t).toISOString(),
 
-      status:
-        'UNAVAILABLE'
-    })
-  );
+    open:
+      n(
+        c?.open ??
+        c?.o
+      ),
+
+    high:
+      n(
+        c?.high ??
+        c?.h
+      ),
+
+    low:
+      n(
+        c?.low ??
+        c?.l
+      ),
+
+    close,
+
+    volume:
+      n(
+        c?.volume ??
+        c?.v
+      )
+  };
 }
 
-function requestedSymbols(req) {
-  const raw =
-    String(
-      req.query.symbols ||
-      req.query.symbol ||
-      ''
-    );
 
-  return [
-    ...new Set(
-      raw
-        .split(',')
-        .map(
-          s => s.trim()
-        )
-        .filter(Boolean)
-    )
-  ].slice(0, 50);
-}
+// =====================================
+// ROUTES
+// =====================================
 
 function registerMaliRadarMarketDataRoutes(app) {
 
-  /* =========================
-     PROVIDER STATUS
-     ========================= */
+
+  // =====================================
+  // PROVIDER STATUS
+  // =====================================
 
   app.get(
     '/api/market-data/status',
     (req, res) => {
 
       res.json({
+
         configured:
           Boolean(
             process.env.MYSTOCKS_API_KEY
@@ -389,9 +416,9 @@ function registerMaliRadarMarketDataRoutes(app) {
   );
 
 
-  /* =========================
-     MARKET DIRECTORY
-     ========================= */
+  // =====================================
+  // STOCK DIRECTORY
+  // =====================================
 
   app.get(
     '/api/market-data/stocks',
@@ -409,6 +436,7 @@ function registerMaliRadarMarketDataRoutes(app) {
           await msFetch(
             '/stocks',
             {
+
               limit:
                 Math.min(
                   Number(
@@ -427,8 +455,8 @@ function registerMaliRadarMarketDataRoutes(app) {
           );
 
         const rows =
-          msList(body)
-            .map(msNormalize)
+          list(body)
+            .map(normalize)
             .filter(
               x =>
                 !x.exchange ||
@@ -440,10 +468,11 @@ function registerMaliRadarMarketDataRoutes(app) {
 
         res.set(
           'Cache-Control',
-          'private, max-age=60'
+          'private,max-age=60'
         );
 
         res.json({
+
           market:
             exchange,
 
@@ -474,7 +503,8 @@ function registerMaliRadarMarketDataRoutes(app) {
       } catch (e) {
 
         res.status(
-          e.status || 502
+          e.status ||
+          502
         ).json({
 
           error:
@@ -492,9 +522,9 @@ function registerMaliRadarMarketDataRoutes(app) {
   );
 
 
-  /* =========================
-     BATCH QUOTES
-     ========================= */
+  // =====================================
+  // BATCH QUOTES
+  // =====================================
 
   app.get(
     '/api/market-data/quotes',
@@ -507,7 +537,20 @@ function registerMaliRadarMarketDataRoutes(app) {
         ).toUpperCase();
 
       let symbols =
-        requestedSymbols(req);
+        String(
+          req.query.symbols ||
+          ''
+        )
+          .split(',')
+          .map(
+            x => x.trim()
+          )
+          .filter(Boolean);
+
+      symbols =
+        [
+          ...new Set(symbols)
+        ].slice(0, 50);
 
       if (!symbols.length) {
 
@@ -521,11 +564,11 @@ function registerMaliRadarMarketDataRoutes(app) {
         });
       }
 
-      symbols =
+      const providerSymbols =
         symbols.map(
-          s =>
+          x =>
             providerSymbol(
-              s,
+              x,
               exchange
             )
         );
@@ -536,52 +579,41 @@ function registerMaliRadarMarketDataRoutes(app) {
           await msFetch(
             '/market/quotes',
             {
+
               symbols:
-                symbols.join(',')
+                providerSymbols.join(',')
             }
           );
 
-        const quotes =
-          quoteRows(body);
+        const rows =
+          quoteList(body)
+            .map(normalize);
 
-        const bySymbol = {};
-
-        quotes.forEach(
-          q => {
-            bySymbol[q.symbol] =
-              q;
-          }
-        );
-
-        const normalized =
-          symbols.map(
+        const out =
+          providerSymbols.map(
             s =>
 
-              bySymbol[s] ||
-
-              quotes.find(
-                q =>
-                  q.localSymbol
-                    .toUpperCase() ===
-                  s
-                    .split('.')[0]
-                    .toUpperCase()
+              rows.find(
+                x =>
+                  x.symbol.toUpperCase() ===
+                  s.toUpperCase()
               ) ||
 
-              msNormalize({
-                symbol:
-                  s,
+              rows.find(
+                x =>
+                  x.localSymbol.toUpperCase() ===
+                  s.split('.')[0].toUpperCase()
+              ) ||
 
-                exchange,
-
-                status:
-                  'UNAVAILABLE'
+              normalize({
+                symbol: s,
+                exchange
               })
           );
 
         res.set(
           'Cache-Control',
-          'private, max-age=30'
+          'private,max-age=30'
         );
 
         res.json({
@@ -590,7 +622,7 @@ function registerMaliRadarMarketDataRoutes(app) {
             exchange,
 
           state:
-            normalized.some(
+            out.some(
               x =>
                 x.price != null
             )
@@ -604,20 +636,14 @@ function registerMaliRadarMarketDataRoutes(app) {
             15,
 
           quotes:
-            normalized,
-
-          notFound:
-            Array.isArray(
-              body?.not_found
-            )
-              ? body.not_found
-              : []
+            out
         });
 
       } catch (e) {
 
         res.status(
-          e.status || 502
+          e.status ||
+          502
         ).json({
 
           error:
@@ -635,9 +661,9 @@ function registerMaliRadarMarketDataRoutes(app) {
   );
 
 
-  /* =========================
-     SINGLE STOCK
-     ========================= */
+  // =====================================
+  // SINGLE STOCK
+  // =====================================
 
   app.get(
     '/api/market-data/stock/:symbol',
@@ -657,7 +683,7 @@ function registerMaliRadarMarketDataRoutes(app) {
 
       try {
 
-        const quoteBody =
+        const body =
           await msFetch(
             '/market/quotes',
             {
@@ -666,54 +692,52 @@ function registerMaliRadarMarketDataRoutes(app) {
             }
           );
 
-        const quote =
-          normalizeQuoteResponse(
-            quoteBody,
-            symbol
-          );
+        const rows =
+          quoteList(body)
+            .map(normalize);
+
+        let q =
+          rows.find(
+            x =>
+              x.symbol.toUpperCase() ===
+              symbol.toUpperCase()
+          ) ||
+          rows[0];
 
         if (
-          quote.price != null
+          q?.price != null
         ) {
 
           return res.json({
 
-            ...quote,
+            ...q,
 
             symbol:
-              quote.symbol ||
+              q.symbol ||
               symbol,
 
             localSymbol:
               (
-                quote.symbol ||
+                q.symbol ||
                 symbol
               ).split('.')[0],
 
             exchange:
-              quote.exchange ||
-              exchange,
-
-            delayMinutes:
-              quote.delayMinutes ||
-              15,
-
-            source:
-              'MyStocks Africa Sandbox'
+              q.exchange ||
+              exchange
           });
         }
 
-        const detailBody =
-          await msFetch(
-            '/stocks/' +
-            encodeURIComponent(
-              symbol
-            )
-          );
-
         const detail =
-          msNormalize(
-            msOne(detailBody)
+          normalize(
+            one(
+              await msFetch(
+                '/stocks/' +
+                encodeURIComponent(
+                  symbol
+                )
+              )
+            )
           );
 
         return res.json({
@@ -732,31 +756,23 @@ function registerMaliRadarMarketDataRoutes(app) {
 
           exchange:
             detail.exchange ||
-            exchange,
-
-          delayMinutes:
-            detail.delayMinutes ||
-            15,
-
-          source:
-            'MyStocks Africa Sandbox'
+            exchange
         });
 
-      } catch (firstError) {
+      } catch (first) {
 
         try {
 
-          const detailBody =
-            await msFetch(
-              '/stocks/' +
-              encodeURIComponent(
-                symbol
-              )
-            );
-
           const detail =
-            msNormalize(
-              msOne(detailBody)
+            normalize(
+              one(
+                await msFetch(
+                  '/stocks/' +
+                  encodeURIComponent(
+                    symbol
+                  )
+                )
+              )
             );
 
           return res.json({
@@ -775,31 +791,24 @@ function registerMaliRadarMarketDataRoutes(app) {
 
             exchange:
               detail.exchange ||
-              exchange,
-
-            delayMinutes:
-              detail.delayMinutes ||
-              15,
-
-            source:
-              'MyStocks Africa Sandbox'
+              exchange
           });
 
-        } catch (secondError) {
+        } catch (second) {
 
           res.status(
-            secondError.status ||
-            firstError.status ||
+            second.status ||
+            first.status ||
             502
           ).json({
 
             error:
-              secondError.message ||
-              firstError.message,
+              second.message ||
+              first.message,
 
             code:
-              secondError.code ||
-              firstError.code ||
+              second.code ||
+              first.code ||
               'MYSTOCKS_ERROR',
 
             source:
@@ -811,10 +820,9 @@ function registerMaliRadarMarketDataRoutes(app) {
   );
 
 
-  /* =========================
-     CANDLE / CHART ENGINE
-     v2.5.2
-     ========================= */
+  // =====================================
+  // HISTORICAL CANDLES
+  // =====================================
 
   app.get(
     '/api/market-data/stock/:symbol/candles',
@@ -838,224 +846,294 @@ function registerMaliRadarMarketDataRoutes(app) {
           '1M'
         ).toUpperCase();
 
+      const policy = {
 
-      /* -------------------------
-         RANGE DEFINITIONS
-         ------------------------- */
+        '1D': {
+          days: 1,
+          interval: '15m'
+        },
 
-      const daysMap = {
+        '1W': {
+          days: 7,
+          interval: '1h'
+        },
 
-        '1D': 1,
+        '1M': {
+          days: 31,
+          interval: '1d'
+        },
 
-        '1W': 7,
+        '3M': {
+          days: 93,
+          interval: '1d'
+        },
 
-        '1M': 31,
+        '1Y': {
+          days: 365,
+          interval: '1d'
+        },
 
-        '3M': 93,
+        'MAX': {
+          days: null,
+          interval: '1w'
+        }
 
-        '1Y': 365,
+      }[range] || {
 
-        'MAX': 3650
+        days: 31,
+        interval: '1d'
 
       };
 
-      const days =
-        daysMap[range] ||
-        31;
-
-
-      /* -------------------------
-         DATE WINDOW
-         ------------------------- */
-
-      const to =
-        new Date();
-
-      const from =
-        new Date(
-          to.getTime() -
-          days *
-          86400000
-        );
-
-
-      const iso =
-        d =>
-          d.toISOString()
-           .slice(0, 10);
-
-
-      /* -------------------------
-         INTERVAL
-         ------------------------- */
-
-      const interval =
-        range === '1D'
-          ? '15m'
-
-          : range === '1W'
-            ? '1h'
-
-            : range === 'MAX'
-              ? '1w'
-
-              : '1d';
-
-
-      /* -------------------------
-         CANDLE TIME
-         ------------------------- */
-
-      function candleTime(c) {
-
-        const raw =
-          c?.timestamp ??
-          c?.time ??
-          c?.date ??
-          c?.datetime ??
-          c?.asOf;
-
-        if (
-          raw == null
-        ) {
-          return null;
-        }
-
-        const t =
-          new Date(
-            raw
-          ).getTime();
-
-        return Number.isFinite(t)
-          ? t
-          : null;
-      }
-
-
-      /* -------------------------
-         EXTRACT CANDLES
-         ------------------------- */
-
-      function extractCandles(body) {
-
-        const a =
-          body?.candles ||
-          body?.data?.candles ||
-          body?.data ||
-          body?.results ||
-          [];
-
-        return Array.isArray(a)
-          ? a
-          : [];
-      }
-
-
       try {
 
-        /* -------------------------
-           ASK MYSTOCKS
-           ------------------------- */
+        const params = {
+
+          interval:
+            policy.interval
+
+        };
+
+        if (
+          policy.days != null
+        ) {
+
+          const to =
+            new Date();
+
+          const from =
+            new Date(
+              to.getTime() -
+              policy.days *
+              86400000
+            );
+
+          params.from =
+            from
+              .toISOString()
+              .slice(0, 10);
+
+          params.to =
+            to
+              .toISOString()
+              .slice(0, 10);
+        }
 
         const body =
           await msFetch(
-
             '/stocks/' +
             encodeURIComponent(
               symbol
             ) +
             '/candles',
-
-            {
-              from:
-                iso(from),
-
-              to:
-                iso(to),
-
-              interval
-            }
+            params
           );
-
-
-        /* -------------------------
-           PROVIDER RESPONSE
-           ------------------------- */
-
-        const rawCandles =
-          extractCandles(
-            body
-          );
-
-
-        const fromMs =
-          from.getTime();
-
-        const toMs =
-          to.getTime();
-
-
-        /* -------------------------
-           IMPORTANT FIX
-           -------------------------
-
-           MyStocks sandbox may return
-           its available historical dataset
-           even when a narrower window
-           is requested.
-
-           Therefore MaliRadar performs
-           its OWN range filtering.
-        */
 
         let candles =
-          rawCandles.filter(
-            c => {
-
-              const t =
-                candleTime(c);
-
-              return (
-                t != null &&
-                t >= fromMs &&
-                t <= toMs
-              );
-            }
-          );
-
-
-        /* -------------------------
-           SORT CHRONOLOGICALLY
-           ------------------------- */
-
-        candles.sort(
-          (a, b) =>
-            (
-              candleTime(a) ?? 0
-            ) -
-            (
-              candleTime(b) ?? 0
+          candlesFrom(body)
+            .map(
+              normalizeCandle
             )
-        );
+            .filter(Boolean)
+            .sort(
+              (a, b) =>
+                new Date(a.time) -
+                new Date(b.time)
+            );
 
+        if (
+          policy.days != null
+        ) {
 
-        /* -------------------------
-           RESPONSE
-           ------------------------- */
+          const cutoff =
+            Date.now() -
+            policy.days *
+            86400000;
+
+          candles =
+            candles.filter(
+              c =>
+                new Date(
+                  c.time
+                ).getTime() >=
+                cutoff
+            );
+        }
+
+        if (
+          !candles.length
+        ) {
+
+          return res.json({
+
+            symbol,
+
+            exchange,
+
+            range,
+
+            interval:
+              policy.interval,
+
+            candles: [],
+
+            count: 0,
+
+            status:
+              'UNAVAILABLE',
+
+            delayMinutes:
+              15,
+
+            source:
+              'MyStocks Africa Sandbox',
+
+            message:
+              'No provider candles were returned for this period. MaliRadar will not invent missing history.'
+          });
+        }
 
         res.json({
 
           symbol,
 
+          exchange,
+
           range,
 
-          interval,
+          interval:
+            policy.interval,
 
-          from:
-            iso(from),
+          candles,
 
-          to:
-            iso(to),
+          count:
+            candles.length,
+
+          status:
+            'DELAYED',
+
+          delayMinutes:
+            15,
+
+          source:
+            'MyStocks Africa Sandbox',
+
+          asOf:
+            candles[
+              candles.length - 1
+            ].time,
+
+          historyPolicy:
+            'PROVIDER_ONLY'
+        });
+
+      } catch (e) {
+
+        res.status(
+          e.status ||
+          502
+        ).json({
+
+          error:
+            e.message ||
+            'Provider candle request failed',
+
+          code:
+            e.code ||
+            'MYSTOCKS_CANDLES_ERROR',
+
+          symbol,
+
+          exchange,
+
+          range,
+
+          status:
+            'UNAVAILABLE',
+
+          delayMinutes:
+            15,
+
+          source:
+            'MyStocks Africa Sandbox',
+
+          message:
+            'Provider history could not be loaded. MaliRadar will not substitute static or fabricated candles.'
+        });
+      }
+    }
+  );
+
+
+  // =====================================
+  // AUTHORITATIVE MARKET STATUS
+  // =====================================
+
+  app.get(
+    '/api/market-data/market-status',
+    async (req, res) => {
+
+      const exchange =
+        String(
+          req.query.market ||
+          'NSE'
+        ).toUpperCase();
+
+      try {
+
+        const body =
+          await msFetch(
+            '/market/status',
+            {
+              exchange
+            }
+          );
+
+        const d =
+          body?.data ||
+          body?.status ||
+          body ||
+          {};
+
+        const open =
+          d.open ??
+          d.isOpen ??
+          d.marketOpen ??
+          null;
+
+        res.json({
+
+          market:
+            exchange,
+
+          open:
+            open == null
+              ? null
+              : Boolean(open),
+
+          state:
+            open == null
+              ? 'UNKNOWN'
+              : (
+                open
+                  ? 'OPEN'
+                  : 'CLOSED'
+              ),
+
+          nextSession:
+            d.nextSession ||
+            d.next_open ||
+            d.nextOpen ||
+            null,
+
+          tradingHours:
+            d.tradingHours ||
+            d.trading_hours ||
+            null,
+
+          timezone:
+            d.timezone ||
+            'Africa/Nairobi',
 
           source:
             'MyStocks Africa Sandbox',
@@ -1063,41 +1141,50 @@ function registerMaliRadarMarketDataRoutes(app) {
           delayMinutes:
             15,
 
-          availableCandles:
-            candles.length,
-
-          providerCandlesReturned:
-            rawCandles.length,
-
-          candles
+          providerStatus:
+            'AUTHORITATIVE_PROVIDER_STATUS'
 
         });
 
       } catch (e) {
 
         res.status(
-          e.status || 502
+          e.status ||
+          502
         ).json({
 
-          error:
-            e.message,
+          market:
+            exchange,
 
-          code:
-            e.code ||
-            'MYSTOCKS_ERROR',
+          open:
+            null,
+
+          state:
+            'UNKNOWN',
 
           source:
-            'MyStocks Africa Sandbox'
+            'MyStocks Africa Sandbox',
+
+          delayMinutes:
+            15,
+
+          error:
+            e.message ||
+            'Market status unavailable',
+
+          message:
+            'Provider market status could not be loaded. MaliRadar will not guess whether the market is open.'
         });
       }
     }
   );
+
 }
 
 
-/* =========================
-   EXPORT
-   ========================= */
+// =====================================
+// EXPORT
+// =====================================
 
 module.exports = {
   registerMaliRadarMarketDataRoutes
