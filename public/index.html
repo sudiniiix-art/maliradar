@@ -293,7 +293,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
   <div class="lb-card" style="margin-top:14px">
     <div class="row"><strong id="lbTitle">⭐ Learning XP • Global</strong><span class="muted" id="lbCount">8 participants</span></div>
     <div id="lbRows"></div>
-    <div class="lb-note">Demo participants are fictional. Your row uses your local paper portfolio and verified provider prices; it is not real-money performance.</div>
+    <div class="lb-note">Demo participants are fictional. Your row uses your saved local learning XP and paper portfolio statistics; paper performance is not real-money performance.</div>
   </div>
 
   <div class="lb-grid">
@@ -351,7 +351,8 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     const profit=value-100000;
     const ret=profit/100000*100;
     const trades=Array.isArray(window.state?.history)?window.state.history.length:0;
-    const xp=Number(window.learnState?.xp||0);
+    const academy=(()=>{try{return JSON.parse(localStorage.getItem('maliradar_academy_v12')||'null')||{};}catch(e){return {};}})();
+    const xp=Number(academy.xp||0);
     return {name:"You",xp,profit,ret,trades,kenya:true,lessons:0,achievements:0,local:true};
   }
   function rows(){
