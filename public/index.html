@@ -1513,6 +1513,9 @@ function deleteTrustData(){
 .mr26-meta span{display:block;font-size:9px;color:var(--muted);margin-bottom:3px}
 .mr26-meta b{font-size:12px}
 .mr26-note{font-size:10px;color:var(--muted);line-height:1.45}
+.mr27-history-card{margin-top:8px;padding:11px;border-radius:10px;font-size:11px;line-height:1.45;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
+.mr27-history-card b{display:block;margin-bottom:3px;font-size:12px}.mr27-warn{border-color:rgba(255,224,138,.3);background:rgba(255,224,138,.04);color:#ffe08a}
+.mr27-history-meta{margin-top:8px;font-size:10px;color:var(--muted)}
 @media(min-width:650px){.mr26-meta{grid-template-columns:repeat(4,minmax(0,1fr))}}
 </style>
 <script id="mr26-market-data-pro">
@@ -1532,14 +1535,18 @@ function deleteTrustData(){
     }catch(e){return 'NSE'}
   };
   const local26 = s => String(s||'').toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,'');
-  function chart26(rows){
+  function chart26(rows,meta,range){
     const a=(rows||[]).map(x=>({
       t:x.timestamp??x.time??x.date??x.datetime,
       p:num26(x.close??x.c??x.price),
       o:num26(x.open??x.o), h:num26(x.high??x.h), l:num26(x.low??x.l),
       v:num26(x.volume??x.v)
     })).filter(x=>x.p!=null&&x.t!=null);
-    if(a.length<2) return '<div class="notice">Not enough provider candles are available for this period.</div>';
+    if(a.length<2){
+      if(range==='1D') return '<div class="mr27-history-card mr27-warn"><b>Intraday data unavailable</b><div>MyStocks Africa Sandbox did not return intraday candles for 1D. MaliRadar will not invent them.</div></div>';
+      if(range==='MAX') return '<div class="mr27-history-card mr27-warn"><b>Maximum provider history available</b><div>The current sandbox returned no usable MAX candle series for this request.</div></div>';
+      return '<div class="mr27-history-card mr27-warn"><b>Insufficient provider history</b><div>There are not enough candles for a reliable '+esc26(range||'selected')+' view. MaliRadar will not invent missing candles.</div></div>';
+    }
     const W=900,H=250, pad={l:12,r:12,t:18,b:26};
     const min=Math.min(...a.map(x=>x.p)), max=Math.max(...a.map(x=>x.p));
     const span=(max-min)||1;
@@ -1605,8 +1612,11 @@ function deleteTrustData(){
           </div>
           <div style="margin-top:8px;font-size:25px;font-weight:800">${price!=null?price.toFixed(2):'—'} <span class="${change!=null&&change<0?'red':''}" style="font-size:12px">${change!=null?(change>0?'+':'')+change.toFixed(2)+'%':''}</span></div>
           <div class="mr25-toolbar">${periods}</div>
-          ${chart26(rows)}
+          ${chart26(rows,c,r)}
           <div class="mr26-note">Chart uses provider candles only. MaliRadar does not invent missing market data.</div>
+          <div class="mr27-history-meta">Range: ${esc26(r)} • Provider interval: ${esc26(c?.interval||((window.MaliRadarV27RangePolicy||{})[r]?.interval)||"provider supplied")} • Candles returned: ${rows.length}</div>
+          ${r==="MAX" && rows.length>0 ? '<div class="mr27-history-card mr27-warn"><b>Maximum provider history available</b><div>The sandbox currently returned a limited weekly history for MAX. Older history was not supplied, so MaliRadar will not fabricate it.</div></div>' : ""}
+          ${r==="1D" && String(c?.status||"").toUpperCase()==="UNAVAILABLE" ? '<div class="mr27-history-card mr27-warn"><b>Intraday data unavailable</b><div>This provider sandbox does not currently supply usable 1D intraday candles.</div></div>' : ""}
         </div>
         <div class="mr26-meta">
           <div><span>Open</span><b>${num26(q?.open)!=null?q.open.toFixed(2):'—'}</b></div>
@@ -1776,6 +1786,6 @@ button{position:relative;overflow:hidden}
     return '';
   }
   // Expose truthful range guidance to the existing chart engine.
-  window.MaliRadarChartRangePolicy={version:'2.7',rangeDays,warning:msg};
+  window.MaliRadarChartRangePolicy={version:'2.7.1',rangeDays,warning:msg};
 })();
 </script>
