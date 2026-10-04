@@ -1235,6 +1235,50 @@ function deleteTrustData(){
   if(oldSet)window.setMaliRegion=function(id){oldSet(id);setTimeout(loadProvider,150)};
   window.addEventListener('load',()=>setTimeout(loadProvider,350));
   window.maliRadarLoadProviderDirectory=loadProvider;
+/* v2.8 Provider Coverage Diagnostic */
+(function(){
+  const escCov=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const apiCov=async p=>{const r=await fetch(p,{cache:'no-store',headers:{Accept:'application/json'}});const j=await r.json().catch(()=>null);if(!r.ok)throw Error(j?.error||('HTTP '+r.status));return j};
+  const marketCov=()=>{try{const r=window.getMaliRegion?window.getMaliRegion():{id:'ke'};return ({ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'})[r.id]||'NSE'}catch(e){return 'NSE'}};
+  function getSymbols(){
+    try{
+      const rows=typeof MaliRadarStocks==='function'?MaliRadarStocks():[];
+      return [...new Set((rows||[]).map(x=>String(x?.symbol||x?.ticker||x?.code||'').trim()).filter(Boolean))];
+    }catch(e){return []}
+  }
+  function renderCov(data,root){
+    const ins=data?.instruments||[], verified=ins.filter(x=>x.status==='VERIFIED'), unavailable=ins.filter(x=>x.status!=='VERIFIED');
+    const groups={};
+    unavailable.forEach(x=>{const k=x.status||'UNAVAILABLE';groups[k]=(groups[k]||0)+1});
+    const groupHtml=Object.entries(groups).map(([k,v])=>'<span class="badge" style="color:#ffe08a;border-color:#665629">'+escCov(k.replaceAll('_',' '))+' • '+v+'</span>').join(' ');
+    const rows=unavailable.map(x=>'<div class="stock"><div class="row"><div><b>'+escCov(x.symbol)+'</b><div class="muted">'+escCov(x.reason||'Provider did not return a verified price')+'</div></div><span class="severity watch">'+escCov(x.status||'UNAVAILABLE')+'</span></div></div>').join('');
+    root.innerHTML='<div class="card"><div class="row"><div><b>Provider Coverage</b><div class="muted">Exact verification status for the current '+escCov(data?.market||marketCov())+' directory</div></div><span class="badge">'+verified.length+'/'+ins.length+' VERIFIED</span></div><div class="grid"><div class="metric">Verified<b class="green">'+verified.length+'</b></div><div class="metric">Unavailable<b class="red">'+unavailable.length+'</b></div><div class="metric">Coverage<b>'+escCov(String(data?.coveragePct??0))+'%</b></div><div class="metric">Provider<b>MyStocks</b></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">'+groupHtml+'</div><div style="margin-top:12px"><b>Unverified instruments</b></div><div>'+rows+'</div></div>';
+  }
+  async function runCov(){
+    const host=document.getElementById('mr27CoveragePanel'); if(!host)return;
+    host.innerHTML='<div class="card"><b>Checking provider coverage…</b><div class="notice">MaliRadar is checking each listed instrument against the provider. This may take a moment.</div></div>';
+    try{
+      const symbols=getSymbols(), market=marketCov();
+      if(!symbols.length) throw Error('No provider directory symbols are available yet. Reload the Markets screen and try again.');
+      const all=[];
+      for(let i=0;i<symbols.length;i+=50){
+        const part=symbols.slice(i,i+50);
+        const j=await apiCov('/api/market-data/coverage?market='+encodeURIComponent(market)+'&symbols='+encodeURIComponent(part.join(','))+'&_mr28='+Date.now());
+        all.push(...(j?.instruments||[]));
+      }
+      const verified=all.filter(x=>x.status==='VERIFIED').length;
+      renderCov({market,total:all.length,verified,coveragePct:all.length?((verified/all.length)*100).toFixed(1):'0.0',instruments:all},host);
+    }catch(e){host.innerHTML='<div class="card"><b>Coverage check failed</b><div class="notice">'+escCov(e?.message||'Unable to check provider coverage.')+'</div><button class="btn" onclick="window.MaliRadarRunCoverage()">↻ Try again</button></div>'}
+  }
+  window.MaliRadarRunCoverage=runCov;
+  window.addEventListener('load',()=>setTimeout(()=>{
+    const anchor=document.querySelector('#marketsView')||document.querySelector('[id*="market"]');
+    if(!anchor||document.getElementById('mr27CoveragePanel'))return;
+    const box=document.createElement('div');box.id='mr27CoveragePanel';box.innerHTML='<div class="card"><div class="row"><div><b>Provider Coverage Diagnostic</b><div class="muted">Check why listed instruments do not have verified prices.</div></div><button class="btn alt" onclick="window.MaliRadarRunCoverage()">Check</button></div></div>';
+    anchor.appendChild(box);
+  },1200));
+})();
+
 })();
 </script>
 
