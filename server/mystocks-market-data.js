@@ -616,6 +616,10 @@ function registerMaliRadarMarketDataRoutes(app) {
           quoteList(body)
             .map(normalize);
 
+        const providerNotFound = Array.isArray(body?.not_found)
+          ? body.not_found.map(x => String(x?.symbol || x?.ticker || x || '').toUpperCase())
+          : [];
+
         const out =
           providerSymbols.map(
             s =>
@@ -641,6 +645,17 @@ function registerMaliRadarMarketDataRoutes(app) {
         // Batch quotes are the fast path. Some provider-listed instruments
         // can still arrive without a usable price, so verify only those
         // missing prices through the authoritative single-stock endpoint.
+        out.forEach((q, i) => {
+          if (q.price != null) {
+            q.verificationMethod = 'BATCH_QUOTE';
+            q.verificationStatus = 'VERIFIED';
+          } else if (providerNotFound.includes(providerSymbols[i].toUpperCase())) {
+            q.verificationMethod = 'NONE';
+            q.verificationStatus = 'NOT_FOUND_BY_PROVIDER';
+            q.availabilityReason = 'Provider could not resolve this symbol in the batch quote endpoint.';
+          }
+        });
+
         const missing = out
           .map((q, i) => ({ q, i }))
           .filter(({q}) => q.price == null);
@@ -664,6 +679,8 @@ function registerMaliRadarMarketDataRoutes(app) {
                       (detail.symbol || providerSymbols[item.i]).split('.')[0],
                     exchange: detail.exchange || exchange,
                     status: 'DELAYED',
+                    verificationMethod: 'SINGLE_STOCK_DETAIL',
+                    verificationStatus: 'VERIFIED',
                     source: 'MyStocks Africa Sandbox'
                   };
                 }
@@ -681,6 +698,14 @@ function registerMaliRadarMarketDataRoutes(app) {
             )
           );
         }
+
+        out.forEach((q) => {
+          if (q.price == null && !q.availabilityReason) {
+            q.verificationMethod = 'NONE';
+            q.verificationStatus = 'NO_VERIFIED_PRICE';
+            q.availabilityReason = 'Provider resolved no usable price from batch or single-stock detail.';
+          }
+        });
 
         res.set(
           'Cache-Control',
@@ -726,6 +751,127 @@ function registerMaliRadarMarketDataRoutes(app) {
 
           source:
             'MyStocks Africa Sandbox'
+        });
+      }
+    }
+  );
+
+
+  // =====================================
+  // QUOTE COVERAGE DIAGNOSTIC
+  // =====================================
+
+  app.get(
+    '/api/market-data/coverage',
+    async (req, res) => {
+      const exchange = String(req.query.market || 'NSE').toUpperCase();
+      const symbols = [...new Set(
+        String(req.query.symbols || '')
+          .split(',')
+          .map(x => x.trim())
+          .filter(Boolean)
+      )].slice(0, 50);
+
+      if (!symbols.length) {
+        return res.status(400).json({
+          error: 'Provide symbols, e.g. ?symbols=SCOM,KCB,EQTY',
+          code: 'SYMBOLS_REQUIRED'
+        });
+      }
+
+      const providerSymbols = symbols.map(x => providerSymbol(x, exchange));
+
+      try {
+        const body = await msFetch('/market/quotes', {
+          symbols: providerSymbols.join(',')
+        });
+        const rows = quoteList(body).map(normalize);
+        const notFound = new Set(
+          Array.isArray(body?.not_found)
+            ? body.not_found.map(x => String(x?.symbol || x?.ticker || x || '').toUpperCase())
+            : []
+        );
+
+        const coverage = [];
+        const concurrency = 5;
+        let cursor = 0;
+
+        const worker = async () => {
+          while (cursor < providerSymbols.length) {
+            const i = cursor++;
+            const symbol = providerSymbols[i];
+            const batch = rows.find(x =>
+              x.symbol.toUpperCase() === symbol.toUpperCase()
+            ) || rows.find(x =>
+              x.localSymbol.toUpperCase() === symbol.split('.')[0].toUpperCase()
+            );
+
+            if (batch?.price != null) {
+              coverage[i] = {
+                symbol,
+                exchange,
+                status: 'VERIFIED',
+                method: 'BATCH_QUOTE',
+                price: batch.price,
+                asOf: batch.asOf || null
+              };
+              continue;
+            }
+
+            try {
+              const detail = await msStockDetail(symbol);
+              if (detail?.price != null) {
+                coverage[i] = {
+                  symbol,
+                  exchange,
+                  status: 'VERIFIED',
+                  method: 'SINGLE_STOCK_DETAIL',
+                  price: detail.price,
+                  asOf: detail.asOf || null
+                };
+              } else {
+                coverage[i] = {
+                  symbol,
+                  exchange,
+                  status: notFound.has(symbol.toUpperCase()) ? 'NOT_FOUND_BY_PROVIDER' : 'NO_VERIFIED_PRICE',
+                  method: 'NONE',
+                  reason: notFound.has(symbol.toUpperCase())
+                    ? 'Provider did not resolve this symbol.'
+                    : 'Provider resolved the instrument but returned no usable price.'
+                };
+              }
+            } catch (e) {
+              coverage[i] = {
+                symbol,
+                exchange,
+                status: notFound.has(symbol.toUpperCase()) ? 'NOT_FOUND_BY_PROVIDER' : 'DETAIL_REQUEST_FAILED',
+                method: 'NONE',
+                reason: e.message || 'Single-stock detail request failed.'
+              };
+            }
+          }
+        };
+
+        await Promise.all(
+          Array.from({length: Math.min(concurrency, providerSymbols.length)}, worker)
+        );
+
+        const verified = coverage.filter(x => x?.status === 'VERIFIED').length;
+        res.json({
+          market: exchange,
+          source: 'MyStocks Africa Sandbox',
+          delayMinutes: 15,
+          total: coverage.length,
+          verified,
+          unavailable: coverage.length - verified,
+          coveragePct: coverage.length ? Number((verified / coverage.length * 100).toFixed(1)) : 0,
+          instruments: coverage
+        });
+      } catch (e) {
+        res.status(e.status || 502).json({
+          error: e.message,
+          code: e.code || 'MYSTOCKS_ERROR',
+          source: 'MyStocks Africa Sandbox'
         });
       }
     }
