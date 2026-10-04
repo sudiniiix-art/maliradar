@@ -229,4 +229,197 @@ function registerMaliRadarMarketDataRoutes(app){
 
 module.exports = {
   registerMaliRadarMarketDataRoutes
+};  // Individual stock quote route.
+  // The frontend can keep using this route for Stock Detail.
+  // It now uses /market/quotes first, which is the important fix.
+
+  app.get('/api/market-data/stock/:symbol', async (req,res) => {
+    const exchange = String(
+      req.query.market || 'NSE'
+    ).toUpperCase();
+
+    const local = String(
+      req.params.symbol || ''
+    ).trim().toUpperCase();
+
+    if(!local){
+      return res.status(400).json({
+        error: 'Missing stock symbol'
+      });
+    }
+
+    const qualified = providerSymbol(
+      local,
+      exchange
+    );
+
+    try{
+      // Preferred quote endpoint.
+      try{
+        const body = await msFetch('/market/quotes', {
+          symbols: qualified
+        });
+
+        const quote = findQuote(
+          body,
+          qualified
+        );
+
+        if(quote && quote.price != null){
+          return res.json({
+            ...quote,
+            symbol: quote.symbol || qualified,
+            localSymbol: quote.localSymbol || local,
+            exchange: quote.exchange || exchange,
+            delayMinutes: 15,
+            status: 'DELAYED',
+            source: 'MyStocks Africa Sandbox'
+          });
+        }
+      }catch(quoteError){
+        // Continue to compatibility fallback below.
+      }
+
+      // Compatibility fallback.
+      const body = await msFetch(
+        '/stocks/' + encodeURIComponent(qualified)
+      );
+
+      const stock = normalizeQuoteResponse(
+        body,
+        qualified
+      );
+
+      stock.localSymbol =
+        stock.localSymbol || local;
+
+      stock.exchange =
+        stock.exchange || exchange;
+
+      stock.delayMinutes = 15;
+      stock.source = 'MyStocks Africa Sandbox';
+
+      if(stock.price == null){
+        stock.status = 'UNAVAILABLE';
+      }else{
+        stock.status = 'DELAYED';
+      }
+
+      return res.json(stock);
+
+    }catch(e){
+      return res.status(e.status || 502).json({
+        symbol: qualified,
+        localSymbol: local,
+        exchange,
+        currency: null,
+        price: null,
+        changePct: null,
+        asOf: null,
+        delayMinutes: 15,
+        stale: false,
+        status: 'UNAVAILABLE',
+        source: 'MyStocks Africa Sandbox',
+        error: e.message,
+        code: e.code || 'MYSTOCKS_STOCK_ERROR'
+      });
+    }
+  });
+
+
+  // Candle/history route.
+  // This route is deliberately isolated from the quote route.
+  // A candle failure must NEVER make a valid quote disappear.
+
+  app.get(
+    '/api/market-data/stock/:symbol/candles',
+    async (req,res) => {
+      const exchange = String(
+        req.query.market || 'NSE'
+      ).toUpperCase();
+
+      const local = String(
+        req.params.symbol || ''
+      ).trim().toUpperCase();
+
+      const qualified = providerSymbol(
+        local,
+        exchange
+      );
+
+      try{
+        const range = String(
+          req.query.range || '1M'
+        ).toUpperCase();
+
+        const now = new Date();
+        let days = 30;
+
+        if(range === '1D') days = 1;
+        else if(range === '1W') days = 7;
+        else if(range === '1M') days = 30;
+        else if(range === '3M') days = 90;
+        else if(range === '1Y') days = 365;
+        else if(range === 'MAX') days = 1825;
+
+        const from = new Date(
+          now.getTime() -
+          days * 24 * 60 * 60 * 1000
+        );
+
+        const body = await msFetch(
+          '/stocks/' +
+          encodeURIComponent(qualified) +
+          '/candles',
+          {
+            from: from.toISOString(),
+            to: now.toISOString(),
+            interval:
+              range === '1D'
+                ? '5m'
+                : range === '1W'
+                  ? '15m'
+                  : '1d'
+          }
+        );
+
+        res.json({
+          symbol: qualified,
+          localSymbol: local,
+          market: exchange,
+          range,
+          source: 'MyStocks Africa Sandbox',
+          delayMinutes: 15,
+          candles:
+            body?.candles ||
+            body?.data ||
+            body?.results ||
+            body?.items ||
+            (Array.isArray(body) ? body : [])
+        });
+
+      }catch(e){
+        // Chart data can be unavailable without
+        // invalidating the stock quote.
+        res.status(e.status || 502).json({
+          symbol: qualified,
+          localSymbol: local,
+          market: exchange,
+          range: String(
+            req.query.range || '1M'
+          ).toUpperCase(),
+          source: 'MyStocks Africa Sandbox',
+          delayMinutes: 15,
+          candles: [],
+          unavailable: true,
+          error: e.message
+        });
+      }
+    }
+  );
+}
+
+module.exports = {
+  registerMaliRadarMarketDataRoutes
 };
+                                                  
