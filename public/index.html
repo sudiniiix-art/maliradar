@@ -1644,6 +1644,22 @@ function deleteTrustData(){
     }catch(e){return 'NSE'}
   };
   const local26 = s => String(s||'').toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,'');
+  const provider26 = (s,ex) => {
+    const u=String(s||'').toUpperCase();
+    if(/\.[A-Z]{2,3}$/.test(u)) return u;
+    const suffix={NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'}[String(ex||'NSE').toUpperCase()]||'';
+    return u+suffix;
+  };
+  function cachedQuote26(sym){
+    const want=String(sym||'').toUpperCase(), local=local26(want);
+    const store=window.maliRadarProviderQuotes||{};
+    for(const [k,v] of Object.entries(store)){
+      const ks=String(k||'').toUpperCase();
+      const vs=String(v?.symbol||'').toUpperCase();
+      if(ks===want||ks===local||vs===want||vs===local||local26(ks)===local)return v;
+    }
+    return null;
+  }
   function chart26(rows,meta,range){
     const a=(rows||[]).map(x=>({
       t:x.timestamp??x.time??x.date??x.datetime,
@@ -1744,12 +1760,20 @@ function deleteTrustData(){
     const s=local26(sym), ex=market26(), title='📈 '+s;
     const r=range||'1M';
     try{
-      let q=(window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[s])||null;
+      const ps=provider26(s,ex);
+      let q=cachedQuote26(ps);
       if(!q || num26(q?.price)==null){
-        const qj=await api26('/api/market-data/quotes?market='+encodeURIComponent(ex)+'&symbols='+encodeURIComponent(s)+'&_mr26='+Date.now());
-        q=Array.isArray(qj?.quotes)?(qj.quotes.find(x=>String(x?.symbol||'').toUpperCase()===String(s).toUpperCase())||qj.quotes[0]):null;
+        const qj=await api26('/api/market-data/quotes?market='+encodeURIComponent(ex)+'&symbols='+encodeURIComponent(ps)+'&_mr26='+Date.now());
+        const arr=Array.isArray(qj?.quotes)?qj.quotes:[];
+        q=arr.find(x=>{
+          const xs=String(x?.symbol||'').toUpperCase();
+          return xs===ps || local26(xs)===local26(ps);
+        })||null;
       }
-      if(!q || num26(q?.price)==null) throw new Error('No verified quote returned for '+s);
+      if(!q || num26(q?.price)==null){
+        q=await api26('/api/market-data/stock/'+encodeURIComponent(ps)+'?market='+encodeURIComponent(ex)+'&_mr26detail='+Date.now()).catch(()=>null);
+      }
+      if(!q || num26(q?.price)==null) throw new Error('No verified quote returned for '+ps);
 
       // Batch quotes are optimized for the Markets screen and may not carry
       // the full OHLC snapshot. For Stock Detail, enrich the verified quote
@@ -1758,7 +1782,7 @@ function deleteTrustData(){
         .some(v=>num26(v)==null);
       if(needsDetail){
         try{
-          const d=await api26('/api/market-data/stock/'+encodeURIComponent(s)+'?market='+encodeURIComponent(ex)+'&_mr26detail='+Date.now());
+          const d=await api26('/api/market-data/stock/'+encodeURIComponent(ps)+'?market='+encodeURIComponent(ex)+'&_mr26detail='+Date.now());
           if(d && num26(d?.price)!=null){
             q=Object.assign({},q,d,{price:num26(d?.price)});
             if(window.maliRadarProviderQuotes) window.maliRadarProviderQuotes[s]=q;
