@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v1.6.1</title><style>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v2.7</title><style>
 :root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
 .alert-item{padding:12px 0;border-top:1px solid var(--line)}
 .alert-item:first-child{border-top:0}
@@ -1494,7 +1494,7 @@ function deleteTrustData(){
 <script id="mr251-chart-fix-marker">
 (function(){
   // v2.5.1 frontend marker: chart periods are backed by the server candle bridge.
-  window.MaliRadarChartVersion='2.6';
+  window.MaliRadarChartVersion='2.7';
 })();
 </script>
 
@@ -1633,7 +1633,7 @@ function deleteTrustData(){
   }
   window.MaliRadarMarketPro={open:open26};
   window.details=function(sym){open26(sym,'1M')};
-  window.MaliRadarMarketDataPro={version:'2.6',provider:'MyStocks Africa Sandbox',delayMinutes:15};
+  window.MaliRadarMarketDataPro={version:'2.7',provider:'MyStocks Africa Sandbox',delayMinutes:15};
 })();
 </script>
 
@@ -1754,7 +1754,7 @@ button{position:relative;overflow:hidden}
     if(btn) flash(btn);
   },true);
 
-  window.MaliRadarButtonIllumination={version:'2.6.1',flash:flash};
+  window.MaliRadarButtonIllumination={version:'2.7',flash:flash};
 })();
 </script>
 
@@ -1764,7 +1764,7 @@ button{position:relative;overflow:hidden}
 </style>
 <script id="mr262-data-fix-js">
 (function(){
-  // v2.6.2: improve chart range handling without inventing provider data.
+  // v2.7: improve chart range handling without inventing provider data.
   // The backend remains the source of truth; this layer only makes the UI
   // use compatible provider history when the requested interval is sparse.
   const oldOpen=window.MaliRadarMarketPro&&window.MaliRadarMarketPro.open;
@@ -1776,6 +1776,6 @@ button{position:relative;overflow:hidden}
     return '';
   }
   // Expose truthful range guidance to the existing chart engine.
-  window.MaliRadarChartRangePolicy={version:'2.6.2',rangeDays,warning:msg};
+  window.MaliRadarChartRangePolicy={version:'2.7',rangeDays,warning:msg};
 })();
 </script>
