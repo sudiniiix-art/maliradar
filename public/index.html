@@ -756,16 +756,103 @@ function togglePortfolioMode(){portfolioMode=portfolioMode==='beginner'?'expert'
 function setPortfolioPeriod(p,btn){portfolioPeriod=p;document.querySelectorAll('.periods button').forEach(b=>b.classList.remove('selected'));if(btn)btn.classList.add('selected');renderPortfolio()}
 function portfolioHistoryValues(){
   let cash=100000,hold={}; const arr=[];
-  state.history.forEach(h=>{if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q} let v=cash;Object.keys(hold).forEach(s=>{let p=paperPrice(s);if(p!=null)v+=hold[s]*p});arr.push({label:h.time||'',value:v})});
+  state.history.slice().reverse().forEach(h=>{
+    if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}
+    else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q}
+    let v=cash;Object.keys(hold).forEach(sym=>{const p=paperPrice(sym);if(p!=null)v+=hold[sym]*p});
+    arr.push({label:h.time||'',value:v});
+  });
   return arr;
 }
-function renderPortfolioChart(current){
-  const el=$('portfolioChart'); if(!el)return; let pts=portfolioHistoryValues();
-  const base=100000; if(!pts.length)pts=[{label:'Start',value:base},{label:'Now',value:current}]; else pts.push({label:'Now',value:current});
-  const min=Math.min(...pts.map(p=>p.value),base),max=Math.max(...pts.map(p=>p.value),base),range=Math.max(1,max-min);
-  const width=460,height=210,pad=22; const xy=pts.map((p,i)=>[pad+(width-pad*2)*(i/Math.max(1,pts.length-1)),height-pad-(p.value-min)/(range)*(height-pad*2)]);
-  const line=xy.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
-  el.innerHTML=`<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none"><defs><linearGradient id="pGlow" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#35e0b1"/><stop offset="1" stop-color="#35e0b1" stop-opacity="0"/></linearGradient></defs><g>${[1,2,3,4].map(i=>`<line x1="0" y1="${i*height/5}" x2="${width}" y2="${i*height/5}" class="chart-grid"/>`).join('')}</g><path d="${line} L ${xy[xy.length-1][0]} ${height-pad} L ${xy[0][0]} ${height-pad} Z" fill="url(#pGlow)" opacity=".12"/><path d="${line}" class="chart-line"/><circle cx="${xy[xy.length-1][0]}" cy="${xy[xy.length-1][1]}" r="5" class="price-dot"/></svg><div style="position:absolute;top:9px;left:10px" class="muted">${portfolioPeriod} • DEMO PERFORMANCE</div><div style="position:absolute;bottom:8px;right:10px" class="muted">KSh ${money(current)}</div>`;
+let portfolioChartToken=0;
+async function renderPortfolioChart(current){
+  const el=$('portfolioChart'); if(!el)return;
+  const token=++portfolioChartToken;
+  const range=portfolioPeriod||'1D';
+  const holdings=Object.keys(state.hold||{}).filter(s=>Number(state.hold[s]||0)>0);
+  const base=100000;
+
+  // Build a truthful historical portfolio curve from provider candles.
+  // Each selected period now requests a different provider range/interval.
+  if(!holdings.length){
+    el.innerHTML=`<div class="mr27-history-card"><b>${esc26(range)} • PORTFOLIO PERFORMANCE</b><div>No paper holdings yet. Buy a verified provider-priced asset to create a portfolio history.</div></div>`;
+    return;
+  }
+
+  el.innerHTML=`<div class="mr27-history-card"><b>Loading ${esc26(range)} portfolio history…</b><div>Calculating portfolio value from MyStocks Africa Sandbox candles. No synthetic prices are used.</div></div>`;
+
+  const ex=(window.getMaliRegion?window.getMaliRegion():{id:'ke'}).id;
+  const market=({ke:'NSE',ng:'NGX',za:'JSE',gh:'GSE',eg:'EGX',ma:'CSE',tz:'DSE',ug:'USE',rw:'RSE',us:'US'}[ex]||'NSE');
+
+  try{
+    const responses=await Promise.all(holdings.map(async sym=>{
+      const ps=String(sym).toUpperCase().includes('.')?String(sym).toUpperCase():String(sym).toUpperCase()+({NSE:'.KE',NGX:'.NG',JSE:'.ZA',GSE:'.GH',EGX:'.EG',CSE:'.MA',DSE:'.TZ',USE:'.UG',RSE:'.RW'}[market]||'');
+      const j=await fetch('/api/market-data/stock/'+encodeURIComponent(sym)+'/candles?market='+encodeURIComponent(market)+'&range='+encodeURIComponent(range)+'&_mrPortfolio='+Date.now(),{cache:'no-store',headers:{Accept:'application/json'}}).then(x=>x.json());
+      const rows=(j?.candles||[]).map(c=>({t:new Date(c.time||c.timestamp||c.date).getTime(),p:Number(c.close??c.c??c.price)})).filter(c=>Number.isFinite(c.t)&&Number.isFinite(c.p));
+      return {sym,rows};
+    }));
+
+    if(token!==portfolioChartToken)return;
+
+    const usable=responses.filter(x=>x.rows.length>=1);
+    if(!usable.length){
+      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>${esc26(range)} history unavailable</b><div>MyStocks Africa Sandbox returned no usable historical candles for the current paper holdings. MaliRadar will not reuse static prices.</div></div>`;
+      return;
+    }
+
+    // Use every provider candle timestamp returned by the selected range.
+    const times=[...new Set(usable.flatMap(x=>x.rows.map(r=>r.t)))].sort((a,b)=>a-b);
+    const tx=state.history.slice().reverse().map(h=>({...h,t:new Date(h.time).getTime()})).filter(h=>Number.isFinite(h.t));
+    const points=[];
+    let cash=base,hold={};
+    let txi=0;
+    const lastPrice={};
+    for(const t of times){
+      while(txi<tx.length && tx[txi].t<=t){
+        const h=tx[txi++];
+        if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}
+        else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q}
+      }
+      for(const item of usable){
+        let best=null;
+        for(const c of item.rows){if(c.t<=t)best=c;else break}
+        if(best)lastPrice[item.sym]=best.p;
+      }
+      let value=cash;
+      Object.keys(hold).forEach(sym=>{const p=lastPrice[sym];if(p!=null)value+=hold[sym]*p});
+      if(Number.isFinite(value))points.push({t,value});
+    }
+
+    if(points.length<2){
+      el.innerHTML=`<div class="mr27-history-card mr27-warn"><b>Not enough provider history</b><div>The selected ${esc26(range)} range does not contain enough verified candle points to draw a portfolio curve.</div></div>`;
+      return;
+    }
+
+    const min=Math.min(...points.map(p=>p.value),base),max=Math.max(...points.map(p=>p.value),base),span=Math.max(1,max-min);
+    const W=900,H=240,pad={l:14,r:14,t:22,b:34};
+    const x=i=>pad.l+(i/(points.length-1))*(W-pad.l-pad.r);
+    const y=v=>pad.t+(1-(v-min)/span)*(H-pad.t-pad.b);
+    const path=points.map((p,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(p.value).toFixed(1)).join(' ');
+    const start=points[0],end=points[points.length-1],delta=end.value-start.value,pct=start.value?delta/start.value*100:0;
+    const labels=[points[0],points[Math.floor((points.length-1)/2)],points[points.length-1]].map((p,i)=>{
+      const label=new Date(p.t).toLocaleDateString([], {month:'short',day:'numeric'});
+      return '<text x="'+x([0,Math.floor((points.length-1)/2),points.length-1][i]).toFixed(1)+'" y="'+(H-9)+'" text-anchor="'+(i===0?'start':i===2?'end':'middle')+'" fill="currentColor" opacity=".55" font-size="10">'+esc26(label)+'</text>';
+    }).join('');
+
+    el.innerHTML='<div class="mr26-chart" style="height:210px" data-points="'+esc26(JSON.stringify(points))+'">'+
+      '<div class="mr26-tip"></div><svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'+
+      '<defs><linearGradient id="portfolioGlow" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#35e0b1"/><stop offset="1" stop-color="#35e0b1" stop-opacity="0"/></linearGradient></defs>'+
+      '<g>'+[1,2,3,4].map(i=>'<line x1="0" y1="'+(i*H/5)+'" x2="'+W+'" y2="'+(i*H/5)+'" class="chart-grid"/>').join('')+'</g>'+
+      '<path d="'+path+' L '+x(points.length-1)+' '+(H-pad.b)+' L '+x(0)+' '+(H-pad.b)+' Z" fill="url(#portfolioGlow)" opacity=".12"/>'+
+      '<path d="'+path+'" class="chart-line"/><circle cx="'+x(points.length-1)+'" cy="'+y(end.value)+'" r="5" class="price-dot"/>'+labels+'</svg>'+
+      '<div style="position:absolute;top:9px;left:10px" class="muted">'+esc26(range)+' • PROVIDER PERFORMANCE</div>'+
+      '<div style="position:absolute;top:9px;right:10px" class="'+(delta>=0?'green':'red')+'">'+(delta>=0?'+':'')+'KSh '+money(delta)+' ('+(pct>=0?'+':'')+pct.toFixed(2)+'%)</div>'+
+      '<div style="position:absolute;bottom:8px;right:10px" class="muted">KSh '+money(end.value)+'</div></div>'+
+      '<div class="mr26-note">Portfolio curve uses verified MyStocks Africa Sandbox candles for the selected range and your paper transactions. Prices are provider data only; missing history is not fabricated.</div>';
+  }catch(e){
+    if(token!==portfolioChartToken)return;
+    el.innerHTML='<div class="mr27-history-card mr27-warn"><b>Portfolio history unavailable</b><div>'+esc26(e?.message||'Provider history request failed')+'. MaliRadar will not invent missing data.</div></div>';
+  }
 }
 function universalSearch(){
   const q=($("q")?.value||"").trim().toLowerCase();
