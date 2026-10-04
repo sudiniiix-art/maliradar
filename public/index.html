@@ -1822,7 +1822,8 @@ function deleteTrustData(){
         if(area) area.innerHTML='<div class="mr27-history-card mr27-warn"><b>Historical chart unavailable</b><div>The verified stock quote remains available. MaliRadar will not invent missing market data.</div></div>';
       }
     }catch(e){
-      openM(esc26(title),'<div class="notice">Provider market data could not be loaded. MaliRadar will not substitute an old static price.</div><button class="btn" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+esc26(r)+'\')">↻ Try again</button>');
+      const msg=String(e?.message||e||'Unknown provider error');
+      openM(esc26(title),'<div class="notice"><b>Provider market data could not be loaded.</b><br><span class="muted">'+esc26(msg)+'</span><br><br>MaliRadar will not substitute an old static price.</div><button class="btn" onclick="window.MaliRadarMarketPro.open(\''+esc26(s)+'\',\''+esc26(r)+'\')">↻ Try again</button>');
     }
   }
   window.MaliRadarMarketPro={open:open26};
