@@ -609,189 +609,222 @@ renderNews();renderEvents();
  </div>
 </section>
 
-<script>
+<script id="mr43-smart-assist-intelligence">
 (function(){
- const levels={
-  assist:["Assist","Whole-market condition explanation mode."],
-  signal:["Signal","Ranks probable setups using observed provider conditions; not instructions."],
-  auto:["Auto-Assist","Paper-only automatic preparation mode."]
- };
- let level="assist",tf="1D",lastResults=[];
- let hist=JSON.parse(localStorage.getItem("maliradar_smart_assist_history")||"[]");
-
- const esc=x=>String(x==null?"":x).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
- const num=x=>{const n=Number(x);return Number.isFinite(n)?n:null};
- const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
- const local=s=>String(s||"").toUpperCase().split(".")[0];
- const marketName=()=>{
-   const qs=Object.values(window.maliRadarProviderQuotes||{});
-   return String(qs.find(q=>q?.exchange)?.exchange||"NSE").toUpperCase();
- };
- const rows=()=>{
-   const map=new Map();
-   for(const q of Object.values(window.maliRadarProviderQuotes||{})){
-     const sym=local(q?.localSymbol||q?.symbol);
-     if(!sym||map.has(sym))continue;
-     map.set(sym,q);
-   }
-   return [...map.values()];
- };
-
- function history(){
-   const el=document.getElementById("saHistory");
-   if(!el)return;
-   if(!hist.length){el.innerHTML='<div class="muted" style="padding-top:8px">No scan snapshots recorded.</div>';return}
-   el.innerHTML=hist.slice(-10).reverse().map(h=>'<div class="sa-history-row"><span>'+esc(h.time)+'</span><span>'+esc(h.tf)+'</span><span>'+esc(h.market)+' • '+esc(h.buy)+' buy / '+esc(h.sell)+' sell</span><span>'+esc(h.scanned)+' scanned</span></div>').join("");
- }
-
- function card(r,type){
-   const q=r.quote||{};
-   const cls=type==="buy"?"green":type==="sell"?"red":"";
-   const action=type==="buy"
-    ?'<button class="sa-btn primary" onclick="buy(\''+esc(r.symbol)+'\')">PAPER BUY</button>'
-    :type==="sell"
-    ?'<button class="sa-btn" onclick="sell(\''+esc(r.symbol)+'\')">PAPER SELL</button>'
-    :"";
-   return '<div class="stock" style="padding:11px 0">'+
-    '<div class="row"><div><b>'+esc(r.symbol)+' • '+esc(q.name||r.symbol)+'</b><div class="muted">'+esc(q.exchange||marketName())+' • '+esc(q.delayMinutes||15)+' min delayed</div></div><strong class="'+cls+'">'+esc(r.label)+'</strong></div>'+
-    '<div class="grid" style="margin-top:8px">'+
-      '<div class="metric">PRICE<b>KSh '+(r.price!=null?r.price.toFixed(2):"—")+'</b></div>'+
+  /*
+   * MaliRadar v4.3 — Market Intelligence 2.0
+   * Provider-backed, educational scanner.
+   * No fabricated candles, no prediction claims, no real-money actions.
+   */
+  const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m]));
+  const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+  const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+  const local=s=>String(s||"").toUpperCase().split(".")[0];
+  let intelTf="1D",lastResults=[],scanRunning=false;
+  const market=()=>{try{const r=window.getMaliRegion?window.getMaliRegion():{id:"ke"};return ({ke:"NSE",ng:"NGX",za:"JSE",gh:"GSE",eg:"EGX",ma:"CSE",tz:"DSE",ug:"USE",rw:"RSE",us:"US"})[r.id]||"NSE"}catch(e){return "NSE"}};
+  const currency=q=>({KES:"KSh",USD:"$",NGN:"₦",ZAR:"R",GHS:"GH₵",EGP:"E£",MAD:"MAD ",TZS:"TSh ",UGX:"USh ",RWF:"FRw "}[(q&&q.currency||"KES").toUpperCase()]||"");
+  const fmt=(v,q)=>v==null?"—":currency(q)+Number(v).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+  const providerRows=()=>{
+    const map=new Map();
+    for(const q of Object.values(window.maliRadarProviderQuotes||{})){
+      const s=local(q?.localSymbol||q?.symbol);
+      if(s&&!map.has(s))map.set(s,q);
+    }
+    return [...map.values()];
+  };
+  async function candlePack(sym,range){
+    try{
+      const r=await fetch("/api/market-data/stock/"+encodeURIComponent(sym)+"/candles?market="+encodeURIComponent(market())+"&range="+encodeURIComponent(range)+"&_mr43="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
+      const j=await r.json().catch(()=>null);
+      if(!r.ok)throw Error(j?.error||j?.message||("HTTP "+r.status));
+      const rows=(j?.candles||j?.data?.candles||j?.data||[]).map(c=>({
+        t:new Date(c.time||c.timestamp||c.date||c.datetime).getTime(),
+        p:num(c.close??c.c??c.price),
+        o:num(c.open??c.o),h:num(c.high??c.h),l:num(c.low??c.l),v:num(c.volume??c.v),
+        volumeAvailable:c.volumeAvailable
+      })).filter(x=>Number.isFinite(x.t)&&x.p!=null).sort((a,b)=>a.t-b.t);
+      return {rows,meta:j?.meta||{}};
+    }catch(e){return {rows:[],meta:{},error:String(e?.message||e)}}
+  }
+  function analyze(r,pack){
+    const q=r.quote||{},a=pack.rows,meta=pack.meta||{};
+    if(!a.length){
+      r.quality="INSUFFICIENT";r.evidence=10;r.trend="NO HISTORY";r.momentum="NO HISTORY";r.consistency=null;r.volatility=null;
+      r.reasons=["Verified quote available, but no candles were returned for "+intelTf+".","No historical classification was applied.","Evidence quality: INSUFFICIENT."];
+      return;
+    }
+    const closes=a.map(x=>x.p), first=closes[0],last=closes[closes.length-1];
+    const recent=a.slice(-Math.min(6,a.length)), recentFirst=recent[0]?.p;
+    const trendPct=first?((last-first)/first)*100:0;
+    const momPct=recentFirst?((last-recentFirst)/recentFirst)*100:0;
+    const ups=recent.filter((x,i)=>i===0||x.p>=recent[i-1].p).length;
+    const consistency=recent.length?ups/recent.length*100:null;
+    const returns=[];
+    for(let i=1;i<closes.length;i++)if(closes[i-1])returns.push((closes[i]-closes[i-1])/closes[i-1]*100);
+    const volatility=returns.length?Math.sqrt(returns.reduce((s,x)=>s+x*x,0)/returns.length):null;
+    const peak=Math.max(...closes),drawdown=peak?((last-peak)/peak)*100:null;
+    const pos=r.pos;
+    const qualityStatus=String(meta.qualityStatus||"").toLowerCase();
+    const ohlcCov=num(meta.ohlcCoveragePct);
+    const volCov=num(meta.volumeCoveragePct);
+    let evidence=0;
+    evidence+=a.length>=20?30:a.length>=10?22:a.length>=5?14:7;
+    evidence+=qualityStatus==="complete"?30:qualityStatus==="partial"?22:qualityStatus==="degraded"?12:qualityStatus==="unavailable"?0:18;
+    evidence+=ohlcCov==null?10:clamp(ohlcCov*.2,0,20);
+    evidence+=volCov==null?5:clamp(volCov*.15,0,15);
+    evidence=Math.round(clamp(evidence,0,100));
+    r.evidence=evidence;
+    r.quality=evidence>=75?"HIGH":evidence>=55?"MEDIUM":evidence>=30?"LOW":"INSUFFICIENT";
+    r.trend=trendPct>1?"UPTREND":trendPct<-1?"DOWNTREND":"SIDEWAYS";
+    r.momentum=momPct>1?"POSITIVE":momPct<-1?"NEGATIVE":"MIXED";
+    r.consistency=consistency;
+    r.volatility=volatility;
+    r.trendPct=trendPct;r.momPct=momPct;r.drawdown=drawdown;
+    const trendScore=clamp(trendPct*2.2,-20,20);
+    const momScore=clamp(momPct*3.0,-16,16);
+    const dayScore=clamp((r.day||0)*1.5,-10,10);
+    const consistencyScore=consistency==null?0:clamp((consistency-50)*.16,-8,8);
+    const positionScore=pos==null?0:clamp((pos-50)*.12,-6,6);
+    const exhaustionPenalty=drawdown!=null&&drawdown<-8?clamp(drawdown*.25,-4,0):0;
+    r.score=Math.round(clamp(50+trendScore+momScore+dayScore+consistencyScore+positionScore+exhaustionPenalty,0,100));
+    r.reasons=[
+      "Trend: "+r.trend+" ("+(trendPct>=0?"+":"")+trendPct.toFixed(2)+"% over "+a.length+" candles).",
+      "Momentum: "+r.momentum+" ("+(momPct>=0?"+":"")+momPct.toFixed(2)+"% across recent candles).",
+      "Consistency: "+Math.round(consistency)+"% of recent candles closed higher or flat.",
+      r.volatility!=null?"Observed candle volatility: "+volatility.toFixed(2)+"% average return dispersion.":"Volatility unavailable.",
+      r.day!=null?"Latest reported move: "+(r.day>=0?"+":"")+r.day.toFixed(2)+"%.":"Latest move unavailable.",
+      "Evidence quality: "+r.quality+" ("+r.evidence+"/100)."
+    ];
+    if(meta.qualityIssues&&meta.qualityIssues.length)r.reasons.push("Provider quality note: "+String(meta.qualityIssues[0]));
+  }
+  function resultCard(r,type){
+    const q=r.quote||{},cls=type==="buy"?"green":type==="sell"?"red":"";
+    const label=type==="buy"?(r.score>=75?"STRONG BUY SETUP":"BUY SETUP"):type==="sell"?(r.score<=25?"STRONG SELL / RISK":"SELL / RISK SETUP"):(r.unavailable?"UNAVAILABLE":"WATCH");
+    const action=type==="buy"?'<button class="sa-btn primary" onclick="buy(\''+esc(r.symbol)+'\')">PAPER BUY</button>':type==="sell"?'<button class="sa-btn" onclick="sell(\''+esc(r.symbol)+'\')">PAPER SELL</button>':"";
+    return '<div class="stock" style="padding:12px 0">'+
+      '<div class="row"><div><b>'+esc(r.symbol)+' • '+esc(q.name||r.symbol)+'</b><div class="muted">'+esc(q.exchange||market())+' • '+esc(q.delayMinutes||15)+' min delayed</div></div><strong class="'+cls+'">'+esc(label)+'</strong></div>'+
+      '<div class="grid" style="margin-top:8px">'+
+      '<div class="metric">PRICE<b>'+esc(fmt(r.price,q))+'</b></div>'+
       '<div class="metric">SETUP SCORE<b>'+esc(r.score)+'/100</b></div>'+
-      '<div class="metric">OBSERVED MOVE<b class="'+(r.day>=0?"green":"red")+'">'+(r.day!=null?(r.day>=0?"+":"")+r.day.toFixed(2)+"%":"—")+'</b></div>'+
-      '<div class="metric">TREND / MOMENTUM<b>'+esc(r.trend)+" / "+esc(r.momentum)+'</b></div>'+
-    '</div>'+
-    '<div class="notice" style="margin-top:8px">'+r.reasons.map(x=>'◈ '+esc(x)).join("<br>")+'</div>'+
-    '<div class="actions">'+action+'<button class="sa-btn" onclick="window.MaliRadarMarketPro&&window.MaliRadarMarketPro.open(\''+esc(r.symbol)+'\',\''+esc(tf)+'\')">OPEN STOCK</button></div>'+
-   '</div>';
- }
-
- function render(){
-   const buys=lastResults.filter(x=>x.type==="buy").sort((a,b)=>b.score-a.score).slice(0,8);
-   const sells=lastResults.filter(x=>x.type==="sell").sort((a,b)=>a.score-b.score).slice(0,8);
-   const watch=lastResults.filter(x=>x.type==="watch").sort((a,b)=>Math.abs(50-a.score)-Math.abs(50-b.score)).slice(0,10);
-   document.getElementById("saBuyList").innerHTML=buys.length?buys.map(x=>card(x,"buy")).join(""):'<div class="muted" style="padding-top:8px">No probable buy setup met the current rules.</div>';
-   document.getElementById("saSellList").innerHTML=sells.length?sells.map(x=>card(x,"sell")).join(""):'<div class="muted" style="padding-top:8px">No probable sell/risk setup met the current rules.</div>';
-   document.getElementById("saWatchList").innerHTML=watch.length?watch.map(x=>card(x,"watch")).join(""):'<div class="muted" style="padding-top:8px">No watch candidates returned.</div>';
-   const buysN=lastResults.filter(x=>x.type==="buy").length,sellsN=lastResults.filter(x=>x.type==="sell").length;
-   document.getElementById("saScanned").textContent=lastResults.length;
-   document.getElementById("saBuyCount").textContent=buysN;
-   document.getElementById("saSellCount").textContent=sellsN;
-   document.getElementById("saWatchCount").textContent=lastResults.filter(x=>x.type==="watch").length;
-   document.getElementById("saUnavailable").textContent=lastResults.filter(x=>x.unavailable).length;
-   document.getElementById("saSignalTitle").textContent=lastResults.length?"SCAN COMPLETE":"READY TO SCAN";
- }
-
- async function candles(sym,range){
-   const market=marketName();
-   try{
-     const j=await fetch("/api/market-data/stock/"+encodeURIComponent(sym)+"/candles?market="+encodeURIComponent(market)+"&range="+encodeURIComponent(range)+"&_sa4="+Date.now(),{cache:"no-store"}).then(x=>x.json());
-     return (j?.candles||[]).map(c=>({t:new Date(c.time||c.timestamp||c.date).getTime(),p:num(c.close??c.c??c.price),v:num(c.volume??c.v)})).filter(x=>Number.isFinite(x.t)&&x.p!=null).sort((a,b)=>a.t-b.t);
-   }catch(e){return []}
- }
-
- async function scan(){
-   const all=rows();
-   const market=marketName();
-   document.getElementById("saMarket").textContent=market;
-   document.getElementById("saMarketMeta").textContent=all.length+" provider securities • "+tf+" • delayed data";
-   document.getElementById("saScanStatus").textContent="SCANNING";
-   document.getElementById("saSignalTitle").textContent="SCANNING "+all.length+" SECURITIES…";
-   document.getElementById("saSignalCopy").textContent="Checking every verified quote, then applying historical candles to the strongest current movers. No synthetic data is used.";
-   document.getElementById("saRunBtn").disabled=true;
-
-   const base=all.map(q=>{
-     const price=num(q?.price),day=num(q?.changePct),prev=num(q?.previousClose),high=num(q?.high),low=num(q?.low);
-     const rangePct=price!=null&&high!=null&&low!=null&&price!==0?Math.abs(high-low)/price*100:null;
-     const pos=price!=null&&high!=null&&low!=null&&high!==low?((price-low)/(high-low))*100:null;
-     let score=50+(day!=null?clamp(day*3,-18,18):0);
-     if(pos!=null)score+=clamp((pos-50)*0.18,-9,9);
-     return {symbol:local(q?.localSymbol||q?.symbol),quote:q,price,day,prev,high,low,rangePct,pos,score:Math.round(clamp(score,0,100)),trend:"QUOTE ONLY",momentum:"MIXED",reasons:[
-       day!=null?"Observed day move: "+(day>=0?"+":"")+day.toFixed(2)+"%.":"Daily change unavailable.",
-       pos!=null?"Price position inside reported day range: "+pos.toFixed(0)+"%.":"Day-range position unavailable.",
-       q?.volume!=null?"Provider reported volume is available.":"Volume not supplied by provider."
-     ],unavailable:price==null,type:"watch"};
-   }).filter(x=>x.symbol);
-
-   const candidates=base.filter(x=>x.price!=null).sort((a,b)=>Math.abs((b.day||0))-Math.abs((a.day||0))).slice(0,24);
-   for(let i=0;i<candidates.length;i+=4){
-     const chunk=candidates.slice(i,i+4);
-     const data=await Promise.all(chunk.map(x=>candles(x.symbol,tf)));
-     data.forEach((arr,j)=>{
-       const r=chunk[j];
-       if(!arr.length){
-         r.quality="MEDIUM";
-         r.reasons.push("Historical candles unavailable; score is based on verified quote fields only.");
-         return;
-       }
-       const first=arr[0].p,last=arr[arr.length-1].p,recent=arr.slice(-Math.min(6,arr.length)),m0=recent[0]?.p;
-       const trendPct=first?((last-first)/first)*100:0;
-       const momPct=m0?((last-m0)/m0)*100:0;
-       const positive=recent.filter((x,k)=>k===0||x.p>=recent[k-1].p).length;
-       const consistency=((positive/recent.length)*100);
-       r.trend=trendPct>0.5?"UPTREND":trendPct<-0.5?"DOWNTREND":"SIDEWAYS";
-       r.momentum=momPct>0.5?"POSITIVE":momPct<-0.5?"NEGATIVE":"MIXED";
-       r.consistency=consistency;
-       const trendScore=clamp(trendPct*2.8,-22,22);
-       const momentumScore=clamp(momPct*3.5,-18,18);
-       const dayScore=clamp((r.day||0)*1.8,-12,12);
-       const rangeScore=r.pos!=null?clamp((r.pos-50)*0.18,-9,9):0;
-       const consistencyScore=clamp((consistency-50)*0.16,-8,8);
-       r.score=Math.round(clamp(50+trendScore+momentumScore+dayScore+rangeScore+consistencyScore,0,100));
-       r.quality=arr.length>=5?"HIGH":"MEDIUM";
-       r.reasons=[
-         "Trend: "+r.trend+" ("+(trendPct>=0?"+":"")+trendPct.toFixed(2)+"% over "+arr.length+" candles).",
-         "Momentum: "+r.momentum+" ("+(momPct>=0?"+":"")+momPct.toFixed(2)+"% recent move).",
-         "Consistency: "+Math.round(consistency)+"% of recent candles closed higher or flat.",
-         r.day!=null?"Latest reported day move: "+(r.day>=0?"+":"")+r.day.toFixed(2)+"%.":"Daily change unavailable.",
-         "Evidence quality: "+r.quality+". Provider data may be delayed."
-       ];
-     });
-     document.getElementById("saScanStatus").textContent="HISTORY "+Math.min(i+4,candidates.length)+"/"+candidates.length;
-   }
-
-   base.forEach(r=>{
-     if(r.unavailable){r.type="watch";r.label="UNAVAILABLE";return}
-     // A quote-only result cannot become a buy/sell recommendation: insufficient evidence.
-     if(r.quality==="MEDIUM" && r.trend==="QUOTE ONLY"){
-       r.type="watch";r.label="WATCH / QUOTE-ONLY";return;
-     }
-     if(r.score>=75){r.type="buy";r.label="STRONG BUY SETUP"}
-     else if(r.score>=65){r.type="buy";r.label="BUY SETUP"}
-     else if(r.score<=25){r.type="sell";r.label="STRONG SELL / RISK"}
-     else if(r.score<=44){r.type="sell";r.label="SELL / RISK SETUP"}
-     else {r.type="watch";r.label="WATCH"}
-   });
-   lastResults=base;
-   document.getElementById("saScanStatus").textContent="COMPLETE";
-   document.getElementById("saSignalCopy").textContent="Whole-market scan complete. Setup labels are educational classifications from provider-backed observations, not predictions or financial advice.";
-   document.getElementById("saRunBtn").disabled=false;
-   render();
-   window.MaliRadarSmartScan={version:"4.2",market,range:tf,results:lastResults,scanned:lastResults.length};
- }
-
- function setLevel(l){
-   level=l;
-   document.querySelectorAll(".sa-choice").forEach(x=>x.classList.toggle("selected",x.dataset.level===l));
-   document.getElementById("saMode").textContent=levels[l][0];
-   document.getElementById("saModeCopy").textContent=levels[l][1];
- }
-
- document.querySelectorAll(".sa-choice").forEach(x=>x.addEventListener("click",()=>setLevel(x.dataset.level)));
- document.getElementById("saActivateBtn").addEventListener("click",()=>{document.getElementById("saActivation").style.display="none";document.getElementById("saWorkspace").style.display="block";history();scan()});
- document.getElementById("saRunBtn").addEventListener("click",scan);
- document.getElementById("saRecordBtn").addEventListener("click",()=>{
-   const buy=lastResults.filter(x=>x.type==="buy").length,sell=lastResults.filter(x=>x.type==="sell").length;
-   hist.push({time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),tf,market:marketName(),buy,sell,scanned:lastResults.length});
-   hist=hist.slice(-30);localStorage.setItem("maliradar_smart_assist_history",JSON.stringify(hist));history();
- });
- document.querySelectorAll("#saTimeframes button").forEach(b=>b.addEventListener("click",()=>{
-   tf=b.textContent.trim();
-   document.querySelectorAll("#saTimeframes button").forEach(x=>x.classList.remove("primary"));
-   b.classList.add("primary");
-   document.getElementById("saScanStatus").textContent="READY";
-   document.getElementById("saSignalTitle").textContent="TIMEFRAME "+tf+" SELECTED";
- }));
- history();
+      '<div class="metric">EVIDENCE<b>'+esc(r.quality||"INSUFFICIENT")+' • '+esc(r.evidence||0)+'/100</b></div>'+
+      '<div class="metric">TREND / MOMENTUM<b>'+esc(r.trend||"—")+' / '+esc(r.momentum||"—")+'</b></div></div>'+
+      '<div class="notice" style="margin-top:8px">'+r.reasons.map(x=>"◈ "+esc(x)).join("<br>")+'</div>'+
+      '<div class="actions">'+action+'<button class="sa-btn" onclick="window.MaliRadarMarketPro&&window.MaliRadarMarketPro.open(\''+esc(r.symbol)+'\',\''+esc(intelTf)+'\')">OPEN STOCK</button></div></div>';
+  }
+  function setText(id,v){const e=document.getElementById(id);if(e)e.textContent=v}
+  function renderResults(){
+    const buys=lastResults.filter(x=>x.type==="buy").sort((a,b)=>b.score-a.score).slice(0,8);
+    const sells=lastResults.filter(x=>x.type==="sell").sort((a,b)=>a.score-b.score).slice(0,8);
+    const watch=lastResults.filter(x=>x.type==="watch").sort((a,b)=>Math.abs(50-a.score)-Math.abs(50-b.score)).slice(0,10);
+    const unavailable=lastResults.filter(x=>x.unavailable);
+    const b=document.getElementById("saBuyList"),s=document.getElementById("saSellList"),w=document.getElementById("saWatchList");
+    if(b)b.innerHTML=buys.length?buys.map(x=>resultCard(x,"buy")).join(""):'<div class="muted" style="padding-top:8px">No positive setup met the current evidence rules.</div>';
+    if(s)s.innerHTML=sells.length?sells.map(x=>resultCard(x,"sell")).join(""):'<div class="muted" style="padding-top:8px">No negative setup met the current evidence rules.</div>';
+    if(w)w.innerHTML=watch.length?watch.map(x=>resultCard(x,"watch")).join(""):'<div class="muted" style="padding-top:8px">No watch candidates returned.</div>';
+    setText("saScanned",lastResults.length);
+    setText("saBuyCount",lastResults.filter(x=>x.type==="buy").length);
+    setText("saSellCount",lastResults.filter(x=>x.type==="sell").length);
+    setText("saWatchCount",lastResults.filter(x=>x.type==="watch").length);
+    setText("saUnavailable",unavailable.length);
+  }
+  function injectPanel(){
+    if(document.getElementById("mr43IntelPanel"))return;
+    const anchor=document.querySelector("#smartAssistView .sa-signal");
+    if(!anchor)return;
+    const p=document.createElement("div");p.id="mr43IntelPanel";p.className="sa-card";p.style.marginTop="14px";
+    p.innerHTML='<div class="row"><div><div class="eyebrow">MARKET INTELLIGENCE 2.0</div><h3>Evidence & Market Breadth</h3></div><span class="sa-pill">RULE-BASED</span></div>'+
+      '<p class="muted">The scanner now separates setup strength from evidence quality. Scores summarize observed conditions; they are not probabilities or predictions.</p>'+
+      '<div class="sa-grid" style="margin-top:10px">'+
+      '<div class="sa-card"><div class="eyebrow">VERIFIED</div><h3 id="mr43Verified">—</h3><p>Quotes with usable price.</p></div>'+
+      '<div class="sa-card"><div class="eyebrow">DEEP ANALYSIS</div><h3 id="mr43Deep">—</h3><p>Provider candle series analyzed.</p></div>'+
+      '<div class="sa-card"><div class="eyebrow">HIGH EVIDENCE</div><h3 id="mr43High">—</h3><p>Evidence quality ≥ 75/100.</p></div>'+
+      '<div class="sa-card"><div class="eyebrow">BREADTH</div><h3 id="mr43Breadth">—</h3><p>Verified securities up today.</p></div>'+
+      '<div class="sa-card"><div class="eyebrow">AVG MOVE</div><h3 id="mr43AvgMove">—</h3><p>Average verified daily move.</p></div>'+
+      '<div class="sa-card"><div class="eyebrow">VOLUME EVIDENCE</div><h3 id="mr43Volume">—</h3><p>Deep series with volume data.</p></div></div>'+
+      '<div id="mr43Method" class="intel-note" style="margin-top:10px">Waiting for the next scan.</div>';
+    anchor.insertAdjacentElement("afterend",p);
+  }
+  function renderPanel(stats){
+    if(!stats)return;
+    setText("mr43Verified",stats.verified+" / "+stats.total);
+    setText("mr43Deep",stats.deep+" / "+stats.verified);
+    setText("mr43High",stats.high);
+    setText("mr43Breadth",stats.up+" up • "+stats.down+" down");
+    setText("mr43AvgMove",stats.avgMove==null?"—":(stats.avgMove>=0?"+":"")+stats.avgMove.toFixed(2)+"%");
+    setText("mr43Volume",stats.volume+" / "+stats.deep);
+    const method=document.getElementById("mr43Method");
+    if(method)method.innerHTML="<b>Scanner method:</b> daily quote move + reported day-range position + historical trend + recent momentum + directional consistency + observed volatility + evidence quality. Deep history is only used when the provider returns it.";
+  }
+  function prepareControls(){
+    const oldRun=document.getElementById("saRunBtn");
+    const oldActivate=document.getElementById("saActivateBtn");
+    const oldRecord=document.getElementById("saRecordBtn");
+    if(oldRun){const n=oldRun.cloneNode(true);oldRun.replaceWith(n);n.addEventListener("click",scan);}
+    if(oldActivate){const n=oldActivate.cloneNode(true);oldActivate.replaceWith(n);n.addEventListener("click",()=>{const a=document.getElementById("saActivation"),w=document.getElementById("saWorkspace");if(a)a.style.display="none";if(w)w.style.display="block";scan();});}
+    if(oldRecord){const n=oldRecord.cloneNode(true);oldRecord.replaceWith(n);n.addEventListener("click",record);}
+    document.querySelectorAll("#saTimeframes button").forEach(b=>{
+      const n=b.cloneNode(true);b.replaceWith(n);
+      n.addEventListener("click",()=>{intelTf=n.textContent.trim();document.querySelectorAll("#saTimeframes button").forEach(x=>x.classList.remove("primary"));n.classList.add("primary");setText("saScanStatus","READY");setText("saSignalTitle","TIMEFRAME "+intelTf+" SELECTED");});
+    });
+  }
+  function record(){
+    const hist=JSON.parse(localStorage.getItem("maliradar_smart_assist_history")||"[]");
+    hist.push({time:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),tf:intelTf,market:market(),buy:lastResults.filter(x=>x.type==="buy").length,sell:lastResults.filter(x=>x.type==="sell").length,scanned:lastResults.length});
+    localStorage.setItem("maliradar_smart_assist_history",JSON.stringify(hist.slice(-30)));
+    const el=document.getElementById("saHistory");
+    if(el)el.innerHTML='<div class="sa-history-row"><span>Recorded</span><span>'+esc(intelTf)+'</span><span>'+esc(market())+' • '+lastResults.filter(x=>x.type==="buy").length+' buy / '+lastResults.filter(x=>x.type==="sell").length+' sell</span><span>'+lastResults.length+' scanned</span></div>'+el.innerHTML;
+  }
+  async function scan(){
+    if(scanRunning)return;
+    scanRunning=true;
+    injectPanel();
+    const all=providerRows(),verified=all.filter(q=>num(q?.price)!=null);
+    setText("saMarket",market());
+    setText("saMarketMeta",all.length+" provider securities • "+intelTf+" • delayed data");
+    setText("saScanStatus","SCANNING");
+    setText("saSignalTitle","SCANNING "+all.length+" SECURITIES…");
+    setText("saSignalCopy","Running a transparent multi-factor scan. Historical candles are used only where the provider returns them.");
+    const base=all.map(q=>{
+      const price=num(q?.price),day=num(q?.changePct),high=num(q?.high),low=num(q?.low);
+      const pos=price!=null&&high!=null&&low!=null&&high!==low?((price-low)/(high-low))*100:null;
+      return {symbol:local(q?.localSymbol||q?.symbol),quote:q,price,day,high,low,pos,score:50,type:"watch",label:"WATCH",unavailable:price==null,quality:price==null?"INSUFFICIENT":"QUOTE ONLY",evidence:price==null?0:20,reasons:price==null?["No verified provider price returned.","Evidence quality: INSUFFICIENT."]:["Verified provider quote available.","Historical evidence pending."]};
+    }).filter(x=>x.symbol);
+    const candidates=base.filter(x=>!x.unavailable).sort((a,b)=>Math.abs(b.day||0)-Math.abs(a.day||0)).slice(0,30);
+    let deep=0;
+    for(let i=0;i<candidates.length;i+=5){
+      const chunk=candidates.slice(i,i+5);
+      const packs=await Promise.all(chunk.map(x=>candlePack(x.symbol,intelTf)));
+      packs.forEach((pack,j)=>{const r=chunk[j];analyze(r,pack);if(pack.rows.length)deep++;});
+      setText("saScanStatus","HISTORY "+Math.min(i+chunk.length,candidates.length)+"/"+candidates.length);
+    }
+    base.forEach(r=>{
+      if(r.unavailable){r.type="watch";r.label="UNAVAILABLE";return}
+      if(r.evidence<45||r.quality==="INSUFFICIENT"||r.trend==="NO HISTORY"){r.type="watch";r.label="WATCH / INSUFFICIENT";return}
+      if(r.score>=75){r.type="buy";r.label="STRONG BUY SETUP"}
+      else if(r.score>=62){r.type="buy";r.label="BUY SETUP"}
+      else if(r.score<=25){r.type="sell";r.label="STRONG SELL / RISK"}
+      else if(r.score<=40){r.type="sell";r.label="SELL / RISK SETUP"}
+      else {r.type="watch";r.label="WATCH"}
+    });
+    lastResults=base;
+    const up=verified.filter(q=>num(q.changePct)>0).length,down=verified.filter(q=>num(q.changePct)<0).length;
+    const moves=verified.map(q=>num(q.changePct)).filter(v=>v!=null);
+    const avgMove=moves.length?moves.reduce((a,b)=>a+b,0)/moves.length:null;
+    const high=base.filter(x=>x.evidence>=75).length;
+    const volume=base.filter(x=>x.evidence>0&&x.trend!=="NO HISTORY"&&x.quote&&x.quote.volume!=null).length;
+    renderPanel({total:all.length,verified:verified.length,deep,high,up,down,avgMove,volume});
+    renderResults();
+    setText("saScanStatus","COMPLETE");
+    setText("saSignalTitle","SCAN COMPLETE");
+    setText("saSignalCopy","Whole-market scan complete. Setup labels are educational classifications from provider-backed observations, not predictions or financial advice.");
+    const run=document.getElementById("saRunBtn");if(run)run.disabled=false;
+    window.MaliRadarSmartScan={version:"4.3",market:market(),range:intelTf,results:lastResults,scanned:lastResults.length,verified:verified.length,deepAnalyzed:deep};
+    scanRunning=false;
+  }
+  function boot(){injectPanel();prepareControls();}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,100));
+  else setTimeout(boot,100);
+  window.MaliRadarRunSmartScan43=scan;
 })();
 </script>
 
