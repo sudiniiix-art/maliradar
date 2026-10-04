@@ -923,153 +923,60 @@ function registerMaliRadarMarketDataRoutes(app) {
   app.get(
     '/api/market-data/stock/:symbol',
     async (req, res) => {
+      const exchange = String(req.query.market || 'NSE').toUpperCase();
+      const symbol = providerSymbol(req.params.symbol, exchange);
 
-      const exchange =
-        String(
-          req.query.market ||
-          'NSE'
-        ).toUpperCase();
-
-      const symbol =
-        providerSymbol(
-          req.params.symbol,
-          exchange
-        );
-
+      // The provider's single-stock endpoint is the authoritative detail path.
+      // Use it first so Stock Detail is independent of the batch quote API's
+      // parameter/shape and always requests the exact provider symbol.
       try {
+        const detail = await msStockDetail(symbol);
 
-        const body =
-          await msFetch(
-            '/market/quotes',
-            {
-              symbol,
-              exchange
-            }
-          );
-
-        const rows =
-          quoteList(body)
-            .map(normalize);
-
-        let q =
-          rows.find(
-            x =>
-              x.symbol.toUpperCase() ===
-              symbol.toUpperCase()
-          ) ||
-          rows[0];
-
-        if (
-          q?.price != null
-        ) {
-
+        if (detail && detail.price != null) {
           return res.json({
-
-            ...q,
-
-            symbol:
-              q.symbol ||
-              symbol,
-
-            localSymbol:
-              (
-                q.symbol ||
-                symbol
-              ).split('.')[0],
-
-            exchange:
-              q.exchange ||
-              exchange
+            ...detail,
+            symbol: detail.symbol || symbol,
+            localSymbol: (detail.symbol || symbol).split('.')[0],
+            exchange: detail.exchange || exchange,
+            verificationMethod: 'SINGLE_STOCK_DETAIL',
+            verificationStatus: 'VERIFIED',
+            source: 'MyStocks Africa Sandbox'
           });
         }
 
-        const detail =
-          normalize(
-            one(
-              await msFetch(
-                '/stocks/' +
-                encodeURIComponent(
-                  symbol
-                )
-              )
-            )
-          );
-
-        return res.json({
-
-          ...detail,
-
-          symbol:
-            detail.symbol ||
-            symbol,
-
-          localSymbol:
-            (
-              detail.symbol ||
-              symbol
-            ).split('.')[0],
-
-          exchange:
-            detail.exchange ||
-            exchange
+        // If the detail catalogue entry exists but has no usable price,
+        // fall back to the documented batch quote path with symbols=.
+        const body = await msFetch('/market/quotes', {
+          symbols: symbol
         });
 
-      } catch (first) {
+        const rows = quoteList(body).map(normalize);
+        const q = rows.find(x => String(x.symbol || '').toUpperCase() === symbol.toUpperCase()) ||
+                  rows.find(x => String(x.localSymbol || '').toUpperCase() === symbol.split('.')[0].toUpperCase());
 
-        try {
-
-          const detail =
-            normalize(
-              one(
-                await msFetch(
-                  '/stocks/' +
-                  encodeURIComponent(
-                    symbol
-                  )
-                )
-              )
-            );
-
+        if (q && q.price != null) {
           return res.json({
-
-            ...detail,
-
-            symbol:
-              detail.symbol ||
-              symbol,
-
-            localSymbol:
-              (
-                detail.symbol ||
-                symbol
-              ).split('.')[0],
-
-            exchange:
-              detail.exchange ||
-              exchange
-          });
-
-        } catch (second) {
-
-          res.status(
-            second.status ||
-            first.status ||
-            502
-          ).json({
-
-            error:
-              second.message ||
-              first.message,
-
-            code:
-              second.code ||
-              first.code ||
-              'MYSTOCKS_ERROR',
-
-            source:
-              'MyStocks Africa Sandbox'
+            ...q,
+            symbol: q.symbol || symbol,
+            localSymbol: (q.symbol || symbol).split('.')[0],
+            exchange: q.exchange || exchange,
+            verificationMethod: 'BATCH_QUOTE',
+            verificationStatus: 'VERIFIED',
+            source: 'MyStocks Africa Sandbox'
           });
         }
+
+        return res.status(502).json({
+          error: 'Provider returned no verified price for ' + symbol,
+          code: 'NO_VERIFIED_PRICE',
+          source: 'MyStocks Africa Sandbox'
+        });
+      } catch (e) {
+        return res.status(e.status || 502).json({
+          error: e.message || 'MyStocks request failed',
+          code: e.code || 'MYSTOCKS_ERROR',
+          source: 'MyStocks Africa Sandbox'
+        });
       }
     }
   );
