@@ -5,7 +5,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+
+// Prevent phones/browsers/proxies from keeping an older MaliRadar frontend.
+// The app is updated frequently, so the HTML must always be revalidated.
+const staticOptions = {
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  }
+};
+
+app.use(express.static(path.join(__dirname, "public"), staticOptions));
 
 const dataDir = path.join(__dirname, "data");
 const dbFile = path.join(dataDir, "demo-db.json");
@@ -75,7 +86,19 @@ app.get("/api/alerts/:userId",(req,res)=>{
 });const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
 registerMaliRadarMarketDataRoutes(app);
 
-app.get("*",(req,res)=>res.sendFile(path.join(__dirname,"public","index.html")));
+app.get("/",(req,res)=>{
+  res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma","no-cache");
+  res.setHeader("Expires","0");
+  res.sendFile(path.join(__dirname,"public","index.html"));
+});
+
+app.get("*",(req,res)=>{
+  res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma","no-cache");
+  res.setHeader("Expires","0");
+  res.sendFile(path.join(__dirname,"public","index.html"));
+});
 
 app.listen(PORT,()=>console.log(`MaliRadar API listening on ${PORT}`));
 
