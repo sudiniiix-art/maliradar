@@ -96,10 +96,16 @@
       refresh.onclick=()=>render();
       const rows=document.getElementById("mrC3Rows");
       try{
-        const r=await fetch("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/leaderboard?_mr_c3="+Date.now(),{cache:"no-store"});
-        const j=r.ok?await r.json():null;
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),5000);
+        const r=await fetch("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/leaderboard?_mr_c3="+Date.now(),{cache:"no-store",signal:controller.signal});
+        clearTimeout(timer);
+        if(!r.ok)throw new Error("challenge leaderboard "+r.status);
+        const j=await r.json();
         if(rows)rows.innerHTML=rankRows(j?.participants||[],me?.id);
-      }catch(e){if(rows)rows.innerHTML='<div class="mr-c3-empty">Challenge rankings will appear after the server records an entrant.</div>'}
+      }catch(e){
+        if(rows)rows.innerHTML='<div class="mr-c3-empty">'+(e?.name==="AbortError"?"Challenge rankings are taking too long to respond. Tap Refresh to retry.":"Challenge rankings are temporarily unavailable. Tap Refresh to retry.")+'</div>';
+      }
     }finally{busy=false}
   }
   function boot(){
