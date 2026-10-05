@@ -309,6 +309,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     <button data-scope="global" class="active">🌍 Global</button>
     <button data-scope="kenya">🇰🇪 Kenya</button>
     <button data-scope="friends">👥 Friends</button>
+    <button type="button" id="mrAddFriendsTab">➕ Add Friends</button>
   </div>
 
   <div class="lb-card" style="margin-top:14px">
@@ -370,7 +371,18 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
    }catch(e){box.innerHTML='<div class="lb-note">Server competition is temporarily unavailable. Demo participants are not displayed.</div>'}
  }
  document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
- document.querySelectorAll("#lbScopeTabs button").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
+ document.querySelectorAll("#lbScopeTabs button[data-scope]").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button[data-scope]").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
+ const addFriendsTab=document.getElementById("mrAddFriendsTab");
+ if(addFriendsTab)addFriendsTab.addEventListener("click",()=>{
+   document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));
+   addFriendsTab.classList.add("active");
+   const open=window.maliRadarOpenFriends;
+   if(typeof open==="function")open();
+   else{
+     const card=document.getElementById("mrFriendsCard");
+     if(card)card.scrollIntoView({behavior:"smooth",block:"center"});
+   }
+ });
  window.renderLeaderboards=render;window.openLeaderboards=function(){nav("leaderboardView",document.querySelector(".tabs button:nth-child(5)"));render()};render();
 })();
 </script>
