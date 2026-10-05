@@ -141,6 +141,18 @@
      const cd=await cr.json(); const x=cd.challenges?.[0]; if(!x)return;
      const card=document.querySelector("#leaderboardView .lb-grid .lb-card:last-child"); if(!card)return;
      const title=card.querySelector("#lbChallengeTitle"); if(title)title.textContent=x.title;
+     let countdown=card.querySelector(".mr-challenge-countdown");
+     if(!countdown){countdown=document.createElement("div");countdown.className="lb-note mr-challenge-countdown";countdown.style.marginTop="8px";countdown.style.fontWeight="800";card.appendChild(countdown);}
+     const updateCountdown=()=>{
+       const target=x.status==="UPCOMING"?Date.parse(x.start):Date.parse(x.end);
+       const ms=target-Date.now();
+       if(ms<=0){countdown.textContent=x.status==="UPCOMING"?"Starting now…":"Challenge ended";return;}
+       const d=Math.floor(ms/86400000),h=Math.floor(ms%86400000/3600000),m=Math.floor(ms%3600000/60000),s=Math.floor(ms%60000/1000);
+       countdown.textContent=(x.status==="UPCOMING"?"⏳ Starts in ":"⏱️ Ends in ")+d+"d "+String(h).padStart(2,"0")+"h "+String(m).padStart(2,"0")+"m "+String(s).padStart(2,"0")+"s";
+     };
+     updateCountdown();
+     if(countdown._timer)clearInterval(countdown._timer);
+     countdown._timer=setInterval(updateCountdown,1000);
      let prize=card.querySelector(".mr-prize-table");
      if(!prize){prize=document.createElement("div");prize.className="lb-note mr-prize-table";prize.style.marginTop="10px";card.appendChild(prize);}
      const p=x.prizes||{first:50000,second:25000,third:15000,top10:5000,participant:1000};
@@ -174,6 +186,11 @@
        actions.appendChild(b);
      }else{
        const s=document.createElement("span");s.className="badge";s.textContent=x.status;actions.appendChild(s);
+     }
+     let refresh=card.querySelector(".mr-challenge-refresh");
+     if(!refresh){
+       refresh=document.createElement("button"); refresh.className="btn alt mr-challenge-refresh"; refresh.textContent="↻ Refresh Challenge"; refresh.style.marginTop="8px";
+       refresh.onclick=()=>challenge(); card.appendChild(refresh);
      }
      let board=card.querySelector(".mr-challenge-board");
      if(!board){board=document.createElement("div");board.className="lb-note mr-challenge-board";board.style.marginTop="10px";card.appendChild(board);}
