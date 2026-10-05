@@ -57,10 +57,24 @@
         "<div class='mr-s4grid'><div class='mr-s4m'><small>SEASON RANK</small><b>#"+p.rank+"</b></div><div class='mr-s4m'><small>POINTS</small><b>"+p.points+"</b></div><div class='mr-s4m'><small>DUEL STREAK</small><b>🔥 "+p.streak+"</b></div><div class='mr-s4m'><small>W / L</small><b>"+p.wins+" / "+p.losses+"</b></div></div>"+
         "<div style='margin-top:12px'><div class='row'><strong>🎖️ Season Badges</strong><span class='muted'>"+(p.badges||[]).filter(function(x){return x.earned;}).length+"/"+(p.badges||[]).length+"</span></div><div class='mr-s4badges'>"+badges+"</div></div>"+
         "<div style='margin-top:12px'><div class='row'><strong>📊 Seasonal Standings</strong><span class='muted'>Top 10</span></div><div class='mr-s4rows'>"+(rows||"<div class='lb-note'>No standings yet.</div>")+"</div></div>"+
-        "<div class='mr-s4actions'><button class='btn alt' id='mrS4Rules'>📜 Season Rules</button><button class='btn' id='mrS4Snapshot'>💾 Save Snapshot</button></div>"+
+        "<div class='mr-s4actions'><button type='button' class='btn alt' id='mrS4Rules'>📜 Season Rules</button><button type='button' class='btn' id='mrS4Snapshot'>💾 Save Snapshot</button></div>"+
         "<div class='notice' id='mrS4Notice' style='margin-top:10px'>Season metrics are simulated game metrics, not real trading skill or financial advice.</div>";
       const rules=document.getElementById("mrS4Rules");
-      if(rules)rules.onclick=function(){document.getElementById("mrS4Notice").innerHTML="<b>Promotion:</b> top 20% of a division. <b>Relegation:</b> bottom 20%. Diamond has no higher division; Bronze has no lower division.<br><br><b>Points:</b> simulated return, learning/activity and competitive results.";};
+      if(rules)rules.onclick=function(ev){
+        if(ev)ev.preventDefault();
+        const n=document.getElementById("mrS4Notice");
+        if(!n)return;
+        const open=n.dataset.rulesOpen==="1";
+        if(open){
+          n.dataset.rulesOpen="0";
+          n.innerHTML="Season metrics are simulated game metrics, not real trading skill or financial advice.";
+          rules.textContent="📜 Season Rules";
+          return;
+        }
+        n.dataset.rulesOpen="1";
+        n.innerHTML="<strong>📜 Season 4 Rules</strong><br><br><b>🏆 Points</b><br>Points come from simulated return, XP, completed trades, achievements and competitive results such as duel wins/losses.<br><br><b>⬆️ Promotion</b><br>Finish in the top 20% of your current division to be promoted when the season ends.<br><br><b>⬇️ Relegation</b><br>Finish in the bottom 20% to be relegated. Bronze cannot be relegated.<br><br><b>💎 Diamond</b><br>Diamond is the highest division, so there is no higher promotion tier.<br><br><b>🔥 Streak</b><br>Your streak tracks consecutive completed duel wins.<br><br><b>🎖️ Badges</b><br>Badges are earned from milestones such as your first duel, win streaks, elite ranking, Gold division and veteran activity.<br><br><span class='muted'>These are game/learning metrics only — not real trading skill, investment advice or a prediction of future returns.</span>";
+        rules.textContent="✕ Close Rules";
+      };
       const snap=document.getElementById("mrS4Snapshot");
       if(snap)snap.onclick=async function(){snap.disabled=true;try{await api("/api/competitive/season/snapshot",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:p.id})});snap.textContent="✓ Saved";}catch(e){snap.textContent="Try again";snap.disabled=false;}};
     }catch(e){
