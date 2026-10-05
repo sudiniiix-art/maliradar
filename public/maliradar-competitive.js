@@ -131,6 +131,10 @@
      const cd=await cr.json(); const x=cd.challenges?.[0]; if(!x)return;
      const card=document.querySelector("#leaderboardView .lb-grid .lb-card:last-child"); if(!card)return;
      const title=card.querySelector("#lbChallengeTitle"); if(title)title.textContent=x.title;
+     let prize=card.querySelector(".mr-prize-table");
+     if(!prize){prize=document.createElement("div");prize.className="lb-note mr-prize-table";prize.style.marginTop="10px";card.appendChild(prize);}
+     const p=x.prizes||{first:50000,second:25000,third:15000,top10:5000,participant:1000};
+     prize.innerHTML='<b>💠 Virtual Prize Ladder</b><br>🥇 KSh '+Number(p.first).toLocaleString("en-KE")+' • 🥈 KSh '+Number(p.second).toLocaleString("en-KE")+' • 🥉 KSh '+Number(p.third).toLocaleString("en-KE")+'<br>🏅 Top 10 KSh '+Number(p.top10).toLocaleString("en-KE")+' • 🎯 Participant KSh '+Number(p.participant).toLocaleString("en-KE")+'<br><span class="muted">Virtual simulation credits only — no cash value or withdrawal.</span>';
      const grid=card.querySelector(".grid");
      if(grid){
        const cells=grid.querySelectorAll(".metric");
