@@ -104,7 +104,11 @@
  function ensureFriendsCard(){
    const root=document.getElementById("leaderboardView"); if(!root)return null;
    let card=document.getElementById("mrFriendsCard");
-   if(card)return card;
+   const mount=document.getElementById("mrFriendsMount");
+   if(card){
+     if(mount && card.parentElement!==mount)mount.appendChild(card);
+     return card;
+   }
    card=document.createElement("div"); card.id="mrFriendsCard"; card.className="lb-card"; card.style.marginTop="14px";
    card.innerHTML='<div class="row"><div><strong>👥 Friends Hub</strong><div class="muted">Your social hub is now directly below My Position. Search players, send requests and manage your network.</div></div><button class="btn" id="mrFriendFocus">➕ Add Friends</button><span class="badge">SOCIAL 3.0</span></div>'+
      '<div class="actions" style="margin-top:12px"><input id="mrFriendSearch" class="input" placeholder="Search username or MaliRadar ID" autocomplete="off" style="flex:1"><button class="btn" id="mrFriendFind">Search</button></div>'+
@@ -112,8 +116,8 @@
      '<div id="mrFriendRequests" style="margin-top:14px"></div>'+
      '<div id="mrFriendList" style="margin-top:14px"></div>'+
      '<div class="lb-note" style="margin-top:10px">Friend connections are server-recorded. Paper profiles only; no private financial information is shared.</div>';
-   const mount=document.getElementById("mrFriendsMount");
-   if(mount)mount.appendChild(card);
+   const mountAfter=document.getElementById("mrFriendsMount");
+   if(mountAfter)mountAfter.appendChild(card);
    else root.appendChild(card);
 
    async function api(url,options={}){
