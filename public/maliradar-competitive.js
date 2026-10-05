@@ -106,14 +106,14 @@
    let card=document.getElementById("mrFriendsCard");
    if(card)return card;
    card=document.createElement("div"); card.id="mrFriendsCard"; card.className="lb-card"; card.style.marginTop="14px";
-   card.innerHTML='<div class="row"><div><strong>👥 Friends Hub</strong><div class="muted">Search players, send requests and manage your network.</div></div><span class="badge">SOCIAL 2.0</span></div>'+
+   card.innerHTML='<div class="row"><div><strong>👥 Friends Hub</strong><div class="muted">Your social hub is now directly below My Position. Search players, send requests and manage your network.</div></div><button class="btn" id="mrFriendFocus">➕ Add Friends</button><span class="badge">SOCIAL 3.0</span></div>'+
      '<div class="actions" style="margin-top:12px"><input id="mrFriendSearch" class="input" placeholder="Search username or MaliRadar ID" autocomplete="off" style="flex:1"><button class="btn" id="mrFriendFind">Search</button></div>'+
      '<div id="mrFriendResults" style="margin-top:8px"></div>'+
      '<div id="mrFriendRequests" style="margin-top:14px"></div>'+
      '<div id="mrFriendList" style="margin-top:14px"></div>'+
      '<div class="lb-note" style="margin-top:10px">Friend connections are server-recorded. Paper profiles only; no private financial information is shared.</div>';
-   const challengeCard=root.querySelector("#lbChallengeTitle")?.closest(".lb-card");
-   if(challengeCard&&challengeCard.parentElement)challengeCard.parentElement.insertBefore(card,challengeCard);
+   const mount=document.getElementById("mrFriendsMount");
+   if(mount)mount.appendChild(card);
    else root.appendChild(card);
 
    async function api(url,options={}){
@@ -142,6 +142,7 @@
        list.innerHTML="";
      }
    }
+   card.querySelector("#mrFriendFocus").onclick=()=>{card.querySelector("#mrFriendSearch")?.focus();card.querySelector("#mrFriendSearch")?.scrollIntoView({behavior:"smooth",block:"center"});};
    card.querySelector("#mrFriendFind").onclick=async()=>{
      const q=card.querySelector("#mrFriendSearch").value.trim(),out=card.querySelector("#mrFriendResults"),me=account();
      if(!me?.id){out.textContent="Create/save your MaliRadar profile before adding friends.";return}
@@ -149,11 +150,13 @@
      out.textContent="Searching…";
      try{
        const d=await api("/api/competitive/profile/search?q="+encodeURIComponent(q)+"&_mr_friend="+Date.now());
-       const incoming=(await api("/api/competitive/friends/"+encodeURIComponent(me.id))).incoming||[];
-       const existing=new Set((await api("/api/competitive/friends/"+encodeURIComponent(me.id))).friends?.map(x=>x.id)||[]);
+       const network=await api("/api/competitive/friends/"+encodeURIComponent(me.id));
+       const incoming=network.incoming||[],outgoing=network.outgoing||[];
+       const existing=new Set((network.friends||[]).map(x=>x.id));
+       const pendingOut=new Set(outgoing.map(x=>x.id));
        out.innerHTML=(d.profiles||[]).filter(p=>p.id!==me.id).map(p=>{
-         const isFriend=existing.has(p.id),isIncoming=incoming.some(x=>x.id===p.id);
-         return '<div class="lb-row" style="margin-top:7px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn '+(isFriend||isIncoming?"alt":"")+'" data-friend="'+p.id+'" '+(isFriend||isIncoming?"disabled":"")+'>'+(isFriend?"✓ Friends":isIncoming?"Incoming request":"Add")+'</button></div>'
+         const isFriend=existing.has(p.id),isIncoming=incoming.some(x=>x.id===p.id),isOutgoing=pendingOut.has(p.id);
+         return '<div class="lb-row" style="margin-top:7px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn '+(isFriend||isIncoming||isOutgoing?"alt":"")+'" data-friend="'+p.id+'" '+(isFriend||isIncoming||isOutgoing?"disabled":"")+'>'+(isFriend?"✓ Friends":isIncoming?"Incoming request":isOutgoing?"✓ Request sent":"Add")+'</button></div>'
        }).join("")||'<div class="lb-note">No matching users.</div>';
        out.querySelectorAll("[data-friend]:not([disabled])").forEach(b=>b.onclick=async()=>{
          b.disabled=true;b.textContent="Sending…";
@@ -300,7 +303,7 @@
      if(fallback){const n=fallback.querySelector(".lb-note");if(n)n.textContent="Challenge dashboard is loading in fallback mode. Refresh after the server finishes deploying."}
    }
  }
- window.MaliRadarCompetitive={version:"2.2",sync,load,challenge};
+ window.MaliRadarCompetitive={version:"3.1",sync,load,challenge};
  setTimeout(()=>{sync();upgradeRender();setTimeout(()=>ensureFriendsCard(),600)},1200);
  // Keep the Friends card alive after leaderboard rerenders, but do not run
  // the retired legacy challenge renderer. Challenge Dashboard 3.0 owns that UI.
