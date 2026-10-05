@@ -2,7 +2,7 @@
 (function(){
   "use strict";
   const A="maliradar_account_v1";
-  const esc=v=>String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":">",""":"&quot;"}[m]));
+  const esc=v=>String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));
   const me=()=>{try{return JSON.parse(localStorage.getItem(A)||"null")}catch(e){return null}};
   async function api(url,opt={}){
     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),5000);
