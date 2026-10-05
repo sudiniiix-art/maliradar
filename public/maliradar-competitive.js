@@ -29,11 +29,13 @@
  }
  async function sync(){
    const p=profile(); if(!p.id)return;
-   try{await fetch("/api/competitive/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});}catch(e){}
+   const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),5000);
+   try{await fetch("/api/competitive/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p),cache:"no-store",signal:ctl.signal});}catch(e){}finally{clearTimeout(timer)}
  }
  async function load(metric,scope){
+   const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),5000);
    try{const a=account(); const extra=scope==="friends"&&a?.id?"&id="+encodeURIComponent(a.id):"";
-   const r=await fetch("/api/competitive/leaderboard?metric="+encodeURIComponent(metric)+"&scope="+encodeURIComponent(scope)+extra);if(!r.ok)throw 0;return await r.json();}catch(e){return null}
+   const r=await fetch("/api/competitive/leaderboard?metric="+encodeURIComponent(metric)+"&scope="+encodeURIComponent(scope)+extra+"&_mr_lb="+Date.now(),{cache:"no-store",signal:ctl.signal});if(!r.ok)throw 0;return await r.json();}catch(e){return null}finally{clearTimeout(timer)}
  }
  function mark(){
    const n=document.querySelector(".lb-note");
@@ -60,7 +62,8 @@
      const bestEl=document.getElementById("lbBest"), worstEl=document.getElementById("lbWorst");
      if(bestEl)bestEl.textContent=best?String(best.name||"?")+" • "+val(best):"—";
      if(worstEl)worstEl.textContent=worst?String(worst.name||"?")+" • "+val(worst):"—";
-     box.innerHTML=data.participants.map((x,i)=>'<div class="lb-row" data-player-id="'+String(x.id||"").replace(/"/g,"&quot;")+'" style="'+(x.id===me?.id?'border:1px solid rgba(80,220,190,.45);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+String(x.name||"?")[0]+'</div><div class="lb-name"><b>'+String(x.name||"MaliRadar User").replace(/[<>]/g,"")+(x.id===me?.id?' • YOU':'')+'</b><div class="muted">Server profile'+(x.region==="kenya"?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+val(x)+'</b><div class="muted">'+Number(x.trades||0)+' total trades</div></div></div>').join("")||'<div class="lb-note">No server profiles yet.</div>';
+     const empty=scope==="friends"?'No friends in your network yet. Tap ➕ Add Friends to search by username or MaliRadar ID.':'No server profiles yet. Create a profile to enter the competition.';
+     box.innerHTML=data.participants.map((x,i)=>'<div class="lb-row" data-player-id="'+String(x.id||"").replace(/"/g,"&quot;")+'" style="'+(x.id===me?.id?'border:1px solid rgba(80,220,190,.45);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+String(x.name||"?")[0]+'</div><div class="lb-name"><b>'+String(x.name||"MaliRadar User").replace(/[<>]/g,"")+(x.id===me?.id?' • YOU':'')+'</b><div class="muted">Server profile'+(x.region==="kenya"?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+val(x)+'</b><div class="muted">'+Number(x.trades||0)+' total trades</div></div></div>').join("")||'<div class="lb-note">'+empty+'</div>';
      const mine=data.participants.findIndex(x=>x.id===me?.id);
      const pos=document.getElementById("myPosition");if(pos)pos.textContent=mine>=0?"#"+(mine+1):"#—";
      const stat=document.getElementById("myStat");if(stat)stat.textContent=mine>=0?"Your server-ranked position is based on your saved paper-trading/learning statistics.":"Sync your profile to enter the server ranking.";
@@ -97,9 +100,9 @@
    let card=document.getElementById("mrFriendsCard");
    if(card)return card;
    card=document.createElement("div"); card.id="mrFriendsCard"; card.className="lb-card"; card.style.marginTop="14px";
-   card.innerHTML='<div class="row"><strong>👥 Friends Network</strong><span class="badge">BETA</span></div>'+
-     '<div class="muted" style="margin-top:6px">Add another MaliRadar user by their MaliRadar ID. Friends appear in the Friends leaderboard.</div>'+
-     '<div class="actions" style="margin-top:10px"><input id="mrFriendSearch" class="input" placeholder="Enter MaliRadar ID or username" style="flex:1"><button class="btn" id="mrFriendFind">Find</button></div>'+
+   card.innerHTML='<div class="row"><strong>➕ Add Friends</strong><span class="badge">SERVER SEARCH</span></div>'+
+     '<div class="muted" style="margin-top:6px">Search the server by username or MaliRadar ID, then send a friend connection. Friends appear in the Friends leaderboard.</div>'+
+     '<div class="actions" style="margin-top:10px"><input id="mrFriendSearch" class="input" placeholder="Search username or MaliRadar ID" autocomplete="off" style="flex:1"><button class="btn" id="mrFriendFind">Search</button></div>'+
      '<div id="mrFriendResults" style="margin-top:8px"></div>'+
      '<div class="lb-note" style="margin-top:8px">Paper profiles only. No real-money or private financial information is shared.</div>';
    const challengeCard=root.querySelector("#lbChallengeTitle")?.closest(".lb-card");
