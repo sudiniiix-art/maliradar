@@ -61,9 +61,20 @@
   async function render(){
     if(busy)return;busy=true;
     try{
-      const c=latest=await getChallenge(), st=c.status||status(c), joined=!!c.joined||localStorage.getItem(KEY)==="1";
+      const c=latest=await getChallenge(), st=c.status||status(c), localJoined=localStorage.getItem(KEY)==="1", joined=!!c.joined||localJoined;
       const card=findCard(); if(!card)return;
       const me=account(), s=state();
+      // Render 3.0 owns enrollment recovery too. Render free-tier storage can reset,
+      // so a locally remembered join is safely re-sent to the idempotent server join endpoint.
+      if(localJoined && me?.id && !c.joined && st!=="ENDED"){
+        try{
+          await fetchJson("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/join",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({id:me.id})
+          },5000);
+        }catch(e){}
+      }
       const cash=Number(s.cash||100000), hold=s.hold||{}, q=window.maliRadarProviderQuotes||{};
       let value=cash;
       Object.keys(hold).forEach(sym=>{const p=Number(q[String(sym).toUpperCase()]?.price);if(Number.isFinite(p))value+=Number(hold[sym]||0)*p});
