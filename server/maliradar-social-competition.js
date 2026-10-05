@@ -105,7 +105,7 @@ function registerMaliRadarSocialCompetition(app){
       if(!u)return null;
       return {id:u.id,name:u.name||"MaliRadar User",region:u.region||"global",ret:(Number(u.ret)||0)-(Number(base.ret)||0),profit:(Number(u.profit)||0)-(Number(base.profit)||0),trades:Math.max(0,(Number(u.trades)||0)-(Number(base.trades)||0))};
     }).filter(Boolean).sort((a,b)=>b.ret-a.ret);
-    if(c.status==="active"&&c.end&&Date.now()>Date.parse(c.end)){c.status="completed";c.updatedAt=now();write(db)}
+    if(c.status==="active"&&c.end&&Date.now()>Date.parse(c.end)){\n      c.status="completed";\n      const sorted=[...rows].sort((a,b)=>b.ret-a.ret);\n      c.winner=sorted.length===2?(sorted[0].ret===sorted[1].ret?null:sorted[0].id):null;\n      c.updatedAt=now();\n      write(db);\n    }
     res.json({challenge:{id:c.id,status:c.status,start:c.start,end:c.end,durationDays:c.durationDays},participants:rows});
   });
 
