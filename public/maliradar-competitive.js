@@ -80,7 +80,56 @@
      window.renderLeaderboards();
    }));
  }
+ async function challenge(){
+   const me=account(); if(!me?.id)return;
+   try{
+     const cr=await fetch("/api/competitive/challenges",{cache:"no-store"});
+     const cd=await cr.json(); const x=cd.challenges?.[0]; if(!x)return;
+     const card=document.querySelector("#leaderboardView .lb-grid .lb-card:last-child"); if(!card)return;
+     const title=card.querySelector("#lbChallengeTitle"); if(title)title.textContent=x.title;
+     const grid=card.querySelector(".grid");
+     if(grid){
+       const cells=grid.querySelectorAll(".metric");
+       if(cells[0])cells[0].querySelector("b").textContent="KSh "+Number(x.startingCapital).toLocaleString();
+       if(cells[1])cells[1].querySelector("b").textContent=x.mode;
+       if(cells[2])cells[2].querySelector("b").textContent="Return %";
+       if(cells[3])cells[3].querySelector("b").textContent=x.status;
+     }
+     let actions=card.querySelector(".mr-challenge-actions");
+     if(!actions){
+       actions=document.createElement("div"); actions.className="actions mr-challenge-actions"; actions.style.marginTop="10px";
+       card.appendChild(actions);
+     }
+     actions.innerHTML="";
+     if(x.status==="ACTIVE"){
+       const b=document.createElement("button"); b.className="btn"; b.textContent=x.joined?"✓ Joined":"Join Challenge";
+       b.disabled=!!x.joined;
+       if(!x.joined)b.onclick=async()=>{
+         b.disabled=true; b.textContent="Joining…";
+         try{
+           const r=await fetch("/api/competitive/challenges/"+encodeURIComponent(x.id)+"/join",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id})});
+           if(!r.ok)throw 0;
+           b.textContent="✓ Joined";
+           challenge();
+         }catch(e){b.disabled=false;b.textContent="Join Challenge";}
+       };
+       actions.appendChild(b);
+     }else{
+       const s=document.createElement("span");s.className="badge";s.textContent=x.status;actions.appendChild(s);
+     }
+     let board=card.querySelector(".mr-challenge-board");
+     if(!board){board=document.createElement("div");board.className="lb-note mr-challenge-board";board.style.marginTop="10px";card.appendChild(board);}
+     const lr=await fetch("/api/competitive/challenges/"+encodeURIComponent(x.id)+"/leaderboard",{cache:"no-store"});
+     const ld=await lr.json();
+     const rows=Array.isArray(ld.participants)?ld.participants:[];
+     const mine=rows.findIndex(r=>r.id===me.id);
+     board.innerHTML=x.joined
+       ? "🏆 Challenge position: <b>"+(mine>=0?"#"+(mine+1):"—")+"</b> • "+rows.length+" joined"
+       : "Join the challenge to enter its separate paper-performance ranking.";
+   }catch(e){}
+ }
  window.MaliRadarCompetitive={version:"1.0",sync,load};
- setTimeout(()=>{sync();upgradeRender()},1200);
+ setTimeout(()=>{sync();upgradeRender();setTimeout(challenge,1800)},1200);
+ setInterval(challenge,30000);
  setInterval(sync,30000);
 })();
