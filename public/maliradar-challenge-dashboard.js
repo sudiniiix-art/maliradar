@@ -98,7 +98,7 @@
           '<div><span>STARTING CAPITAL</span><b>KSh 100,000</b></div>'+
           '<div><span>MODE</span><b>Paper only</b></div>'+
           '<div><span>SCORING</span><b>Return %</b></div>'+
-          '<div><span>YOUR RETURN</span><b>'+ret.toFixed(2)+'%</b></div>'+
+          '<div><span>PORTFOLIO RETURN</span><b>'+ret.toFixed(2)+'%</b></div>'+
         '</div>'+
         '<div class="mr-c3-prizes"><b>PRIZE LADDER • VIRTUAL CREDITS</b><div class="mr-c3-prize-row"><span>🥇 1st</span><strong>KSh 50,000</strong></div><div class="mr-c3-prize-row"><span>🥈 2nd</span><strong>KSh 25,000</strong></div><div class="mr-c3-prize-row"><span>🥉 3rd</span><strong>KSh 15,000</strong></div><div class="mr-c3-prize-row"><span>✦ Top 10</span><strong>KSh 5,000</strong></div><div class="mr-c3-prize-row"><span>◆ Participant</span><strong>KSh 1,000</strong></div></div>'+
         '<div class="mr-c3-actions"><button class="btn" id="mrC3Join" '+(joined||st==="ENDED"?"disabled":"")+'>'+joinedText+'</button><button class="btn alt" id="mrC3Refresh">↻ Refresh</button></div>'+
