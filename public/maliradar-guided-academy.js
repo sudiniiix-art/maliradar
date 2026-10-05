@@ -29,9 +29,9 @@ setTimeout(function(){var el=resolve(s);$('mrGuidedStep').textContent=(i+1)+' / 
 function start(){if(active)return;active=true;i=0;show()}
 function next(){if(!active)return;if(i<steps.length-1){i++;show()}else stop()}
 function back(){if(i>0){i--;show()}}
-function stop(){active=false;clearSpot();if(observer)observer.disconnect();observer=null;var o=$('mrGuidedOverlay');if(o)o.classList.remove('on')}
+function stop(){if(active && i===steps.length-1)localStorage.setItem('maliradar_guided_academy_completed','1');active=false;clearSpot();if(observer)observer.disconnect();observer=null;var o=$('mrGuidedOverlay');if(o)o.classList.remove('on')}
 function addLauncher(){var academy=$('mr52Academy');if(!academy||$('mrGuidedStart'))return false;var box=document.createElement('div');box.className='actions';box.innerHTML='<button class="btn" id="mrGuidedStart">🧭 Guided Navigation</button><button class="btn alt" id="mrGuidedReset">↻ Restart Guide</button>';academy.appendChild(box);$('mrGuidedStart').onclick=start;$('mrGuidedReset').onclick=function(){stop();i=0;start()};return true}
-function boot(){makeUI();if(addLauncher())return;observer=new MutationObserver(function(){if(addLauncher()){observer.disconnect();observer=null}});observer.observe(document.body,{childList:true,subtree:true})}
+function boot(){makeUI();if(addLauncher()){if(!localStorage.getItem('maliradar_guided_academy_completed'))setTimeout(start,900);return;}observer=new MutationObserver(function(){if(addLauncher()){observer.disconnect();observer=null}});observer.observe(document.body,{childList:true,subtree:true})}
 window.MaliRadarGuidedAcademy={version:'2.0',start:start,stop:stop,next:next,back:back};
 window.addEventListener('load',function(){setTimeout(boot,800)});
 })();
