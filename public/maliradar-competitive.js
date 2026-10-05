@@ -106,39 +106,62 @@
    let card=document.getElementById("mrFriendsCard");
    if(card)return card;
    card=document.createElement("div"); card.id="mrFriendsCard"; card.className="lb-card"; card.style.marginTop="14px";
-   card.innerHTML='<div class="row"><strong>➕ Add Friends</strong><span class="badge">SERVER SEARCH</span></div>'+
-     '<div class="muted" style="margin-top:6px">Search the server by username or MaliRadar ID, then send a friend connection. Friends appear in the Friends leaderboard.</div>'+
-     '<div class="actions" style="margin-top:10px"><input id="mrFriendSearch" class="input" placeholder="Search username or MaliRadar ID" autocomplete="off" style="flex:1"><button class="btn" id="mrFriendFind">Search</button></div>'+
+   card.innerHTML='<div class="row"><div><strong>👥 Friends Hub</strong><div class="muted">Search players, send requests and manage your network.</div></div><span class="badge">SOCIAL 2.0</span></div>'+
+     '<div class="actions" style="margin-top:12px"><input id="mrFriendSearch" class="input" placeholder="Search username or MaliRadar ID" autocomplete="off" style="flex:1"><button class="btn" id="mrFriendFind">Search</button></div>'+
      '<div id="mrFriendResults" style="margin-top:8px"></div>'+
-     '<div class="lb-note" style="margin-top:8px">Paper profiles only. No real-money or private financial information is shared.</div>';
+     '<div id="mrFriendRequests" style="margin-top:14px"></div>'+
+     '<div id="mrFriendList" style="margin-top:14px"></div>'+
+     '<div class="lb-note" style="margin-top:10px">Friend connections are server-recorded. Paper profiles only; no private financial information is shared.</div>';
    const challengeCard=root.querySelector("#lbChallengeTitle")?.closest(".lb-card");
    if(challengeCard&&challengeCard.parentElement)challengeCard.parentElement.insertBefore(card,challengeCard);
    else root.appendChild(card);
-   card.querySelector("#mrFriendFind").onclick=async()=>{
-     const q=card.querySelector("#mrFriendSearch").value.trim();
-     const out=card.querySelector("#mrFriendResults");
-     if(q.length<2){out.textContent="Enter at least 2 characters.";return;}
-     out.textContent="Searching…";
-     const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),5000);
+
+   async function api(url,options={}){
+     const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),5000);
      try{
-       const r=await fetch("/api/competitive/profile/search?q="+encodeURIComponent(q)+"&_mr_friend="+Date.now(),{cache:"no-store",signal:ctl.signal});
-       if(!r.ok)throw new Error("HTTP "+r.status);
-       const d=await r.json(), me=account();
-       if(!me?.id){out.textContent="Create/save your MaliRadar profile before adding friends.";return;}
-       out.innerHTML=(d.profiles||[]).filter(p=>p.id!==me?.id).map(p=>'<div class="lb-row" style="margin-top:6px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn alt" data-friend="'+p.id+'">Add</button></div>').join("")||'<div class="lb-note">No matching users.</div>';
-       out.querySelectorAll("[data-friend]").forEach(b=>b.onclick=async()=>{
-         b.disabled=true;b.textContent="Adding…";
-         try{
-           const rr=await fetch("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.friend}),cache:"no-store"});
-           if(!rr.ok)throw 0;
-           b.textContent="✓ Added";
-           b.classList.remove("alt");
-           if(document.querySelector("#lbScopeTabs button[data-scope='friends']")?.classList.contains("active"))window.renderLeaderboards();
-         }catch(e){b.disabled=false;b.textContent="Add";}
+       const r=await fetch(url,{cache:"no-store",...options,signal:ctl.signal});
+       const d=await r.json().catch(()=>({}));
+       if(!r.ok)throw new Error(d.error||("HTTP "+r.status));
+       return d;
+     }finally{clearTimeout(timer)}
+   }
+   async function refreshNetwork(){
+     const me=account(); if(!me?.id)return;
+     const incoming=card.querySelector("#mrFriendRequests"), list=card.querySelector("#mrFriendList");
+     try{
+       const d=await api("/api/competitive/friends/"+encodeURIComponent(me.id));
+       incoming.innerHTML='<div class="row"><strong>📨 Friend Requests</strong><span class="muted">'+(d.incoming?.length||0)+' incoming</span></div>'+
+         ((d.incoming||[]).map(p=>'<div class="lb-row" style="margin-top:7px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn" data-accept="'+p.id+'">Accept</button><button class="btn alt" data-decline="'+p.id+'">Decline</button></div>').join("")||'<div class="lb-note" style="margin-top:7px">No pending requests.</div>');
+       list.innerHTML='<div class="row"><strong>👥 Your Friends</strong><span class="muted">'+(d.friends?.length||0)+' connected</span></div>'+
+         ((d.friends||[]).map(p=>'<div class="lb-row" style="margin-top:7px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn alt" data-remove="'+p.id+'">Remove</button></div>').join("")||'<div class="lb-note" style="margin-top:7px">No friends yet. Search for a username above.</div>');
+       card.querySelectorAll("[data-accept]").forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api("/api/competitive/friends/respond",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.accept,action:"accept"})});await refreshNetwork();window.renderLeaderboards()}catch(e){b.disabled=false}});
+       card.querySelectorAll("[data-decline]").forEach(b=>b.onclick=async()=>{b.disabled=true;try{await api("/api/competitive/friends/respond",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.decline,action:"decline"})});await refreshNetwork()}catch(e){b.disabled=false}});
+       card.querySelectorAll("[data-remove]").forEach(b=>b.onclick=async()=>{if(!confirm("Remove this friend?"))return;b.disabled=true;try{await api("/api/competitive/friends/"+encodeURIComponent(me.id)+"/"+encodeURIComponent(b.dataset.remove),{method:"DELETE"});await refreshNetwork();window.renderLeaderboards()}catch(e){b.disabled=false}});
+     }catch(e){
+       incoming.innerHTML='<div class="lb-note">⚠️ Friend network is temporarily unavailable. Tap Add Friends again to retry.</div>';
+       list.innerHTML="";
+     }
+   }
+   card.querySelector("#mrFriendFind").onclick=async()=>{
+     const q=card.querySelector("#mrFriendSearch").value.trim(),out=card.querySelector("#mrFriendResults"),me=account();
+     if(!me?.id){out.textContent="Create/save your MaliRadar profile before adding friends.";return}
+     if(q.length<2){out.textContent="Enter at least 2 characters.";return}
+     out.textContent="Searching…";
+     try{
+       const d=await api("/api/competitive/profile/search?q="+encodeURIComponent(q)+"&_mr_friend="+Date.now());
+       const incoming=(await api("/api/competitive/friends/"+encodeURIComponent(me.id))).incoming||[];
+       const existing=new Set((await api("/api/competitive/friends/"+encodeURIComponent(me.id))).friends?.map(x=>x.id)||[]);
+       out.innerHTML=(d.profiles||[]).filter(p=>p.id!==me.id).map(p=>{
+         const isFriend=existing.has(p.id),isIncoming=incoming.some(x=>x.id===p.id);
+         return '<div class="lb-row" style="margin-top:7px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn '+(isFriend||isIncoming?"alt":"")+'" data-friend="'+p.id+'" '+(isFriend||isIncoming?"disabled":"")+'>'+(isFriend?"✓ Friends":isIncoming?"Incoming request":"Add")+'</button></div>'
+       }).join("")||'<div class="lb-note">No matching users.</div>';
+       out.querySelectorAll("[data-friend]:not([disabled])").forEach(b=>b.onclick=async()=>{
+         b.disabled=true;b.textContent="Sending…";
+         try{const r=await api("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.friend})});b.textContent=r.status==="friend"?"✓ Friends":"✓ Request sent";b.classList.add("alt");await refreshNetwork()}catch(e){b.disabled=false;b.textContent="Add"}
        });
-     }catch(e){out.textContent=e?.name==="AbortError"?"Search timed out. Tap Search to retry.":"Could not search right now.";}
-     finally{clearTimeout(timer)}
+     }catch(e){out.textContent=e?.name==="AbortError"?"Search timed out. Tap Search to retry.":"Could not search right now."}
    };
+   refreshNetwork();
    return card;
  }
  window.maliRadarOpenFriends=function(){
