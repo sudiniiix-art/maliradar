@@ -37,8 +37,8 @@
       const p=price(o.sym);
       if(!p){keep.push(o);return}
       let hit=false;
-      if(o.orderType==="STOP_LOSS") hit=p<=o.triggerPrice;
-      else if(o.orderType==="TAKE_PROFIT") hit=p>=o.triggerPrice;
+      if(o.orderType==="STOP_LOSS") hit=o.side==="SELL"?p<=o.triggerPrice:p>=o.triggerPrice;
+      else if(o.orderType==="TAKE_PROFIT") hit=o.side==="SELL"?p>=o.triggerPrice:p<=o.triggerPrice;
       else hit=o.side==="BUY"?p<=o.limitPrice:p>=o.limitPrice;
       if(hit&&executeLimit(o,p,st)){changed=true}
       else keep.push(o);
@@ -54,7 +54,7 @@
     root.innerHTML='<div style="position:fixed;inset:0;background:#000b;z-index:9000;display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:480px;background:#0c1820;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px;max-height:90vh;overflow:auto">'+
       '<div class="row"><div><div class="muted">PAPER ORDER</div><h2 style="margin:4px 0">Paper '+(side==="BUY"?"Buy":"Sell")+'</h2><div class="muted">'+esc(name)+' • '+esc(s)+'</div></div><button class="btn alt" id="mr50Close">✕</button></div>'+
       '<div class="grid"><div class="metric"><div>Provider price</div><b>KSh '+fmt(p)+'</b></div><div class="metric"><div>Data</div><b style="color:#ffe08a">'+d+'-MIN DELAYED</b></div></div>'+
-      '<div class="formline" style="margin-top:14px"><label style="width:80px">Order type</label><select id="mr50Type"><option value="MARKET">Market — execute now</option><option value="LIMIT">Limit — execute at target</option></select></div>'+
+      '<div class="formline" style="margin-top:14px"><label style="width:80px">Order type</label><select id="mr50Type"><option value="MARKET">Market — execute now</option><option value="LIMIT">Limit — execute at target</option><option value="STOP_LOSS">Stop-Loss — protect downside</option><option value="TAKE_PROFIT">Take-Profit — lock gains</option></select></div>'+
       '<div class="formline" id="mr50LimitRow" style="margin-top:8px;display:none"><label style="width:80px">Target price</label><input id="mr50Limit" type="number" min="0.01" step="0.01" value="'+fmt(p)+'"></div>'+
       '<div class="formline" style="margin-top:8px"><label style="width:80px">Quantity</label><input id="mr50Qty" type="number" min="1" max="'+max+'" step="1" value="'+(max?Math.min(1,max):0)+'"></div>'+
       '<div class="metric" style="margin-top:10px"><div>Estimated '+(side==="BUY"?"cost":"proceeds")+'</div><b id="mr50Total">KSh 0.00</b></div>'+
@@ -74,7 +74,7 @@
         fresh.pendingOrders=Array.isArray(fresh.pendingOrders)?fresh.pendingOrders:[];
         const id=(kind==="STOP_LOSS"?"STP-":kind==="TAKE_PROFIT"?"TP-":"LMT-")+Date.now().toString(36).toUpperCase();
         const trigger=kind==="LIMIT"?null:lp;
-        fresh.pendingOrders.unshift({id,sym:s,side,q,limitPrice:kind==="LIMIT"?lp:null,triggerPrice:trigger,createdAt:new Date().toISOString(),delayMinutes:d,providerBacked:true,orderType:kind});
+        fresh.pendingOrders.unshift({id,sym:s,side,q,limitPrice:kind==="LIMIT"?lp:null,triggerPrice:trigger,createdAt:new Date().toISOString(),delayMinutes:d,providerBacked:true,orderType:kind,status:"OPEN"});
         write(fresh);root.remove();refresh();renderPending();
         const label=kind==="STOP_LOSS"?"stop-loss":kind==="TAKE_PROFIT"?"take-profit":"limit";
         showOrderStatus(label+" order for "+q+" "+s+" at KSh "+fmt(lp)+" is waiting for the provider price.","pending");return;
@@ -97,14 +97,14 @@
     let card=document.getElementById("mr50PendingCard");
     if(!card){card=document.createElement("div");card.id="mr50PendingCard";card.className="card";p.insertBefore(card,p.firstElementChild?.nextElementSibling||p.firstChild);}
     const st=read(),arr=Array.isArray(st.pendingOrders)?st.pendingOrders:[];
-    card.innerHTML='<div class="row"><div><b>⏳ Pending Paper Orders</b><div class="muted">Limit orders awaiting provider price</div></div><span class="badge">'+arr.length+' OPEN</span></div>'+
+    card.innerHTML='<div class="row"><div><b>⏳ Pending Paper Orders</b><div class="muted">Limit, stop-loss and take-profit orders awaiting provider price</div></div><span class="badge">'+arr.length+' OPEN</span></div>'+
       (arr.length?arr.map(o=>'<div class="metric" style="margin-top:8px"><div><b>'+esc(o.side)+' • '+esc(o.sym)+'</b><br><span class="muted">'+o.q+' shares • target KSh '+fmt(o.limitPrice)+'</span></div><button class="btn alt" data-mr50-cancel="'+esc(o.id)+'">Cancel</button></div>').join(''):'<div class="notice" style="margin-top:10px">No pending limit orders.</div>')+
-      '<p class="notice" style="margin-top:10px">Limit, stop-loss and take-profit checks use provider-backed prices and the provider delay. These are educational simulation tools, not trading instructions.</p>';
+      '<p class="notice" style="margin-top:10px">All pending-order checks use provider-backed prices and the provider delay. These are educational simulation tools, not trading instructions.</p>';
     card.querySelectorAll("[data-mr50-cancel]").forEach(b=>b.onclick=()=>{
       const s=read();s.pendingOrders=(Array.isArray(s.pendingOrders)?s.pendingOrders:[]).filter(x=>x.id!==b.dataset.mr50Cancel);write(s);renderPending();
     });
   }
-  window.MaliRadarOrderTicket={version:"2.0",open:ticket,checkLimits};
+  window.MaliRadarOrderTicket={version:"2.1",open:ticket,checkLimits};
   window.buy=s=>ticket("BUY",s);window.sell=s=>ticket("SELL",s);
   document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mr49-order]");if(b)ticket(b.dataset.mr49Order,b.dataset.symbol)});
   setInterval(()=>{checkLimits();renderPending()},10000);
