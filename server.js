@@ -6,12 +6,12 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Inject the latest client-side order ticket without requiring a duplicate HTML entrypoint.
+// Inject the latest client-side modules without requiring duplicate HTML entrypoints.
 app.use((req,res,next)=>{
   if(req.method==="GET" && req.path==="/"){
     const file=path.join(__dirname,"public","index.html");
     let html=fs.readFileSync(file,"utf8");
-    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-competitive.js?v=3.2"></script><script src="/maliradar-challenge-dashboard.js?v=3.3"></script><script src="/maliradar-progression.js?v=2.0"></script>';
+    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-competitive.js?v=3.2"></script><script src="/maliradar-challenge-dashboard.js?v=3.3"></script><script src="/maliradar-progression.js?v=2.0"></script><script src="/maliradar-friends-hub.js?v=4.0"></script>';
     if(!html.includes(tag)) html=html.replace("</body>",tag+"</body>");
     res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma","no-cache");
@@ -22,8 +22,6 @@ app.use((req,res,next)=>{
   next();
 });
 
-// Prevent phones/browsers/proxies from keeping an older MaliRadar frontend.
-// The app is updated frequently, so the HTML must always be revalidated.
 const staticOptions = {
   setHeaders: (res) => {
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
@@ -38,13 +36,7 @@ const dataDir = path.join(__dirname, "data");
 const dbFile = path.join(dataDir, "demo-db.json");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, {recursive:true});
 if (!fs.existsSync(dbFile)) {
-  fs.writeFileSync(dbFile, JSON.stringify({
-    users: [],
-    portfolios: [],
-    transactions: [],
-    watchlists: [],
-    alerts: []
-  }, null, 2));
+  fs.writeFileSync(dbFile, JSON.stringify({users:[],portfolios:[],transactions:[],watchlists:[],alerts:[]}, null, 2));
 }
 function readDB(){ return JSON.parse(fs.readFileSync(dbFile,"utf8")); }
 function writeDB(db){ fs.writeFileSync(dbFile, JSON.stringify(db,null,2)); }
@@ -122,8 +114,6 @@ app.get("/api/competitive/leaderboard",(req,res)=>{
   const db=readDB();
   let rows=(db.users||[]).filter(u=>u.xp!==undefined);
   if(scope==="kenya")rows=rows.filter(u=>String(u.region).toLowerCase()==="kenya");
-  // Friends is intentionally conservative in beta: until friend connections exist,
-  // never leak unrelated users or demo participants into a user's Friends ranking.
   if(scope==="friends"){
     const id=String(req.query.id||"");
     const links=(db.friends||[]).filter(f=>f.a===id||f.b===id);
@@ -134,152 +124,43 @@ app.get("/api/competitive/leaderboard",(req,res)=>{
   rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
   res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
 });
-// Competitive challenge beta. Server records enrollment; it does not execute real-money trades.
 app.get("/api/competitive/challenges",(req,res)=>{
   const now=new Date();
-  const challenges=[{
-    id:"october-paper-2026",
-    title:"October Paper Challenge",
-    start:"2026-10-01T00:00:00.000Z",
-    end:"2026-10-31T23:59:59.999Z",
-    startingCapital:100000,
-    metric:"ret",
-    mode:"Paper only",
-    prizes:{first:50000,second:25000,third:15000,top10:5000,participant:1000},
-    prizeCurrency:"KSh virtual credits"
-  }];
-  const db=readDB();
-  const joined=Array.isArray(db.challenges)?db.challenges:[];
-  res.json({source:"MaliRadar competitive beta",challenges:challenges.map(x=>({
-    ...x,
-    status:now.getTime()<Date.parse(x.start)?"UPCOMING":now.getTime()>Date.parse(x.end)?"ENDED":"ACTIVE",
-    joined:joined.some(j=>j.challengeId===x.id)
-  }))});
+  const challenges=[{id:"october-paper-2026",title:"October Paper Challenge",start:"2026-10-01T00:00:00.000Z",end:"2026-10-31T23:59:59.999Z",startingCapital:100000,metric:"ret",mode:"Paper only",prizes:{first:50000,second:25000,third:15000,top10:5000,participant:1000},prizeCurrency:"KSh virtual credits"}];
+  const db=readDB(),joined=Array.isArray(db.challenges)?db.challenges:[];
+  res.json({source:"MaliRadar competitive beta",challenges:challenges.map(x=>({...x,status:now.getTime()<Date.parse(x.start)?"UPCOMING":now.getTime()>Date.parse(x.end)?"ENDED":"ACTIVE",joined:joined.some(j=>j.challengeId===x.id)}))});
 });
 app.post("/api/competitive/challenges/:challengeId/join",(req,res)=>{
   const {id}=req.body||{};
   if(!id||typeof id!=="string")return res.status(400).json({error:"MaliRadar ID required"});
-  const allowed=["october-paper-2026"];
-  if(!allowed.includes(req.params.challengeId))return res.status(404).json({error:"Challenge not found"});
+  if(!["october-paper-2026"].includes(req.params.challengeId))return res.status(404).json({error:"Challenge not found"});
   const db=readDB(); if(!Array.isArray(db.challenges))db.challenges=[];
-  const user=db.users.find(u=>u.id===id);
-  if(!user)return res.status(404).json({error:"Profile not found"});
+  const user=db.users.find(u=>u.id===id); if(!user)return res.status(404).json({error:"Profile not found"});
   const existing=db.challenges.find(x=>x.challengeId===req.params.challengeId&&x.id===id);
-  if(!existing){
-    db.challenges.push({
-      challengeId:req.params.challengeId,
-      id,
-      joinedAt:new Date().toISOString(),
-      baselineRet:Number(user.ret)||0,
-      baselineProfit:Number(user.profit)||0,
-      baselineTrades:Number(user.trades)||0,
-      baselineVersion:2
-    });
-  }else if(Number(existing.baselineVersion||0)<2){
-    // Repair enrollments created by the earlier beta baseline logic.
-    // Their stored baseline could be stale/invalid, producing impossible
-    // challenge returns such as ~99% immediately after joining.
-    existing.joinedAt=new Date().toISOString();
-    existing.baselineRet=Number(user.ret)||0;
-    existing.baselineProfit=Number(user.profit)||0;
-    existing.baselineTrades=Number(user.trades)||0;
-    existing.baselineVersion=2;
-  }
+  if(!existing)db.challenges.push({challengeId:req.params.challengeId,id,joinedAt:new Date().toISOString(),baselineRet:Number(user.ret)||0,baselineProfit:Number(user.profit)||0,baselineTrades:Number(user.trades)||0,baselineVersion:2});
+  else if(Number(existing.baselineVersion||0)<2){existing.joinedAt=new Date().toISOString();existing.baselineRet=Number(user.ret)||0;existing.baselineProfit=Number(user.profit)||0;existing.baselineTrades=Number(user.trades)||0;existing.baselineVersion=2;}
   writeDB(db); res.json({ok:true,joined:true});
 });
 app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
-  const db=readDB();
-  const entries=(db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId);
-  const users=new Map((db.users||[]).map(u=>[u.id,u]));
+  const db=readDB(),entries=(db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId),users=new Map((db.users||[]).map(u=>[u.id,u]));
   let repaired=false;
-  const rows=entries.map(e=>{
-    const u=users.get(e.id); if(!u)return null;
-    // Any legacy entry that reaches the board is normalized to v2 as well.
-    if(Number(e.baselineVersion||0)<2){
-      e.joinedAt=new Date().toISOString();
-      e.baselineRet=Number(u.ret)||0;
-      e.baselineProfit=Number(u.profit)||0;
-      e.baselineTrades=Number(u.trades)||0;
-      e.baselineVersion=2;
-      repaired=true;
-    }
-    return {
-      id:u.id,name:u.name,region:u.region,
-      ret:(Number(u.ret)||0)-(Number(e.baselineRet)||0),
-      profit:(Number(u.profit)||0)-(Number(e.baselineProfit)||0),
-      trades:Math.max(0,(Number(u.trades)||0)-(Number(e.baselineTrades)||0))
-    };
-  }).filter(Boolean).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
+  const rows=entries.map(e=>{const u=users.get(e.id);if(!u)return null;if(Number(e.baselineVersion||0)<2){e.joinedAt=new Date().toISOString();e.baselineRet=Number(u.ret)||0;e.baselineProfit=Number(u.profit)||0;e.baselineTrades=Number(u.trades)||0;e.baselineVersion=2;repaired=true}return{id:u.id,name:u.name,region:u.region,ret:(Number(u.ret)||0)-(Number(e.baselineRet)||0),profit:(Number(u.profit)||0)-(Number(e.baselineProfit)||0),trades:Math.max(0,(Number(u.trades)||0)-(Number(e.baselineTrades)||0))}}).filter(Boolean).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
   if(repaired)writeDB(db);
   res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,metric:"return since join",participants:rows.slice(0,100)});
 });
 app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"0.5"}));
 
-app.get("/api/stocks",(req,res)=>{
-  res.json({source:"demo", warning:"Illustrative data only", stocks:[
-    {symbol:"SCOM",name:"Safaricom",price:35.95},
-    {symbol:"KCB",name:"KCB Group",price:92.50},
-    {symbol:"EQTY",name:"Equity Group",price:105.00},
-    {symbol:"EABL",name:"EABL",price:286.75}
-  ]});
-});
+app.get("/api/stocks",(req,res)=>res.json({source:"demo",warning:"Illustrative data only",stocks:[{symbol:"SCOM",name:"Safaricom",price:35.95},{symbol:"KCB",name:"KCB Group",price:92.50},{symbol:"EQTY",name:"Equity Group",price:105.00},{symbol:"EABL",name:"EABL",price:286.75}]}));
+app.post("/api/demo-user",(req,res)=>{const db=readDB(),id="demo-"+Date.now(),user={id,name:req.body.name||"Demo User",createdAt:new Date().toISOString()};db.users.push(user);writeDB(db);res.status(201).json(user)});
+app.get("/api/demo-user/:id",(req,res)=>{const db=readDB(),user=db.users.find(u=>u.id===req.params.id);if(!user)return res.status(404).json({error:"User not found"});res.json(user)});
+app.post("/api/paper-order",(req,res)=>{const {userId,symbol,side,quantity,price}=req.body;if(!userId||!symbol||!["BUY","SELL"].includes(side)||!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<=0)return res.status(400).json({error:"Invalid paper order"});const db=readDB();if(!db.users.some(u=>u.id===userId))return res.status(404).json({error:"User not found"});const tx={id:"tx-"+Date.now(),userId,symbol,side,quantity,price,createdAt:new Date().toISOString()};db.transactions.push(tx);writeDB(db);res.status(201).json(tx)});
+app.get("/api/transactions/:userId",(req,res)=>{const db=readDB();res.json(db.transactions.filter(t=>t.userId===req.params.userId))});
+app.post("/api/alerts",(req,res)=>{const {userId,symbol,targetPrice}=req.body;if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)return res.status(400).json({error:"Invalid alert"});const db=readDB();const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};db.alerts.push(alert);writeDB(db);res.status(201).json(alert)});
+app.get("/api/alerts/:userId",(req,res)=>{const db=readDB();res.json(db.alerts.filter(a=>a.userId===req.params.userId))});
 
-app.post("/api/demo-user",(req,res)=>{
-  const db=readDB();
-  const id="demo-"+Date.now();
-  const user={id,name:req.body.name||"Demo User",createdAt:new Date().toISOString()};
-  db.users.push(user); writeDB(db); res.status(201).json(user);
-});
-
-app.get("/api/demo-user/:id",(req,res)=>{
-  const db=readDB(); const user=db.users.find(u=>u.id===req.params.id);
-  if(!user) return res.status(404).json({error:"User not found"});
-  res.json(user);
-});
-
-app.post("/api/paper-order",(req,res)=>{
-  const {userId,symbol,side,quantity,price}=req.body;
-  if(!userId||!symbol||!["BUY","SELL"].includes(side)||!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<=0)
-    return res.status(400).json({error:"Invalid paper order"});
-  const db=readDB();
-  if(!db.users.some(u=>u.id===userId)) return res.status(404).json({error:"User not found"});
-  const tx={id:"tx-"+Date.now(),userId,symbol,side,quantity,price,createdAt:new Date().toISOString()};
-  db.transactions.push(tx); writeDB(db); res.status(201).json(tx);
-});
-
-app.get("/api/transactions/:userId",(req,res)=>{
-  const db=readDB();
-  res.json(db.transactions.filter(t=>t.userId===req.params.userId));
-});
-
-app.post("/api/alerts",(req,res)=>{
-  const {userId,symbol,targetPrice}=req.body;
-  if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)
-    return res.status(400).json({error:"Invalid alert"});
-  const db=readDB();
-  const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};
-  db.alerts.push(alert); writeDB(db); res.status(201).json(alert);
-});
-
-app.get("/api/alerts/:userId",(req,res)=>{
-  const db=readDB(); res.json(db.alerts.filter(a=>a.userId===req.params.userId));
-});const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
+const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
 registerMaliRadarMarketDataRoutes(app);
 
-app.get("/",(req,res)=>{
-  res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma","no-cache");
-  res.setHeader("Expires","0");
-  res.sendFile(path.join(__dirname,"public","index.html"));
-});
-
-app.get("*",(req,res)=>{
-  res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma","no-cache");
-  res.setHeader("Expires","0");
-  res.sendFile(path.join(__dirname,"public","index.html"));
-});
-
+app.get("/",(req,res)=>{res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");res.setHeader("Pragma","no-cache");res.setHeader("Expires","0");res.sendFile(path.join(__dirname,"public","index.html"))});
+app.get("*",(req,res)=>{res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");res.setHeader("Pragma","no-cache");res.setHeader("Expires","0");res.sendFile(path.join(__dirname,"public","index.html"))});
 app.listen(PORT,()=>console.log(`MaliRadar API listening on ${PORT}`));
-
-  
