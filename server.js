@@ -113,7 +113,9 @@ app.get("/api/competitive/challenges",(req,res)=>{
     end:"2026-10-31T23:59:59.999Z",
     startingCapital:100000,
     metric:"ret",
-    mode:"Paper only"
+    mode:"Paper only",
+    prizes:{first:50000,second:25000,third:15000,top10:5000,participant:1000},
+    prizeCurrency:"KSh virtual credits"
   }];
   const db=readDB();
   const joined=Array.isArray(db.challenges)?db.challenges:[];
