@@ -49,6 +49,32 @@ if (!fs.existsSync(dbFile)) {
 function readDB(){ return JSON.parse(fs.readFileSync(dbFile,"utf8")); }
 function writeDB(db){ fs.writeFileSync(dbFile, JSON.stringify(db,null,2)); }
 
+// Competitive profile + leaderboard beta. Uses the existing demo DB; no real-money data.
+app.post("/api/competitive/profile",(req,res)=>{
+  const {id,name,region,xp,profit,ret,trades,achievements}=req.body||{};
+  if(!id||typeof id!=="string"||id.length>80) return res.status(400).json({error:"Invalid MaliRadar ID"});
+  const db=readDB(); if(!Array.isArray(db.users)) db.users=[];
+  let u=db.users.find(x=>x.id===id);
+  if(!u){u={id,createdAt:new Date().toISOString()};db.users.push(u);}
+  u.name=String(name||"MaliRadar User").slice(0,24);
+  u.region=String(region||"global").slice(0,32);
+  u.xp=Number.isFinite(Number(xp))?Number(xp):0;
+  u.profit=Number.isFinite(Number(profit))?Number(profit):0;
+  u.ret=Number.isFinite(Number(ret))?Number(ret):0;
+  u.trades=Number.isFinite(Number(trades))?Number(trades):0;
+  u.achievements=Number.isFinite(Number(achievements))?Number(achievements):0;
+  u.updatedAt=new Date().toISOString();
+  writeDB(db); res.json({ok:true,profile:u});
+});
+app.get("/api/competitive/leaderboard",(req,res)=>{
+  const metric=["xp","profit","ret","trades"].includes(req.query.metric)?req.query.metric:"xp";
+  const scope=req.query.scope==="kenya"?"kenya":"global";
+  const db=readDB();
+  let rows=(db.users||[]).filter(u=>u.xp!==undefined);
+  if(scope==="kenya")rows=rows.filter(u=>String(u.region).toLowerCase()==="kenya");
+  rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
+  res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
+});
 app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"0.5"}));
 
 app.get("/api/stocks",(req,res)=>{
