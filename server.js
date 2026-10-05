@@ -77,12 +77,43 @@ app.get("/api/competitive/profile/search",(req,res)=>{
 app.post("/api/competitive/friends/add",(req,res)=>{
   const {id,friendId}=req.body||{};
   if(!id||!friendId||id===friendId)return res.status(400).json({error:"Two different MaliRadar IDs are required"});
-  const db=readDB();
+  const db=readDB(); if(!Array.isArray(db.users))db.users=[];
   if(!db.users.some(u=>u.id===id)||!db.users.some(u=>u.id===friendId))return res.status(404).json({error:"Profile not found"});
+  if(!Array.isArray(db.friendRequests))db.friendRequests=[];
   if(!Array.isArray(db.friends))db.friends=[];
-  const exists=db.friends.some(f=>(f.a===id&&f.b===friendId)||(f.a===friendId&&f.b===id));
-  if(!exists)db.friends.push({a:id,b:friendId,createdAt:new Date().toISOString()});
-  writeDB(db); res.json({ok:true,friend:true});
+  const accepted=db.friends.some(f=>(f.a===id&&f.b===friendId)||(f.a===friendId&&f.b===id));
+  if(accepted)return res.json({ok:true,status:"friend"});
+  const incoming=db.friendRequests.find(r=>r.from===friendId&&r.to===id&&r.status==="pending");
+  if(incoming){incoming.status="accepted";incoming.updatedAt=new Date().toISOString();db.friends.push({a:id,b:friendId,createdAt:new Date().toISOString()});writeDB(db);return res.json({ok:true,status:"friend"});}
+  const existing=db.friendRequests.find(r=>r.from===id&&r.to===friendId&&r.status==="pending");
+  if(existing)return res.json({ok:true,status:"pending"});
+  db.friendRequests.push({id:"fr-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),from:id,to:friendId,status:"pending",createdAt:new Date().toISOString()});
+  writeDB(db); res.json({ok:true,status:"pending"});
+});
+app.get("/api/competitive/friends/:id",(req,res)=>{
+  const id=String(req.params.id||"");
+  const db=readDB(); if(!Array.isArray(db.friendRequests))db.friendRequests=[];
+  if(!Array.isArray(db.friends))db.friends=[];
+  const users=new Map((db.users||[]).map(u=>[u.id,u]));
+  const incoming=db.friendRequests.filter(r=>r.to===id&&r.status==="pending").map(r=>{const u=users.get(r.from);return u?{id:u.id,name:u.name,region:u.region}:null}).filter(Boolean);
+  const outgoing=db.friendRequests.filter(r=>r.from===id&&r.status==="pending").map(r=>r.to);
+  const friends=db.friends.filter(f=>f.a===id||f.b===id).map(f=>users.get(f.a===id?f.b:f.a)).filter(Boolean).map(u=>({id:u.id,name:u.name,region:u.region}));
+  res.json({friends,incoming,outgoing});
+});
+app.post("/api/competitive/friends/respond",(req,res)=>{
+  const {id,friendId,action}=req.body||{};
+  if(!id||!friendId||!["accept","decline"].includes(action))return res.status(400).json({error:"Invalid friend response"});
+  const db=readDB(); if(!Array.isArray(db.friendRequests))db.friendRequests=[]; if(!Array.isArray(db.friends))db.friends=[];
+  const r=db.friendRequests.find(x=>x.from===friendId&&x.to===id&&x.status==="pending");
+  if(!r)return res.status(404).json({error:"Friend request not found"});
+  r.status=action==="accept"?"accepted":"declined";r.updatedAt=new Date().toISOString();
+  if(action==="accept"&&!db.friends.some(f=>(f.a===id&&f.b===friendId)||(f.a===friendId&&f.b===id)))db.friends.push({a:id,b:friendId,createdAt:new Date().toISOString()});
+  writeDB(db);res.json({ok:true,status:r.status});
+});
+app.delete("/api/competitive/friends/:id/:friendId",(req,res)=>{
+  const {id,friendId}=req.params;const db=readDB();if(!Array.isArray(db.friends))db.friends=[];
+  db.friends=db.friends.filter(f=>!((f.a===id&&f.b===friendId)||(f.a===friendId&&f.b===id)));
+  writeDB(db);res.json({ok:true,removed:true});
 });
 app.get("/api/competitive/leaderboard",(req,res)=>{
   const metric=["xp","profit","ret","trades"].includes(req.query.metric)?req.query.metric:"xp";
