@@ -341,98 +341,34 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 <script>
 (function(){
  const _nativeNav=window.nav;
- if(typeof _nativeNav==="function"){
-   window.nav=function(view,btn){
-     const r=_nativeNav.apply(this,arguments);
-     window.scrollTo({top:0,behavior:"instant"});
-     return r;
-   };
+ if(typeof _nativeNav==="function")window.nav=function(view,btn){const r=_nativeNav.apply(this,arguments);window.scrollTo({top:0,behavior:"instant"});return r};
+ let metric="xp",scope="global";
+ function esc(v){return String(v??"").replace(/[<>]/g,"")}
+ function val(x){return metric==="xp"?Number(x.xp||0).toLocaleString()+" XP":metric==="profit"?"KSh "+Math.round(Number(x.profit)||0).toLocaleString():metric==="return"?Number(x.ret||0).toFixed(2)+"%":Number(x.trades||0)+" trades"}
+ async function render(){
+   const box=document.getElementById("lbRows"),title=document.getElementById("lbTitle");if(!box||!title)return;
+   title.textContent=({xp:"⭐ Learning XP",profit:"💰 Simulated Profit",return:"📈 Simulated Return %",trades:"🎯 Trading Activity"}[metric]||"⭐ Learning XP")+" • "+({global:"Global",kenya:"Kenya",friends:"Friends"}[scope]||"Global");
+   box.innerHTML='<div class="lb-note">Loading server competition…</div>';
+   try{
+     const a=JSON.parse(localStorage.getItem("maliradar_account_v1")||"null");
+     if(a?.id){
+       const st=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}"),ac=JSON.parse(localStorage.getItem("maliradar_academy_v1")||"{}"),q=window.maliRadarProviderQuotes||{};
+       let value=Number(st.cash||100000);Object.keys(st.hold||{}).forEach(sym=>{const p=Number(q[String(sym).toUpperCase()]?.price);if(Number.isFinite(p))value+=Number(st.hold[sym]||0)*p});
+       const h=Array.isArray(st.history)?st.history:[],guided=!!localStorage.getItem("maliradar_guided_academy_completed"),started=!!ac.started,missions=started?Math.min(5,Math.max(0,Number(ac.step)||0)+1):0,xp=(guided?100:0)+(started?50:0)+missions*50+(h.length>0?50:0)+(h.length>=5?100:0)+(h.length>=10?150:0);
+       await fetch("/api/competitive/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:a.id,name:a.name||"MaliRadar User",region:(document.getElementById("regionSelect")?.value||"global").toLowerCase(),xp,profit:value-100000,ret:(value-100000)/100000*100,trades:h.length,achievements:0})});
+     }
+     const rr=await fetch("/api/competitive/leaderboard?metric="+encodeURIComponent(metric)+"&scope="+encodeURIComponent(scope),{cache:"no-store"});if(!rr.ok)throw new Error("leaderboard");
+     const d=await rr.json(),rows=Array.isArray(d.participants)?d.participants:[],me=JSON.parse(localStorage.getItem("maliradar_account_v1")||"null")?.id;
+     document.getElementById("lbCount").textContent=rows.length+" server participants";
+     const podium=document.getElementById("lbPodium");if(podium)podium.innerHTML=rows.slice(0,3).map((x,i)=>'<div class="lb-podium-card '+(x.id===me?'you':'')+'"><div class="lb-podium-rank">'+["🥇","🥈","🥉"][i]+'</div><div class="lb-podium-name">'+esc(x.name)+'</div><div class="lb-podium-value">'+val(x)+'</div></div>').join("");
+     document.getElementById("lbBest").textContent=rows[0]?esc(rows[0].name)+" • "+val(rows[0]):"—";document.getElementById("lbWorst").textContent=rows.length?esc(rows[rows.length-1].name)+" • "+val(rows[rows.length-1]):"—";
+     box.innerHTML=rows.map((x,i)=>'<div class="lb-row" style="'+(x.id===me?'border:1px solid rgba(80,220,190,.45);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+esc((x.name||"?")[0])+'</div><div class="lb-name"><b>'+esc(x.name)+(x.id===me?' • YOU':'')+'</b><div class="muted">Server profile'+(x.region==="kenya"?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+val(x)+'</b><div class="muted">'+Number(x.trades||0)+' total trades</div></div></div>').join("")||'<div class="lb-note">No server profiles yet. Create a profile to enter the competition.</div>';
+     const pos=rows.findIndex(x=>x.id===me);document.getElementById("myPosition").textContent=pos>=0?"#"+(pos+1):"#—";document.getElementById("myStat").textContent=pos>=0?"Your position is calculated from the server-recorded profile.":"Sync your profile to enter the server ranking.";
+   }catch(e){box.innerHTML='<div class="lb-note">Server competition is temporarily unavailable. Demo participants are not displayed.</div>'}
  }
-
-  const demo=[
-    {name:"MarketRookie",xp:1280,profit:18420,ret:18.42,trades:86,kenya:true,lessons:18,achievements:4},
-    {name:"StockExplorer",xp:1125,profit:14680,ret:14.68,trades:71,kenya:true,lessons:16,achievements:4},
-    {name:"MaliMaster",xp:980,profit:12150,ret:12.15,trades:64,kenya:false,lessons:15,achievements:3},
-    {name:"ChartReader",xp:870,profit:9450,ret:9.45,trades:52,kenya:true,lessons:13,achievements:3},
-    {name:"NSEStudent",xp:790,profit:7210,ret:7.21,trades:43,kenya:true,lessons:12,achievements:3},
-    {name:"PaperTrader",xp:710,profit:5830,ret:5.83,trades:38,kenya:false,lessons:10,achievements:2},
-    {name:"MarketScholar",xp:650,profit:4210,ret:4.21,trades:31,kenya:true,lessons:9,achievements:2},
-    {name:"TradeLearner",xp:590,profit:3180,ret:3.18,trades:27,kenya:false,lessons:8,achievements:2}
-  ];
-  let metric="xp",scope="global";
-  function currentUser(){
-    const cash=Number(window.state?.cash??100000);
-    const hold=window.state?.hold||{};
-    const quotes=window.maliRadarProviderQuotes||{};
-    let value=cash;
-    Object.keys(hold).forEach(sym=>{
-      const key=String(sym).toUpperCase().split('.')[0];
-      const q=quotes[key];
-      const p=Number(q?.price);
-      if(Number.isFinite(p))value+=Number(hold[sym]||0)*p;
-    });
-    const profit=value-100000;
-    const ret=profit/100000*100;
-    const trades=Array.isArray(window.state?.history)?window.state.history.length:0;
-    const academy=(()=>{try{return JSON.parse(localStorage.getItem('maliradar_academy_v12')||'null')||{};}catch(e){return {};}})();
-    const xp=Number(academy.xp||0);
-    return {name:"You",xp,profit,ret,trades,kenya:true,lessons:0,achievements:0,local:true};
-  }
-  function rows(){
-    let a=demo.slice();
-    const me=currentUser();
-    // The user's own paper-trading statistics are calculated from the current
-    // local portfolio and verified provider quotes; no price is fabricated.
-    if(scope==="kenya")a=a.filter(x=>x.kenya);
-    if(scope==="friends")a=a.slice(0,4);
-    if(scope!=="friends")a.push(me);
-    const key=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
-    a.sort((x,y)=>y[key]-x[key]); return a;
-  }
-  function label(){
-    const m={xp:"⭐ Learning XP",profit:"💰 Simulated Profit",return:"📈 Simulated Return %",trades:"🎯 Trading Activity"}[metric];
-    const s={global:"Global",kenya:"Kenya",friends:"Friends",daily:"Daily",weekly:"Weekly",monthly:"Monthly",all:"All-time"}[scope];
-    return m+" • "+s;
-  }
-  function value(x){
-    if(metric==="xp")return x.xp.toLocaleString()+" XP";
-    if(metric==="profit")return "KSh "+x.profit.toLocaleString();
-    if(metric==="return")return x.ret.toFixed(2)+"%";
-    return x.trades+" trades";
-  }
-  function renderPodium(a){
-    const box=document.getElementById("lbPodium"); if(!box)return;
-    box.innerHTML=a.slice(0,3).map((x,i)=>'<div class="lb-podium-card '+(x.local?'you':'')+'"><div class="lb-podium-rank">'+(["🥇","🥈","🥉"][i])+'</div><div class="lb-podium-name">'+x.name+'</div><div class="lb-podium-value">'+value(x)+'</div></div>').join("");
-  }
-  function render(){
-    const box=document.getElementById("lbRows"),title=document.getElementById("lbTitle");
-    if(!box||!title)return;
-    const a=rows(); title.textContent=label();
-    document.getElementById("lbCount").textContent=a.length+" participants";
-    renderPodium(a);
-    const best=a[0],worst=a[a.length-1];
-    const bestEl=document.getElementById("lbBest"),worstEl=document.getElementById("lbWorst");
-    if(bestEl)bestEl.textContent=best?best.name+" • "+value(best):"—";
-    if(worstEl)worstEl.textContent=worst?worst.name+" • "+value(worst):"—";
-    box.innerHTML=a.map((x,i)=>'<div class="lb-row" style="'+(x.local?'border:1px solid rgba(80,220,190,.35);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+x.name[0]+'</div><div class="lb-name"><b>'+x.name+(x.local?' • YOU':'')+'</b><div class="muted">'+(x.local?'Verified local paper stats':'Demo participant')+(x.kenya?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+value(x)+'</b><div class="muted">'+x.trades+' total trades</div></div></div>').join("");
-    const me=currentUser();
-    const meKey=metric==="xp"?"xp":metric==="profit"?"profit":metric==="return"?"ret":"trades";
-    const myRank=a.slice().sort((x,y)=>y[meKey]-x[meKey]).findIndex(x=>x.local)+1;
-    document.getElementById("myPosition").textContent=myRank>0?"#"+myRank:"#—";
-    document.getElementById("myStat").textContent=metric==="profit"
-      ?"Your simulated P/L: KSh "+me.profit.toLocaleString()+" • Based on your current paper portfolio."
-      :metric==="return"
-      ?"Your simulated return: "+me.ret.toFixed(2)+"% • Starting capital: KSh 100,000."
-      :metric==="trades"
-      ?"Your recorded paper trades: "+me.trades+"."
-      :"Your current learning XP: "+me.xp+".";
-
-  }
-  document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
-  document.querySelectorAll("#lbScopeTabs button").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render();}));
-  window.renderLeaderboards=render;
-  window.openLeaderboards=function(){nav("leaderboardView",document.querySelector(".tabs button:nth-child(5)"));render();};
-  render();
+ document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
+ document.querySelectorAll("#lbScopeTabs button").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
+ window.renderLeaderboards=render;window.openLeaderboards=function(){nav("leaderboardView",document.querySelector(".tabs button:nth-child(5)"));render()};render();
 })();
 </script>
 
