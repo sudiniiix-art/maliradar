@@ -195,7 +195,57 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 <style id="v19-region-market-style">
 .region-market-card label{display:block;font-size:12px;opacity:.75;margin:10px 0 6px}.region-select{width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,255,190,.22);background:rgba(255,255,255,.04);color:inherit}.market-choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.market-choice{padding:10px;border:1px solid rgba(0,255,190,.15);border-radius:12px;background:rgba(255,255,255,.03);cursor:pointer}.market-choice.active{border-color:rgba(0,255,190,.55);box-shadow:0 0 14px rgba(0,255,190,.08)}.market-choice b{display:block}.market-choice span{font-size:11px;opacity:.65}@media(max-width:520px){.market-choice-grid{grid-template-columns:1fr 1fr}}
 </style>
-</head><body><script id="mr-stock-directory-bridge">
+<style id="v7-secondary-gap-fix">
+/* v7.0: remove artificial vertical whitespace from News and Smart Assist.
+   Secondary screens stay in normal document flow; no display:contents or
+   inherited screen/min-height spacing can create a blank scroll zone. */
+body.compact-header main{
+  display:block!important;
+  position:relative!important;
+  padding:0 10px 82px!important;
+  margin:0!important;
+  min-height:0!important;
+}
+body.compact-header .screen{
+  display:none!important;
+  position:relative!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+}
+body.compact-header .screen.active{
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+}
+body.compact-header #newsView,
+body.compact-header #smartAssistView{
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+}
+body.compact-header #newsView .section-head{
+  margin:0!important;
+  padding:8px 0 6px!important;
+}
+body.compact-header #newsView .news-filters{
+  margin-top:4px!important;
+}
+body.compact-header #smartAssistView .sa-hero{
+  margin:0!important;
+}
+body.compact-header #smartAssistView #saActivation{
+  margin-top:8px!important;
+}
+body.compact-header #smartAssistView #saWorkspace{
+  margin-top:8px!important;
+  padding-bottom:18px!important;
+}
+</style></head><body><script id="mr-stock-directory-bridge">
 (function(){
   // Top-level `let STOCKS` is a global lexical binding, not window.STOCKS.
   // Expose the live array safely so provider modules can see the same directory.
@@ -906,7 +956,7 @@ function nav(id,btn){
   document.body.classList.toggle("compact-header",compact);
   const hdr=document.querySelector(".app > header"), mainEl=document.querySelector(".app > main");
   if(hdr) hdr.style.display=compact?"none":"";
-  if(mainEl) mainEl.style.display=compact?"contents":"";
+  if(mainEl) mainEl.style.display="";
   const target=$(id); if(target)target.classList.add("active");
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
   if(btn)btn.classList.add("active");
