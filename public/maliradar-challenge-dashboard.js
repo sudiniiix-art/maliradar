@@ -39,11 +39,18 @@
     if(hit){hit.id="mrChallengeV3";return hit}
     return null;
   }
+  async function fetchJson(url,opts={},timeoutMs=5000){
+    const controller=new AbortController();
+    const timer=setTimeout(()=>controller.abort(),timeoutMs);
+    try{
+      const r=await fetch(url,{...opts,signal:controller.signal,cache:"no-store"});
+      if(!r.ok)throw new Error("HTTP "+r.status);
+      return await r.json();
+    }finally{clearTimeout(timer)}
+  }
   async function getChallenge(){
     try{
-      const r=await fetch("/api/competitive/challenges?_mr_challenge_v3="+Date.now(),{cache:"no-store"});
-      if(!r.ok)throw 0;
-      const j=await r.json();
+      const j=await fetchJson("/api/competitive/challenges?_mr_challenge_v3="+Date.now(),{},5000);
       if(j&&Array.isArray(j.challenges)&&j.challenges[0])return {...fallback,...j.challenges[0]};
     }catch(e){}
     return {...fallback,status:status(fallback),joined:localStorage.getItem(KEY)==="1",localFallback:true};
@@ -96,12 +103,7 @@
       refresh.onclick=()=>render();
       const rows=document.getElementById("mrC3Rows");
       try{
-        const controller=new AbortController();
-        const timer=setTimeout(()=>controller.abort(),5000);
-        const r=await fetch("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/leaderboard?_mr_c3="+Date.now(),{cache:"no-store",signal:controller.signal});
-        clearTimeout(timer);
-        if(!r.ok)throw new Error("challenge leaderboard "+r.status);
-        const j=await r.json();
+        const j=await fetchJson("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/leaderboard?_mr_c3="+Date.now(),{},5000);
         if(rows)rows.innerHTML=rankRows(j?.participants||[],me?.id);
       }catch(e){
         if(rows)rows.innerHTML='<div class="mr-c3-empty">'+(e?.name==="AbortError"?"Challenge rankings are taking too long to respond. Tap Refresh to retry.":"Challenge rankings are temporarily unavailable. Tap Refresh to retry.")+'</div>';
