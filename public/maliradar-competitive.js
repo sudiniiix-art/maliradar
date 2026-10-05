@@ -84,7 +84,12 @@
    }));
    const addFriends=document.getElementById("mrAddFriendsTab");
    if(addFriends){
-     addFriends.onclick=()=>{addFriends.classList.add("active");window.maliRadarOpenFriends?.()};
+     addFriends.onclick=(e)=>{
+       e.preventDefault();
+       document.querySelectorAll("#lbScopeTabs button").forEach(x=>x.classList.remove("active"));
+       addFriends.classList.add("active");
+       if(typeof window.maliRadarOpenFriends==="function")window.maliRadarOpenFriends();
+     };
    }
  }
  function ensureFriendsCard(){
@@ -123,56 +128,11 @@
    return card;
  }
  window.maliRadarOpenFriends=function(){
-   const root=document.getElementById("leaderboardView");
-   if(!root)return;
-   let modal=document.getElementById("mrFriendsModal");
-   if(!modal){
-     modal=document.createElement("div");
-     modal.id="mrFriendsModal";
-     modal.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center;padding:12px";
-     modal.innerHTML=
-       '<div style="width:min(480px,100%);max-height:82vh;overflow:auto;background:#0b1820;border:1px solid var(--line);border-radius:20px 20px 14px 14px;padding:16px;box-shadow:0 24px 70px rgba(0,0,0,.55)">'+
-       '<div class="row"><div><b>👥 Add Friends</b><div class="muted">Find another MaliRadar player by username or MaliRadar ID.</div></div><button class="btn alt" id="mrFriendsClose">Close</button></div>'+
-       '<div class="actions" style="margin-top:12px"><input id="mrFriendModalSearch" class="input" placeholder="Username or MaliRadar ID" style="flex:1;min-width:0"><button class="btn" id="mrFriendModalFind">Find</button></div>'+
-       '<div id="mrFriendModalResults" style="margin-top:10px"></div>'+
-       '<div class="notice" style="margin-top:10px">Friends rankings only use public MaliRadar profile information. No private financial information is shared.</div>'+
-       '</div>';
-     document.body.appendChild(modal);
-     const close=()=>modal.remove();
-     modal.addEventListener("click",e=>{if(e.target===modal)close()});
-     modal.querySelector("#mrFriendsClose").onclick=close;
-     const search=async()=>{
-       const q=modal.querySelector("#mrFriendModalSearch").value.trim();
-       const out=modal.querySelector("#mrFriendModalResults");
-       const me=account();
-       if(q.length<2){out.innerHTML='<div class="lb-note">Enter at least 2 characters.</div>';return}
-       out.innerHTML='<div class="lb-note">Searching…</div>';
-       try{
-         const r=await fetch("/api/competitive/profile/search?q="+encodeURIComponent(q),{cache:"no-store"});
-         if(!r.ok)throw new Error("search");
-         const d=await r.json();
-         const rows=(d.profiles||[]).filter(p=>p.id!==me?.id);
-         out.innerHTML=rows.map(p=>'<div class="lb-row" style="margin-top:6px"><div class="lb-avatar">'+String(p.name||"?").replace(/[<>]/g,"")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+String(p.id||"")+(String(p.region||"").toLowerCase()==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn alt" data-mr-add="'+String(p.id||"").replace(/"/g,"&quot;")+'">Add</button></div>').join("")||'<div class="lb-note">No matching users found. They must have opened MaliRadar and created a server profile first.</div>';
-         out.querySelectorAll("[data-mr-add]").forEach(btn=>btn.onclick=async()=>{
-           if(!me?.id)return;
-           btn.disabled=true;btn.textContent="Adding…";
-           try{
-             const rr=await fetch("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:btn.dataset.mrAdd}),cache:"no-store"});
-             if(!rr.ok)throw new Error("add");
-             btn.textContent="✓ Added";
-             if(document.querySelector("#lbScopeTabs button[data-scope='friends']")?.classList.contains("active"))window.renderLeaderboards?.();
-           }catch(e){btn.disabled=false;btn.textContent="Add";}
-         });
-       }catch(e){out.innerHTML='<div class="lb-note">Friend search is temporarily unavailable. Try again.</div>';}
-     };
-     modal.querySelector("#mrFriendModalFind").onclick=search;
-     modal.querySelector("#mrFriendModalSearch").addEventListener("keydown",e=>{if(e.key==="Enter")search()});
-   }
-   modal.style.display="flex";
-   const input=modal.querySelector("#mrFriendModalSearch");
-   if(input){input.value="";setTimeout(()=>input.focus(),40);}
-   const out=modal.querySelector("#mrFriendModalResults");
-   if(out)out.innerHTML='<div class="lb-note">Search for a player above.</div>';
+   const card=ensureFriendsCard();
+   if(!card)return;
+   card.style.display="";
+   card.scrollIntoView({behavior:"smooth",block:"start"});
+   setTimeout(()=>card.querySelector("#mrFriendSearch")?.focus(),450);
  };
  function challengeReward(rank){return rank===1?50000:rank===2?25000:rank===3?15000:rank<=10?5000:1000}
  function challengeBadge(rank){return rank===1?["CHAMPION","🏆"]:rank===2?["ELITE RUNNER-UP","🥈"]:rank===3?["TOP 3","🥉"]:rank<=10?["TOP 10","✦"]:["CHALLENGER","◆"]}
