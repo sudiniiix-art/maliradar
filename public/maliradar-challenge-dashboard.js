@@ -14,7 +14,7 @@
     prizes:{first:50000,second:25000,third:15000,top10:5000,participant:1000},
     prizeCurrency:"KSh virtual credits"
   };
-  let latest=fallback, busy=false;
+  let latest=fallback, busy=false, countdownTimer=null;
   function account(){try{return JSON.parse(localStorage.getItem("maliradar_account_v1")||"null")}catch(e){return null}}
   function state(){try{return JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}")}catch(e){return {}}}
   function status(c){
@@ -55,10 +55,19 @@
     }catch(e){}
     return {...fallback,status:status(fallback),joined:localStorage.getItem(KEY)==="1",localFallback:true};
   }
+  function tickCountdown(){
+    const card=findCard(), c=latest;
+    const el=card?.querySelector(".mr-c3-count");
+    if(!el||!c)return;
+    const st=c.status||status(c), target=st==="UPCOMING"?Date.parse(c.start):st==="ACTIVE"?Date.parse(c.end):0;
+    el.textContent=st==="ENDED"?"CHALLENGE ENDED":fmtTime(target-Date.now());
+  }
   function rankRows(rows,me){
     return (rows||[]).map((x,i)=>'<div class="mr-c3-row '+(x.id===me?"you":"")+'"><span>#'+(i+1)+'</span><b>'+esc(x.name||"MaliRadar User")+(x.id===me?" • YOU":"")+'</b><span>'+Number(x.ret||0).toFixed(2)+'%</span></div>').join("")||'<div class="mr-c3-empty">No challenge entrants yet. Join to appear on the board.</div>';
   }
-  async function render(){
+  async function render(force=false){
+    const existing=findCard();
+    if(!force && existing?.dataset.mrC3Ready==="1"){tickCountdown();return}
     if(busy)return;busy=true;
     try{
       const c=latest=await getChallenge(), st=c.status||status(c), localJoined=localStorage.getItem(KEY)==="1", joined=!!c.joined||localJoined;
@@ -95,7 +104,8 @@
         '<div class="mr-c3-actions"><button class="btn" id="mrC3Join" '+(joined||st==="ENDED"?"disabled":"")+'>'+joinedText+'</button><button class="btn alt" id="mrC3Refresh">↻ Refresh</button></div>'+
         '<div class="mr-c3-meta">Competition engine 3.0 • '+(c.localFallback?"offline-safe fallback":"server challenge API")+' • Data is simulated/paper only.</div>'+
         '<div class="mr-c3-board"><div class="row"><b>Challenge Leaderboard</b><span class="badge">RETURN SINCE JOIN</span></div><div id="mrC3Rows">Loading…</div></div>';
-      if(!document.getElementById("mr-c3-css")){
+      card.dataset.mrC3Ready="1";
+            if(!document.getElementById("mr-c3-css")){
         const style=document.createElement("style");style.id="mr-c3-css";style.textContent=
           ".mr-c3-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.mr-c3-kicker{font-size:10px;letter-spacing:.18em;font-weight:900;opacity:.8}.mr-c3-status{padding:6px 9px;border-radius:999px;font-size:10px;font-weight:900;border:1px solid rgba(255,255,255,.18)}.mr-c3-status.active{color:#8fffd9;border-color:rgba(80,240,190,.35)}.mr-c3-status.upcoming{color:#ffe08a}.mr-c3-status.ended{color:#ff9c9c}.mr-c3-count{font-size:27px;font-weight:1000;letter-spacing:.04em;margin:16px 0;text-align:center;padding:13px;border-radius:14px;background:linear-gradient(135deg,rgba(80,220,255,.1),rgba(255,255,255,.025));border:1px solid var(--line)}.mr-c3-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mr-c3-grid>div{padding:10px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}.mr-c3-grid span{display:block;font-size:9px;color:var(--muted);letter-spacing:.08em}.mr-c3-grid b{display:block;margin-top:4px}.mr-c3-prizes{margin-top:12px;padding:12px;border:1px solid var(--line);border-radius:14px}.mr-c3-prize-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06)}.mr-c3-prize-row:last-child{border-bottom:0}.mr-c3-actions{display:flex;gap:8px;margin-top:12px}.mr-c3-actions button{flex:1}.mr-c3-meta{font-size:10px;color:var(--muted);margin-top:9px;text-align:center}.mr-c3-board{margin-top:13px;padding-top:12px;border-top:1px solid var(--line)}.mr-c3-row{display:grid;grid-template-columns:34px 1fr auto;gap:7px;align-items:center;padding:9px;border-bottom:1px solid rgba(255,255,255,.05)}.mr-c3-row.you{border:1px solid rgba(80,220,190,.4);border-radius:10px}.mr-c3-empty{padding:12px;color:var(--muted);font-size:12px}";
         document.head.appendChild(style);
@@ -108,10 +118,10 @@
           const r=await fetch("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/join",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id}),cache:"no-store"});
           if(!r.ok)throw 0;
           localStorage.setItem(KEY,"1");
-          await render();
+          await render(true);
         }catch(e){join.disabled=false;join.textContent="JOIN";join.title="Server is unavailable — try again after deployment."}
       };
-      refresh.onclick=()=>render();
+      refresh.onclick=()=>render(true);
       const rows=document.getElementById("mrC3Rows");
       try{
         const j=await fetchJson("/api/competitive/challenges/"+encodeURIComponent(c.id)+"/leaderboard?_mr_c3="+Date.now(),{},5000);
@@ -122,9 +132,10 @@
     }finally{busy=false}
   }
   function boot(){
-    render();
-    setInterval(render,2000);
-    document.addEventListener("visibilitychange",()=>{if(!document.hidden)render()});
+    render(true);
+    if(countdownTimer)clearInterval(countdownTimer);
+    countdownTimer=setInterval(tickCountdown,1000);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden){tickCountdown();}});
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,700));else setTimeout(boot,700);
   window.MaliRadarChallengeV3={version:"3.0",render};
