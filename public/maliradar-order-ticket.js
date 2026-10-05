@@ -36,7 +36,10 @@
     pending.forEach(o=>{
       const p=price(o.sym);
       if(!p){keep.push(o);return}
-      const hit=o.side==="BUY"?p<=o.limitPrice:p>=o.limitPrice;
+      let hit=false;
+      if(o.orderType==="STOP_LOSS") hit=p<=o.triggerPrice;
+      else if(o.orderType==="TAKE_PROFIT") hit=p>=o.triggerPrice;
+      else hit=o.side==="BUY"?p<=o.limitPrice:p>=o.limitPrice;
       if(hit&&executeLimit(o,p,st)){changed=true}
       else keep.push(o);
     });
@@ -52,7 +55,7 @@
       '<div class="row"><div><div class="muted">PAPER ORDER</div><h2 style="margin:4px 0">Paper '+(side==="BUY"?"Buy":"Sell")+'</h2><div class="muted">'+esc(name)+' • '+esc(s)+'</div></div><button class="btn alt" id="mr50Close">✕</button></div>'+
       '<div class="grid"><div class="metric"><div>Provider price</div><b>KSh '+fmt(p)+'</b></div><div class="metric"><div>Data</div><b style="color:#ffe08a">'+d+'-MIN DELAYED</b></div></div>'+
       '<div class="formline" style="margin-top:14px"><label style="width:80px">Order type</label><select id="mr50Type"><option value="MARKET">Market — execute now</option><option value="LIMIT">Limit — execute at target</option></select></div>'+
-      '<div class="formline" id="mr50LimitRow" style="margin-top:8px;display:none"><label style="width:80px">Limit price</label><input id="mr50Limit" type="number" min="0.01" step="0.01" value="'+fmt(p)+'"></div>'+
+      '<div class="formline" id="mr50LimitRow" style="margin-top:8px;display:none"><label style="width:80px">Target price</label><input id="mr50Limit" type="number" min="0.01" step="0.01" value="'+fmt(p)+'"></div>'+
       '<div class="formline" style="margin-top:8px"><label style="width:80px">Quantity</label><input id="mr50Qty" type="number" min="1" max="'+max+'" step="1" value="'+(max?Math.min(1,max):0)+'"></div>'+
       '<div class="metric" style="margin-top:10px"><div>Estimated '+(side==="BUY"?"cost":"proceeds")+'</div><b id="mr50Total">KSh 0.00</b></div>'+
       '<div class="metric" style="margin-top:8px"><div>'+(side==="BUY"?"Paper cash available":"Shares available")+'</div><b>'+(side==="BUY"?"KSh "+fmt(cash):owned+" shares")+'</b></div>'+
@@ -60,18 +63,21 @@
       '<button class="btn" id="mr50Submit" style="width:100%;margin-top:8px;color:#041015;background:'+(side==="BUY"?"var(--a)":"var(--r)")+'">'+(side==="BUY"?"BUY":"SELL")+' PAPER ORDER</button></div></div>';
     document.body.appendChild(root);
     const type=root.querySelector("#mr50Type"),lr=root.querySelector("#mr50LimitRow"),lim=root.querySelector("#mr50Limit"),qty=root.querySelector("#mr50Qty"),tot=root.querySelector("#mr50Total"),submit=root.querySelector("#mr50Submit");
-    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p;lr.style.display=type.value==="LIMIT"?"flex":"none";tot.textContent="KSh "+fmt(q*(type.value==="LIMIT"?lp:p));submit.disabled=q<1||q>max||(type.value==="LIMIT"&&lp<=0);submit.style.opacity=submit.disabled?".45":"1"};
+    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p,protect=type.value==="STOP_LOSS"||type.value==="TAKE_PROFIT";lr.style.display=(type.value==="LIMIT"||protect)?"flex":"none";lr.querySelector("label").textContent=protect?(type.value==="STOP_LOSS"?"Stop price":"Target price"):"Limit price";tot.textContent="KSh "+fmt(q*p);submit.disabled=q<1||q>max||((type.value==="LIMIT"||protect)&&lp<=0);submit.style.opacity=submit.disabled?".45":"1"};
     type.onchange=update;lim.oninput=update;qty.oninput=update;update();
     root.querySelector("#mr50Close").onclick=()=>root.remove();root.firstElementChild.onclick=e=>{if(e.target===root.firstElementChild)root.remove()};
     submit.onclick=()=>{
       const q=Math.floor(Number(qty.value)||0),kind=type.value,lp=Number(lim.value)||0;
       if(q<1||q>max||(kind==="LIMIT"&&lp<=0))return;
       const fresh=read();fresh.cash=Number(fresh.cash||0);fresh.hold=fresh.hold||{};fresh.history=Array.isArray(fresh.history)?fresh.history:[];
-      if(kind==="LIMIT"){
+      if(kind==="LIMIT"||kind==="STOP_LOSS"||kind==="TAKE_PROFIT"){
         fresh.pendingOrders=Array.isArray(fresh.pendingOrders)?fresh.pendingOrders:[];
-        const id="LMT-"+Date.now().toString(36).toUpperCase();
-        fresh.pendingOrders.unshift({id,sym:s,side,q,limitPrice:lp,createdAt:new Date().toISOString(),delayMinutes:d,providerBacked:true});
-        write(fresh);root.remove();refresh();renderPending();showOrderStatus((side==="BUY"?"Buy":"Sell")+" limit order for "+q+" "+s+" at KSh "+fmt(lp)+" is waiting for the provider price to reach the target.","pending");return;
+        const id=(kind==="STOP_LOSS"?"STP-":kind==="TAKE_PROFIT"?"TP-":"LMT-")+Date.now().toString(36).toUpperCase();
+        const trigger=kind==="LIMIT"?null:lp;
+        fresh.pendingOrders.unshift({id,sym:s,side,q,limitPrice:kind==="LIMIT"?lp:null,triggerPrice:trigger,createdAt:new Date().toISOString(),delayMinutes:d,providerBacked:true,orderType:kind});
+        write(fresh);root.remove();refresh();renderPending();
+        const label=kind==="STOP_LOSS"?"stop-loss":kind==="TAKE_PROFIT"?"take-profit":"limit";
+        showOrderStatus(label+" order for "+q+" "+s+" at KSh "+fmt(lp)+" is waiting for the provider price.","pending");return;
       }
       const value=q*p;
       if(side==="BUY"){if(value>fresh.cash)return alert("Not enough paper cash.");fresh.cash-=value;fresh.hold[s]=(Number(fresh.hold[s]||0)+q)}
@@ -93,7 +99,7 @@
     const st=read(),arr=Array.isArray(st.pendingOrders)?st.pendingOrders:[];
     card.innerHTML='<div class="row"><div><b>⏳ Pending Paper Orders</b><div class="muted">Limit orders awaiting provider price</div></div><span class="badge">'+arr.length+' OPEN</span></div>'+
       (arr.length?arr.map(o=>'<div class="metric" style="margin-top:8px"><div><b>'+esc(o.side)+' • '+esc(o.sym)+'</b><br><span class="muted">'+o.q+' shares • target KSh '+fmt(o.limitPrice)+'</span></div><button class="btn alt" data-mr50-cancel="'+esc(o.id)+'">Cancel</button></div>').join(''):'<div class="notice" style="margin-top:10px">No pending limit orders.</div>')+
-      '<p class="notice" style="margin-top:10px">Limit execution checks use provider-backed prices and the provider delay. This is educational simulation only.</p>';
+      '<p class="notice" style="margin-top:10px">Limit, stop-loss and take-profit checks use provider-backed prices and the provider delay. These are educational simulation tools, not trading instructions.</p>';
     card.querySelectorAll("[data-mr50-cancel]").forEach(b=>b.onclick=()=>{
       const s=read();s.pendingOrders=(Array.isArray(s.pendingOrders)?s.pendingOrders:[]).filter(x=>x.id!==b.dataset.mr50Cancel);write(s);renderPending();
     });
