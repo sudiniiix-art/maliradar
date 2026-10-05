@@ -45,14 +45,20 @@
  }
  async function upgradeRender(){
    if(typeof window.renderLeaderboards!=="function")return;
-   const original=window.renderLeaderboards;
    window.renderLeaderboards=async function(){
      await sync();
      const metric=document.querySelector("#lbMetricTabs button.active")?.dataset.metric||"xp";
      const scope=document.querySelector("#lbScopeTabs button.active")?.dataset.scope||"global";
      const data=await load(metric,scope);
-     if(!data||!Array.isArray(data.participants)){original();return}
      const box=document.getElementById("lbRows"); if(!box)return;
+     if(!data||!Array.isArray(data.participants)){
+       box.innerHTML='<div class="lb-note">⚠️ Server competition is temporarily unavailable. Tap the tab again or retry after the server responds.</div>';
+       const podium=document.getElementById("lbPodium"); if(podium)podium.innerHTML="";
+       const count=document.getElementById("lbCount"); if(count)count.textContent="Server unavailable";
+       const pos=document.getElementById("myPosition"); if(pos)pos.textContent="#—";
+       const stat=document.getElementById("myStat"); if(stat)stat.textContent="Your server ranking could not be refreshed.";
+       return;
+     }
      const me=account();
      const val=x=>metric==="xp"?Number(x.xp||0).toLocaleString()+" XP":metric==="profit"?"KSh "+Number(x.profit||0).toLocaleString():metric==="return"?Number(x.ret||0).toFixed(2)+"%":Number(x.trades||0)+" trades";
      const podium=document.getElementById("lbPodium");
@@ -113,20 +119,25 @@
      const out=card.querySelector("#mrFriendResults");
      if(q.length<2){out.textContent="Enter at least 2 characters.";return;}
      out.textContent="Searching…";
+     const ctl=new AbortController(), timer=setTimeout(()=>ctl.abort(),5000);
      try{
-       const r=await fetch("/api/competitive/profile/search?q="+encodeURIComponent(q),{cache:"no-store"});
+       const r=await fetch("/api/competitive/profile/search?q="+encodeURIComponent(q)+"&_mr_friend="+Date.now(),{cache:"no-store",signal:ctl.signal});
+       if(!r.ok)throw new Error("HTTP "+r.status);
        const d=await r.json(), me=account();
+       if(!me?.id){out.textContent="Create/save your MaliRadar profile before adding friends.";return;}
        out.innerHTML=(d.profiles||[]).filter(p=>p.id!==me?.id).map(p=>'<div class="lb-row" style="margin-top:6px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn alt" data-friend="'+p.id+'">Add</button></div>').join("")||'<div class="lb-note">No matching users.</div>';
        out.querySelectorAll("[data-friend]").forEach(b=>b.onclick=async()=>{
          b.disabled=true;b.textContent="Adding…";
          try{
-           const rr=await fetch("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.friend})});
+           const rr=await fetch("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.friend}),cache:"no-store"});
            if(!rr.ok)throw 0;
            b.textContent="✓ Added";
+           b.classList.remove("alt");
            if(document.querySelector("#lbScopeTabs button[data-scope='friends']")?.classList.contains("active"))window.renderLeaderboards();
          }catch(e){b.disabled=false;b.textContent="Add";}
        });
-     }catch(e){out.textContent="Could not search right now.";}
+     }catch(e){out.textContent=e?.name==="AbortError"?"Search timed out. Tap Search to retry.":"Could not search right now.";}
+     finally{clearTimeout(timer)}
    };
    return card;
  }
