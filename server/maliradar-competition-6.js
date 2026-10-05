@@ -47,14 +47,18 @@ function registerMaliRadarCompetition6(app){
   function achievements(db,id,season){
     const t=season.tournaments,d=season.duels;
     const history=Array.isArray(db.seasonHistory)?db.seasonHistory.filter(x=>x.id===id):[];
-    const promoted=history.some(x=>String(x.status||"").toUpperCase().includes("PROMOT"));
+    const all=(db.users||[]).map(u=>({id:u.id,points:seasonSnapshot(db,u.id)?.points||0,division:seasonSnapshot(db,u.id)?.division||"Bronze"}));
+    const same=all.filter(x=>x.division===season.division).sort((a,b)=>b.points-a.points);
+    const currentRank=Math.max(0,same.findIndex(x=>x.id===id)+1);
+    const promotionZone=Math.max(1,Math.ceil(same.length*.2));
+    const promoted=currentRank>0&&currentRank<=promotionZone&&season.division!=="Diamond";
     const items=[
       {id:"first-tournament",icon:"🌍",name:"First Tournament",desc:"Enter your first paper tournament.",earned:t.played>=1},
       {id:"tournament-winner",icon:"🏆",name:"Tournament Winner",desc:"Win a paper tournament.",earned:t.wins>=1},
       {id:"top10-tournament",icon:"🥇",name:"Tournament Top 10",desc:"Finish a paper tournament in the top 10.",earned:t.top10>=1},
       {id:"five-tournaments",icon:"🎟️",name:"Five Entries",desc:"Enter 5 paper tournaments.",earned:t.played>=5},
       {id:"ten-duel-wins",icon:"⚔️",name:"Duel Master",desc:"Win 10 paper duels.",earned:d.wins>=10},
-      {id:"season-promoted",icon:"📈",name:"Season Promoted",desc:"Reach a promotion result in a season.",earned:promoted},
+      {id:"season-promoted",icon:"📈",name:"Season Promoted",desc:"Reach a promotion-zone position in a season.",earned:promoted},
       {id:"diamond",icon:"💎",name:"Diamond Division",desc:"Reach Diamond in the current season.",earned:season.division==="Diamond"},
       {id:"global-champion",icon:"🌐",name:"Global Champion",desc:"Win a global paper tournament.",earned:t.entries.some(e=>e.region==="global"&&Number(e.finalRank)===1)}
     ];
