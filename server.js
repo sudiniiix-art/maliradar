@@ -6,6 +6,22 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+// Inject the latest client-side order ticket without requiring a duplicate HTML entrypoint.
+app.use((req,res,next)=>{
+  if(req.method==="GET" && req.path==="/"){
+    const file=path.join(__dirname,"public","index.html");
+    let html=fs.readFileSync(file,"utf8");
+    const tag='<script src="/maliradar-order-ticket.js"></script>';
+    if(!html.includes(tag)) html=html.replace(/<\\/body>/i,tag+"<\\/body>");
+    res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma","no-cache");
+    res.setHeader("Expires","0");
+    res.type("html").send(html);
+    return;
+  }
+  next();
+});
+
 // Prevent phones/browsers/proxies from keeping an older MaliRadar frontend.
 // The app is updated frequently, so the HTML must always be revalidated.
 const staticOptions = {
