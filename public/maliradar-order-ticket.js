@@ -103,6 +103,4 @@
   document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mr49-order]");if(b)ticket(b.dataset.mr49Order,b.dataset.symbol)});
   setInterval(()=>{checkLimits();renderPending()},10000);
   setTimeout(()=>{checkLimits();renderPending()},1000);
-  const obs=new MutationObserver(()=>renderPending());
-  setTimeout(()=>{const p=document.getElementById("portfolio");if(p)obs.observe(p,{childList:true,subtree:true})},1200);
 })();
