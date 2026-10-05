@@ -118,6 +118,10 @@
    };
    return card;
  }
+ window.maliRadarOpenFriends=function(){
+   const card=ensureFriendsCard();
+   if(card)card.scrollIntoView({behavior:"smooth",block:"center"});
+ };
  function challengeReward(rank){return rank===1?50000:rank===2?25000:rank===3?15000:rank<=10?5000:1000}
  function challengeBadge(rank){return rank===1?["CHAMPION","🏆"]:rank===2?["ELITE RUNNER-UP","🥈"]:rank===3?["TOP 3","🥉"]:rank<=10?["TOP 10","✦"]:["CHALLENGER","◆"]}
  function showChallengeCeremony(rank,name){
