@@ -139,8 +139,20 @@
    try{
      const cr=await fetch("/api/competitive/challenges",{cache:"no-store"});
      const cd=await cr.json(); const x=cd.challenges?.[0]; if(!x)return;
-     const card=document.querySelector("#leaderboardView .lb-grid .lb-card:last-child"); if(!card)return;
+     let card=document.querySelector("#lbChallengeTitle")?.closest(".lb-card");
+     if(!card){
+       const grid=document.querySelector("#leaderboardView .lb-grid");
+       if(grid){
+         card=document.createElement("div");
+         card.className="lb-card";
+         card.innerHTML="<strong>🏆 Monthly Paper Portfolio Challenge</strong><div style=\"margin-top:8px;font-weight:800\" id=\"lbChallengeTitle\"></div><div class=\"grid\" style=\"margin-top:10px\"><div class=\"metric\">Starting Capital<b></b></div><div class=\"metric\">Mode<b></b></div><div class=\"metric\">Metric<b></b></div><div class=\"metric\">Status<b></b></div></div>";
+         grid.appendChild(card);
+       }
+     }
+     if(!card)return;
      const title=card.querySelector("#lbChallengeTitle"); if(title)title.textContent=x.title;
+     const oldNote=card.querySelector(".lb-note:not(.mr-challenge-countdown):not(.mr-prize-table):not(.mr-challenge-board)");
+     if(oldNote&&/placeholder|future server-recorded/i.test(oldNote.textContent||""))oldNote.remove();
      let countdown=card.querySelector(".mr-challenge-countdown");
      if(!countdown){countdown=document.createElement("div");countdown.className="lb-note mr-challenge-countdown";countdown.style.marginTop="8px";countdown.style.fontWeight="800";card.appendChild(countdown);}
      const updateCountdown=()=>{
@@ -221,7 +233,7 @@
      }
    }catch(e){}
  }
- window.MaliRadarCompetitive={version:"1.0",sync,load};
+ window.MaliRadarCompetitive={version:"2.1",sync,load,challenge};
  setTimeout(()=>{sync();upgradeRender();setTimeout(()=>{ensureFriendsCard();challenge()},1800)},1200);
  setInterval(ensureFriendsCard,30000);
  setInterval(challenge,30000);
