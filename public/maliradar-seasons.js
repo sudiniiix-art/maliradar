@@ -14,7 +14,7 @@
     if(document.getElementById("mr-s4-style"))return;
     const s=document.createElement("style");
     s.id="mr-s4-style";
-    s.textContent=".mr-s4{margin-top:14px}.mr-s4hero{padding:14px;border:1px solid #234854;border-radius:16px;background:#0b1d25}.mr-s4hero b{display:block;font-size:25px;margin-top:5px}.mr-s4grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mr-s4m{padding:10px;border:1px solid #1b3c47;border-radius:12px}.mr-s4m small{display:block;color:#91aab1}.mr-s4m b{font-size:18px}.mr-s4rows{margin-top:10px}.mr-s4row{display:grid;grid-template-columns:35px 1fr auto;gap:8px;padding:9px 0;border-top:1px solid #17343e}.mr-s4badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.mr-s4badge{padding:7px 9px;border:1px solid #254650;border-radius:10px}.mr-s4actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}";
+    s.textContent=".mr-s4{margin-top:14px}.mr-s4hero{padding:14px;border:1px solid #234854;border-radius:16px;background:#0b1d25}.mr-s4hero b{display:block;font-size:25px;margin-top:5px}.mr-s4grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mr-s4m{padding:10px;border:1px solid #1b3c47;border-radius:12px}.mr-s4m small{display:block;color:#91aab1}.mr-s4m b{font-size:18px}.mr-s4rows{margin-top:10px}.mr-s4row{display:grid;grid-template-columns:35px 1fr auto;gap:8px;padding:9px 0;border-top:1px solid #17343e}.mr-s4badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.mr-s4badge{padding:7px 9px;border:1px solid #254650;border-radius:10px;cursor:pointer}.mr-s4badge.locked{opacity:.42;filter:grayscale(1)}.mr-s4badge.earned{box-shadow:0 0 0 1px #2b6472 inset}.mr-s4badgeHint{margin-top:8px;padding:9px 11px;border-radius:10px;border:1px solid #1b3c47;font-size:13px;color:#9fb7be}.mr-s4actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}";
     document.head.appendChild(s);
   }
   function mount(){
@@ -47,7 +47,8 @@
       const p=d.player,s=d.season;
       if(!p){card.innerHTML="<div class='lb-note'>Season profile unavailable.</div>";return;}
       const zone=p.seasonStatus||"SAFE";
-      const badges=(p.badges||[]).map(function(b){return "<span class='mr-s4badge'>"+b.icon+" "+esc(b.name)+"</span>";}).join("");
+      const badgeHelp={"First Duel":"Complete your first paper duel.","Hot Streak":"Build a winning duel streak.","Unstoppable":"Reach the Unstoppable streak milestone.","Elite Ten":"Reach the Elite Ten seasonal milestone.","Gold Standard":"Reach Gold division.","Veteran":"Reach the Veteran activity milestone."};
+      const badges=(p.badges||[]).map(function(b){const earned=!!b.earned;const title=earned?"Earned badge":"Locked • "+(badgeHelp[b.name]||"Complete the required seasonal milestone.");return "<button type='button' class='mr-s4badge "+(earned?"earned":"locked")+"' data-badge='"+esc(b.name)+"' title='"+esc(title)+"'>"+(earned?b.icon:"🔒")+" "+esc(b.name)+"</button>";}).join("");
       const rows=(d.standings||[]).slice(0,10).map(function(x){
         return "<div class='mr-s4row'><b>#"+x.rank+"</b><div><b>"+esc(x.name)+(x.id===p.id?" • YOU":"")+"</b><small>"+x.division.icon+" "+esc(x.division.name)+" • "+x.points+" pts</small></div><span class='badge'>"+esc(x.region)+"</span></div>";
       }).join("");
@@ -59,6 +60,7 @@
         "<div style='margin-top:12px'><div class='row'><strong>📊 Seasonal Standings</strong><span class='muted'>Top 10</span></div><div class='mr-s4rows'>"+(rows||"<div class='lb-note'>No standings yet.</div>")+"</div></div>"+
         "<div class='mr-s4actions'><button type='button' class='btn alt' id='mrS4Rules'>📜 Season Rules</button><button type='button' class='btn' id='mrS4Snapshot'>💾 Save Snapshot</button></div>"+
         "<div class='notice' id='mrS4Notice' style='margin-top:10px'>Season metrics are simulated game metrics, not real trading skill or financial advice.</div>";
+      document.querySelectorAll("#mrSeason4Card .mr-s4badge").forEach(function(btn){btn.onclick=function(){const name=btn.getAttribute("data-badge")||"Badge";const item=(p.badges||[]).find(function(x){return x.name===name;});const hint=document.getElementById("mrS4BadgeHint");if(!hint)return;if(item&&item.earned)hint.innerHTML="✅ <b>"+esc(name)+"</b> — earned this season.";else hint.innerHTML="🔒 <b>"+esc(name)+"</b> — "+esc(badgeHelp[name]||"Complete the required seasonal milestone.");};});
       const rules=document.getElementById("mrS4Rules");
       if(rules)rules.onclick=function(ev){
         if(ev)ev.preventDefault();
