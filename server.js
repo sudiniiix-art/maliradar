@@ -158,6 +158,9 @@ app.get("/api/transactions/:userId",(req,res)=>{const db=readDB();res.json(db.tr
 app.post("/api/alerts",(req,res)=>{const {userId,symbol,targetPrice}=req.body;if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)return res.status(400).json({error:"Invalid alert"});const db=readDB();const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};db.alerts.push(alert);writeDB(db);res.status(201).json(alert)});
 app.get("/api/alerts/:userId",(req,res)=>{const db=readDB();res.json(db.alerts.filter(a=>a.userId===req.params.userId))});
 
+const { registerMaliRadarSocialCompetition } = require('./server/maliradar-social-competition');
+registerMaliRadarSocialCompetition(app);
+
 const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
 registerMaliRadarMarketDataRoutes(app);
 
