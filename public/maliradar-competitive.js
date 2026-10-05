@@ -70,18 +70,22 @@
    };
    // Remove the old demo click handlers. They call the original lexical renderer
    // directly, which could overwrite the server ranking after a tap.
-   const oldTabs=document.querySelectorAll("#lbMetricTabs button,#lbScopeTabs button");
+   const oldTabs=document.querySelectorAll("#lbMetricTabs button:not(#mrAddFriendsTab),#lbScopeTabs button[data-scope]");
    oldTabs.forEach(b=>{
      const fresh=b.cloneNode(true);
      b.replaceWith(fresh);
    });
-   const tabs=document.querySelectorAll("#lbMetricTabs button,#lbScopeTabs button");
+   const tabs=document.querySelectorAll("#lbMetricTabs button,#lbScopeTabs button[data-scope]");
    tabs.forEach(b=>b.addEventListener("click",()=>{
      const group=b.closest("#lbMetricTabs,#lbScopeTabs");
      if(group)group.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
      b.classList.add("active");
      window.renderLeaderboards();
    }));
+   const addFriends=document.getElementById("mrAddFriendsTab");
+   if(addFriends){
+     addFriends.onclick=()=>{addFriends.classList.add("active");window.maliRadarOpenFriends?.()};
+   }
  }
  function ensureFriendsCard(){
    const root=document.getElementById("leaderboardView"); if(!root)return null;
