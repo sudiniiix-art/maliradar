@@ -158,9 +158,26 @@
      const ld=await lr.json();
      const rows=Array.isArray(ld.participants)?ld.participants:[];
      const mine=rows.findIndex(r=>r.id===me.id);
-     board.innerHTML=x.joined
-       ? "🏆 Challenge position: <b>"+(mine>=0?"#"+(mine+1):"—")+"</b> • "+rows.length+" joined<br><span class=\"muted\">Performance is measured from the moment you joined, not from your earlier paper-trading history.</span>"
-       : "Join the challenge to enter its separate paper-performance ranking.";
+     if(x.joined){
+       const meRow=mine>=0?rows[mine]:null;
+       const tier=mine===0?"🥇 CHAMPION":mine===1?"🥈 RUNNER-UP":mine===2?"🥉 TOP 3":mine>=0&&mine<10?"🏅 TOP 10":"🎯 PARTICIPANT";
+       const esc=v=>String(v??"").replace(/[<>]/g,"");
+       const pct=v=>(Number(v)||0).toFixed(2)+"%";
+       const top=rows.slice(0,3).map((r,i)=>'<div class="metric"><b>'+["🥇","🥈","🥉"][i]+" "+esc(r.name||"User")+'</b><span>'+pct(r.ret)+"</span></div>").join("");
+       board.innerHTML='<div style="font-weight:800">🏆 Challenge Ranking</div>'+
+         '<div class="grid" style="margin-top:8px">'+top+'</div>'+
+         '<div class="actions" style="margin-top:8px">'+
+         '<span class="badge">'+tier+'</span>'+
+         '<span class="badge">#'+(mine>=0?mine+1:"—")+' / '+rows.length+'</span></div>'+
+         '<div class="grid" style="margin-top:8px">'+
+         '<div class="metric">Your return<b>'+pct(meRow?.ret)+'</b></div>'+
+         '<div class="metric">Challenge P/L<b>KSh '+Math.round(Number(meRow?.profit)||0).toLocaleString("en-KE")+'</b></div>'+
+         '<div class="metric">Trades<b>'+Number(meRow?.trades||0)+'</b></div>'+
+         '<div class="metric">Reward tier<b>'+tier+'</b></div></div>'+
+         '<div class="muted" style="margin-top:8px">Recognition only — no cash prize is implied. Performance is measured from the moment you joined, not from earlier paper-trading history.</div>';
+     }else{
+       board.innerHTML="Join the challenge to enter its separate paper-performance ranking.";
+     }
    }catch(e){}
  }
  window.MaliRadarCompetitive={version:"1.0",sync,load};
