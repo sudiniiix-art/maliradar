@@ -80,6 +80,41 @@
      window.renderLeaderboards();
    }));
  }
+ function ensureFriendsCard(){
+   const root=document.getElementById("leaderboardView"); if(!root)return null;
+   let card=document.getElementById("mrFriendsCard");
+   if(card)return card;
+   card=document.createElement("div"); card.id="mrFriendsCard"; card.className="lb-card"; card.style.marginTop="14px";
+   card.innerHTML='<div class="row"><strong>👥 Friends Network</strong><span class="badge">BETA</span></div>'+
+     '<div class="muted" style="margin-top:6px">Add another MaliRadar user by their MaliRadar ID. Friends appear in the Friends leaderboard.</div>'+
+     '<div class="actions" style="margin-top:10px"><input id="mrFriendSearch" class="input" placeholder="Enter MaliRadar ID or username" style="flex:1"><button class="btn" id="mrFriendFind">Find</button></div>'+
+     '<div id="mrFriendResults" style="margin-top:8px"></div>'+
+     '<div class="lb-note" style="margin-top:8px">Paper profiles only. No real-money or private financial information is shared.</div>';
+   const challengeCard=root.querySelector("#lbChallengeTitle")?.closest(".lb-card");
+   if(challengeCard&&challengeCard.parentElement)challengeCard.parentElement.insertBefore(card,challengeCard);
+   else root.appendChild(card);
+   card.querySelector("#mrFriendFind").onclick=async()=>{
+     const q=card.querySelector("#mrFriendSearch").value.trim();
+     const out=card.querySelector("#mrFriendResults");
+     if(q.length<2){out.textContent="Enter at least 2 characters.";return;}
+     out.textContent="Searching…";
+     try{
+       const r=await fetch("/api/competitive/profile/search?q="+encodeURIComponent(q),{cache:"no-store"});
+       const d=await r.json(), me=account();
+       out.innerHTML=(d.profiles||[]).filter(p=>p.id!==me?.id).map(p=>'<div class="lb-row" style="margin-top:6px"><div class="lb-avatar">'+String(p.name||"?")[0]+'</div><div class="lb-name"><b>'+String(p.name||"User").replace(/[<>]/g,"")+'</b><div class="muted">'+p.id+(p.region==="kenya"?" • 🇰🇪":"")+'</div></div><button class="btn alt" data-friend="'+p.id+'">Add</button></div>').join("")||'<div class="lb-note">No matching users.</div>';
+       out.querySelectorAll("[data-friend]").forEach(b=>b.onclick=async()=>{
+         b.disabled=true;b.textContent="Adding…";
+         try{
+           const rr=await fetch("/api/competitive/friends/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:me.id,friendId:b.dataset.friend})});
+           if(!rr.ok)throw 0;
+           b.textContent="✓ Added";
+           if(document.querySelector("#lbScopeTabs button[data-scope='friends']")?.classList.contains("active"))window.renderLeaderboards();
+         }catch(e){b.disabled=false;b.textContent="Add";}
+       });
+     }catch(e){out.textContent="Could not search right now.";}
+   };
+   return card;
+ }
  async function challenge(){
    const me=account(); if(!me?.id)return;
    try{
@@ -129,7 +164,8 @@
    }catch(e){}
  }
  window.MaliRadarCompetitive={version:"1.0",sync,load};
- setTimeout(()=>{sync();upgradeRender();setTimeout(challenge,1800)},1200);
+ setTimeout(()=>{sync();upgradeRender();setTimeout(()=>{ensureFriendsCard();challenge()},1800)},1200);
+ setInterval(ensureFriendsCard,30000);
  setInterval(challenge,30000);
  setInterval(sync,30000);
 })();
