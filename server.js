@@ -66,6 +66,24 @@ app.post("/api/competitive/profile",(req,res)=>{
   u.updatedAt=new Date().toISOString();
   writeDB(db); res.json({ok:true,profile:u});
 });
+app.get("/api/competitive/profile/search",(req,res)=>{
+  const q=String(req.query.q||"").trim().toLowerCase();
+  if(q.length<2)return res.json({profiles:[]});
+  const db=readDB();
+  const profiles=(db.users||[]).filter(u=>String(u.id).toLowerCase().includes(q)||String(u.name||"").toLowerCase().includes(q)).slice(0,10)
+    .map(u=>({id:u.id,name:u.name,region:u.region}));
+  res.json({profiles});
+});
+app.post("/api/competitive/friends/add",(req,res)=>{
+  const {id,friendId}=req.body||{};
+  if(!id||!friendId||id===friendId)return res.status(400).json({error:"Two different MaliRadar IDs are required"});
+  const db=readDB();
+  if(!db.users.some(u=>u.id===id)||!db.users.some(u=>u.id===friendId))return res.status(404).json({error:"Profile not found"});
+  if(!Array.isArray(db.friends))db.friends=[];
+  const exists=db.friends.some(f=>(f.a===id&&f.b===friendId)||(f.a===friendId&&f.b===id));
+  if(!exists)db.friends.push({a:id,b:friendId,createdAt:new Date().toISOString()});
+  writeDB(db); res.json({ok:true,friend:true});
+});
 app.get("/api/competitive/leaderboard",(req,res)=>{
   const metric=["xp","profit","ret","trades"].includes(req.query.metric)?req.query.metric:"xp";
   const requestedScope=String(req.query.scope||"global").toLowerCase();
@@ -77,7 +95,10 @@ app.get("/api/competitive/leaderboard",(req,res)=>{
   // never leak unrelated users or demo participants into a user's Friends ranking.
   if(scope==="friends"){
     const id=String(req.query.id||"");
-    rows=id?rows.filter(u=>u.id===id):[];
+    const links=(db.friends||[]).filter(f=>f.a===id||f.b===id);
+    const ids=new Set([id]);
+    links.forEach(f=>{if(f.a===id)ids.add(f.b);if(f.b===id)ids.add(f.a);});
+    rows=id?rows.filter(u=>ids.has(u.id)):[];
   }
   rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
   res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
