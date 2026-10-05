@@ -33,11 +33,22 @@ function registerMaliRadarSeasons(app){
     const losses=duels.filter(c=>c.status==="completed"&&c.winner&&c.winner!==id).length;
     const played=duels.filter(c=>["completed","active"].includes(c.status)).length;
     const baseReturn=Number(u.ret)||0, xp=Number(u.xp)||0,trades=Number(u.trades)||0,ach=Number(u.achievements)||0;
-    const points=Math.max(0,Math.round(baseReturn*20)+Math.min(600,xp*.5)+Math.min(300,trades*3)+Math.min(200,ach*20)+wins*100-losses*30);
+    const tournamentEntries=Array.isArray(db.tournamentEntries)?db.tournamentEntries.filter(e=>e.id===id):[];
+    const tournamentPlayed=tournamentEntries.length;
+    const tournamentWins=tournamentEntries.filter(e=>Number(e.finalRank)===1).length;
+    const tournamentTop10=tournamentEntries.filter(e=>Number(e.finalRank)>0&&Number(e.finalRank)<=10).length;
+    const tournamentPoints=tournamentEntries.reduce((sum,e)=>{
+      if(!e.finalRank)return sum+10;
+      if(Number(e.finalRank)===1)return sum+250;
+      if(Number(e.finalRank)===2)return sum+150;
+      if(Number(e.finalRank)<=10)return sum+75;
+      return sum+25;
+    },0);
+    const points=Math.max(0,Math.round(baseReturn*20)+Math.min(600,xp*.5)+Math.min(300,trades*3)+Math.min(200,ach*20)+wins*100-losses*30+tournamentPoints);
     let streak=0;
     const ordered=duels.filter(c=>c.status==="completed"&&c.winner).sort((a,b)=>Date.parse(b.updatedAt||b.end||b.createdAt)-Date.parse(a.updatedAt||a.end||a.createdAt));
     for(const c of ordered){if(c.winner===id)streak++;else break}
-    return {id:u.id,name:u.name||"MaliRadar User",region:u.region||"global",points,division:division(points),wins,losses,played,streak,ret:baseReturn,xp,trades,achievements:ach,season:d};
+    return {id:u.id,name:u.name||"MaliRadar User",region:u.region||"global",points,division:division(points),wins,losses,played,streak,ret:baseReturn,xp,trades,achievements:ach,tournamentsPlayed:tournamentPlayed,tournamentWins,tournamentTop10,tournamentPoints,season:d};
   };
   function badges(p,rank,total){
     return [
@@ -69,7 +80,7 @@ function registerMaliRadarSeasons(app){
     const divRank=me?same.findIndex(x=>x.id===id)+1:0;
     const promotion=Math.max(1,Math.ceil(same.length*.2)),relegation=Math.max(1,Math.floor(same.length*.2));
     const status=divRank&&divRank<=promotion&&div!=="Diamond"?"PROMOTION ZONE":divRank&&divRank>same.length-relegation&&div!=="Bronze"?"RELEGATION ZONE":"SAFE";
-    res.json({season:s,player:me?{...me,rank,total,divisionRank:divRank,divisionSize:same.length,seasonStatus:status,badges:badges(me,rank,total),progress:{current:div,min:prog.min,next:prog.next,nextMin:prog.nextMin,percent:progress,pointsToNext},reward:seasonReward(div,status)}:null,standings:all.slice(0,50).map((x,i)=>({...x,rank:i+1,badges:badges(x,i+1,total)})),rules:{promotionTopPercent:20,relegationBottomPercent:20,points:"Return + learning/activity + competitive results",disclaimer:"Season points, divisions and badges are simulated game metrics. They are not a measure of real trading skill or future returns."}});
+    res.json({season:s,player:me?{...me,rank,total,divisionRank:divRank,divisionSize:same.length,seasonStatus:status,badges:badges(me,rank,total),progress:{current:div,min:prog.min,next:prog.next,nextMin:prog.nextMin,percent:progress,pointsToNext},reward:seasonReward(div,status)}:null,standings:all.slice(0,50).map((x,i)=>({...x,rank:i+1,badges:badges(x,i+1,total)})),rules:{promotionTopPercent:20,relegationBottomPercent:20,points:"Return + learning/activity + duels + tournament participation and placements",tournamentPoints:{participation:10,top10:75,runnerUp:150,champion:250},disclaimer:"Season points, divisions and badges are simulated game metrics. They are not a measure of real trading skill or future returns."}});
   });
 
   app.get("/api/competitive/season/history/:id",(req,res)=>{
