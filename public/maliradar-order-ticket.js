@@ -71,14 +71,20 @@
         fresh.pendingOrders=Array.isArray(fresh.pendingOrders)?fresh.pendingOrders:[];
         const id="LMT-"+Date.now().toString(36).toUpperCase();
         fresh.pendingOrders.unshift({id,sym:s,side,q,limitPrice:lp,createdAt:new Date().toISOString(),delayMinutes:d,providerBacked:true});
-        write(fresh);root.remove();refresh();alert("Limit order placed. It will execute automatically when the delayed provider price reaches your target.");return;
+        write(fresh);root.remove();refresh();renderPending();showOrderStatus((side==="BUY"?"Buy":"Sell")+" limit order for "+q+" "+s+" at KSh "+fmt(lp)+" is waiting for the provider price to reach the target.","pending");return;
       }
       const value=q*p;
       if(side==="BUY"){if(value>fresh.cash)return alert("Not enough paper cash.");fresh.cash-=value;fresh.hold[s]=(Number(fresh.hold[s]||0)+q)}
       else{const have=Number(fresh.hold[s]||0);if(q>have)return alert("You do not have enough paper shares.");fresh.cash+=value;fresh.hold[s]=have-q;if(!fresh.hold[s])delete fresh.hold[s]}
       fresh.history.unshift({type:side,sym:s,q,p,value,time:new Date().toLocaleString(),providerBacked:true,delayMinutes:d,orderType:"MARKET"});
-      write(fresh);root.remove();refresh();
+      write(fresh);root.remove();refresh();renderPending();showOrderStatus((side==="BUY"?"Bought ":"Sold ")+q+" "+s+" at KSh "+fmt(p)+" each. This paper order is completed, not pending.","completed");
     };
+  }
+  function showOrderStatus(message,kind){
+    let n=document.getElementById("mr50OrderStatus");
+    if(!n){n=document.createElement("div");n.id="mr50OrderStatus";n.style.cssText="position:fixed;left:12px;right:12px;bottom:78px;z-index:9100;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:#0d1a22;box-shadow:0 10px 30px #0008";document.body.appendChild(n)}
+    n.innerHTML='<b>'+esc(kind==="pending"?"⏳ ORDER PENDING":"✓ ORDER COMPLETED")+'</b><div class="muted" style="margin-top:4px">'+esc(message)+'</div>';
+    clearTimeout(window.__mr50StatusTimer);window.__mr50StatusTimer=setTimeout(()=>n.remove(),5000);
   }
   function renderPending(){
     const p=document.getElementById("portfolio");if(!p)return;
@@ -95,5 +101,8 @@
   window.MaliRadarOrderTicket={version:"2.0",open:ticket,checkLimits};
   window.buy=s=>ticket("BUY",s);window.sell=s=>ticket("SELL",s);
   document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mr49-order]");if(b)ticket(b.dataset.mr49Order,b.dataset.symbol)});
-  setInterval(()=>{checkLimits();renderPending()},60000);setTimeout(()=>{checkLimits();renderPending()},1500);
+  setInterval(()=>{checkLimits();renderPending()},10000);
+  setTimeout(()=>{checkLimits();renderPending()},1000);
+  const obs=new MutationObserver(()=>renderPending());
+  setTimeout(()=>{const p=document.getElementById("portfolio");if(p)obs.observe(p,{childList:true,subtree:true})},1200);
 })();
