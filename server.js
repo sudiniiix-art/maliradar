@@ -82,6 +82,43 @@ app.get("/api/competitive/leaderboard",(req,res)=>{
   rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
   res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
 });
+// Competitive challenge beta. Server records enrollment; it does not execute real-money trades.
+app.get("/api/competitive/challenges",(req,res)=>{
+  const now=new Date();
+  const challenges=[{
+    id:"october-paper-2026",
+    title:"October Paper Challenge",
+    start:"2026-10-01T00:00:00.000Z",
+    end:"2026-10-31T23:59:59.999Z",
+    startingCapital:100000,
+    metric:"ret",
+    mode:"Paper only"
+  }];
+  const db=readDB();
+  const joined=Array.isArray(db.challenges)?db.challenges:[];
+  res.json({source:"MaliRadar competitive beta",challenges:challenges.map(x=>({
+    ...x,
+    status:now<x.start?"UPCOMING":now>x.end?"ENDED":"ACTIVE",
+    joined:joined.some(j=>j.challengeId===x.id)
+  }))});
+});
+app.post("/api/competitive/challenges/:challengeId/join",(req,res)=>{
+  const {id}=req.body||{};
+  if(!id||typeof id!=="string")return res.status(400).json({error:"MaliRadar ID required"});
+  const allowed=["october-paper-2026"];
+  if(!allowed.includes(req.params.challengeId))return res.status(404).json({error:"Challenge not found"});
+  const db=readDB(); if(!Array.isArray(db.challenges))db.challenges=[];
+  if(!db.users.some(u=>u.id===id))return res.status(404).json({error:"Profile not found"});
+  const exists=db.challenges.some(x=>x.challengeId===req.params.challengeId&&x.id===id);
+  if(!exists)db.challenges.push({challengeId:req.params.challengeId,id,joinedAt:new Date().toISOString()});
+  writeDB(db); res.json({ok:true,joined:true});
+});
+app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
+  const db=readDB();
+  const joined=new Set((db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId).map(x=>x.id));
+  const rows=(db.users||[]).filter(u=>joined.has(u.id)).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
+  res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,ret:u.ret,profit:u.profit,trades:u.trades}))});
+});
 app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"0.5"}));
 
 app.get("/api/stocks",(req,res)=>{
