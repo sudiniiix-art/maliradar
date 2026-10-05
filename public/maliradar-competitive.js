@@ -159,7 +159,7 @@
      const rows=Array.isArray(ld.participants)?ld.participants:[];
      const mine=rows.findIndex(r=>r.id===me.id);
      board.innerHTML=x.joined
-       ? "🏆 Challenge position: <b>"+(mine>=0?"#"+(mine+1):"—")+"</b> • "+rows.length+" joined"
+       ? "🏆 Challenge position: <b>"+(mine>=0?"#"+(mine+1):"—")+"</b> • "+rows.length+" joined<br><span class=\"muted\">Performance is measured from the moment you joined, not from your earlier paper-trading history.</span>"
        : "Join the challenge to enter its separate paper-performance ranking.";
    }catch(e){}
  }
