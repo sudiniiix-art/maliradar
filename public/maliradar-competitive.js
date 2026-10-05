@@ -247,9 +247,10 @@
      if(fallback){const n=fallback.querySelector(".lb-note");if(n)n.textContent="Challenge dashboard is loading in fallback mode. Refresh after the server finishes deploying."}
    }
  }
- window.MaliRadarCompetitive={version:"2.1",sync,load,challenge};
- setTimeout(()=>{sync();upgradeRender();setTimeout(()=>{ensureFriendsCard();challenge()},1800)},1200);
- setInterval(ensureFriendsCard,30000);
- setInterval(challenge,30000);
+ window.MaliRadarCompetitive={version:"2.2",sync,load,challenge};
+ setTimeout(()=>{sync();upgradeRender();setTimeout(()=>ensureFriendsCard(),600)},1200);
+ // Keep the Friends card alive after leaderboard rerenders, but do not run
+ // the retired legacy challenge renderer. Challenge Dashboard 3.0 owns that UI.
+ setInterval(ensureFriendsCard,1000);
  setInterval(sync,30000);
 })();
