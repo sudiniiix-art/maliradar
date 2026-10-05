@@ -1,0 +1,74 @@
+/* MALIRADAR Smart Assist 2.0 / 7.0
+   Explainable paper-learning intelligence layer.
+   No predictions, no guaranteed signals, no real-money execution. */
+(function(){
+"use strict";
+const HKEY="maliradar_sa2_history_v1",WKEY="maliradar_sa2_watch_v1";
+const esc=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(f))}catch(e){return f}};
+const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
+const getScan=()=>window.MaliRadarSmartScan||null;
+function css(){if(document.getElementById("mr-sa2-css"))return;const s=document.createElement("style");s.id="mr-sa2-css";s.textContent=".mr-sa2{margin-top:14px}.mr-sa2grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.mr-sa2stat,.mr-sa2item{padding:10px;border:1px solid #1b3c47;border-radius:12px}.mr-sa2stat small{display:block;color:#91aab1}.mr-sa2stat b{display:block;font-size:17px;margin-top:3px}.mr-sa2item{margin-top:8px}.mr-sa2row{display:flex;justify-content:space-between;gap:8px;align-items:center}.mr-sa2tag{display:inline-block;padding:4px 7px;border:1px solid #28505e;border-radius:99px;font-size:10px}.mr-sa2good{border-color:#35694f}.mr-sa2warn{border-color:#69552e}.mr-sa2bad{border-color:#693c42}.mr-sa2actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.mr-sa2modal{position:fixed;inset:0;z-index:100002;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:12px}.mr-sa2box{width:min(700px,100%);max-height:90vh;overflow:auto;background:#071219;border:1px solid #20404b;border-radius:22px;padding:18px}.mr-sa2section{margin-top:14px;padding-top:12px;border-top:1px solid #17343e}.mr-sa2bar{height:8px;border-radius:8px;background:#142b33;overflow:hidden;margin-top:7px}.mr-sa2bar i{display:block;height:100%;background:#4aaec0}.mr-sa2list{max-height:330px;overflow:auto}@media(max-width:520px){.mr-sa2grid{grid-template-columns:1fr 1fr}}";document.head.appendChild(s)}
+function mount(){const root=document.getElementById("smartAssistView");if(!root)return null;let c=document.getElementById("mrSa2Panel");if(!c){c=document.createElement("div");c.id="mrSa2Panel";c.className="sa-card mr-sa2";const anchor=document.getElementById("mr43IntelPanel")||root.querySelector(".sa-disclaimer:last-of-type")||root.lastElementChild;root.appendChild(c)}return c}
+function quality(r){return Math.max(0,Math.min(100,Math.round(Number(r?.evidence)||0)))}
+function risk(r){
+ const q=quality(r),score=num(r?.score)||50,vol=num(r?.volatility),day=Math.abs(num(r?.day)||0);
+ let n=0,why=[];
+ if(q<60){n+=35;why.push("Evidence quality is below the strong-evidence threshold.")}
+ else if(q<75){n+=18;why.push("Evidence quality is moderate.")}
+ if(vol!=null&&vol>3){n+=25;why.push("Observed return dispersion is elevated.")}
+ else if(vol!=null&&vol>1.5){n+=12;why.push("Observed volatility is moderate-to-high.")}
+ if(day>5){n+=20;why.push("The latest reported move is unusually large.")}
+ if(score>0&&score<40||score>60&&score<70){n+=10;why.push("Setup strength is not in the highest-confidence band.")}
+ return {score:Math.min(100,n),level:n>=60?"HIGH":n>=30?"MEDIUM":"LOW",why};
+}
+function classify(r){
+ const score=num(r?.score); if(score==null)return "WATCH";
+ if(r.unavailable)return "UNAVAILABLE";
+ if(score>=75)return "BUY SETUP";
+ if(score<=25)return "SELL / RISK";
+ if(score>=62)return "BUY WATCH";
+ if(score<=40)return "RISK WATCH";
+ return "WATCH";
+}
+function explanation(r){
+ const parts=[];
+ if(r.trend)parts.push("Trend: "+r.trend);
+ if(r.momentum)parts.push("Momentum: "+r.momentum);
+ if(r.consistency!=null)parts.push("Directional consistency: "+Number(r.consistency).toFixed(0)+"%");
+ if(r.volatility!=null)parts.push("Observed volatility: "+Number(r.volatility).toFixed(2)+"%");
+ if(r.pos!=null)parts.push("Day-range position: "+Number(r.pos).toFixed(0)+"%");
+ return parts;
+}
+function modal(title,body){document.getElementById("mrSa2Modal")?.remove();const m=document.createElement("div");m.id="mrSa2Modal";m.className="mr-sa2modal";m.innerHTML="<div class='mr-sa2box'><button type='button' class='btn alt' id='mrSa2Close'>✕ Close</button><h3>"+esc(title)+"</h3>"+body+"</div>";document.body.appendChild(m);m.querySelector("#mrSa2Close").onclick=()=>m.remove();m.onclick=e=>{if(e.target===m)m.remove()};return m}
+function saveSignal(r){const h=read(HKEY,[]);const id=Date.now()+"_"+String(r.symbol);h.unshift({id,symbol:r.symbol,market:r.quote?.exchange||"market",price:num(r.price),score:num(r.score),type:classify(r),evidence:quality(r),time:new Date().toISOString(),status:"OPEN"});write(HKEY,h.slice(0,60));render()}
+function saveWatch(r){const w=read(WKEY,[]);if(!w.some(x=>x.symbol===r.symbol)){w.unshift({symbol:r.symbol,market:r.quote?.exchange||"market",added:new Date().toISOString(),score:num(r.score),type:classify(r)});write(WKEY,w.slice(0,30))}render()}
+function resolveHistory(scan){
+ const h=read(HKEY,[]),results=scan?.results||[];let changed=false;
+ h.forEach(x=>{if(x.status!=="OPEN")return;const r=results.find(z=>z.symbol===x.symbol);if(!r||num(r.price)==null||x.price==null)return;const move=(num(r.price)-x.price)/x.price*100;x.lastPrice=num(r.price);x.move=move;x.lastChecked=new Date().toISOString();if(Math.abs(move)>=2){x.status="OBSERVED";changed=true}});
+ if(changed)write(HKEY,h);
+}
+function signalRows(scan){
+ return (scan?.results||[]).filter(r=>!r.unavailable&&(r.type==="buy"||r.type==="sell")).sort((a,b)=>(quality(b)-quality(a))||(Math.abs((b.score||50)-50)-Math.abs((a.score||50)-50))).slice(0,8);
+}
+function render(){
+ const c=mount();if(!c)return;const scan=getScan();
+ if(!scan){c.innerHTML="<div class='row'><div><strong>🤖 Smart Assist 2.0</strong><div class='muted'>Advanced explainable analysis layer</div></div><span class='badge'>7.0</span></div><div class='lb-note' style='margin-top:10px'>Run a whole-market scan to activate Smart Assist 2.0.</div>";return}
+ resolveHistory(scan);
+ const rows=signalRows(scan),h=read(HKEY,[]),w=read(WKEY,[]),high=rows.filter(r=>quality(r)>=75).length,med=rows.filter(r=>quality(r)>=45&&quality(r)<75).length;
+ const cards=rows.map(r=>{const q=quality(r),rk=risk(r),cls=rk.level==="HIGH"?"mr-sa2bad":rk.level==="MEDIUM"?"mr-sa2warn":"mr-sa2good";return "<div class='mr-sa2item "+cls+"'><div class='mr-sa2row'><b>"+esc(r.symbol)+" • "+esc(classify(r))+"</b><span class='mr-sa2tag'>EVIDENCE "+q+"/100</span></div><div class='mr-sa2grid'><div class='mr-sa2stat'><small>SETUP</small><b>"+esc(r.score)+"/100</b></div><div class='mr-sa2stat'><small>RISK GATE</small><b>"+rk.level+"</b></div><div class='mr-sa2stat'><small>MOVE</small><b>"+(num(r.day)==null?"—":(r.day>=0?"+":"")+Number(r.day).toFixed(2)+"%")+"</b></div></div><div class='mr-sa2bar'><i style='width:"+q+"%'></i></div><div class='muted' style='margin-top:7px'>"+explanation(r).map(esc).join(" • ")+"</div><div class='mr-sa2actions'><button type='button' class='btn' data-explain='"+esc(r.symbol)+"'>🔎 Explain</button><button type='button' class='btn alt' data-save='"+esc(r.symbol)+"'>📌 Track Signal</button><button type='button' class='btn alt' data-watch='"+esc(r.symbol)+"'>👀 Watch</button></div></div>"}).join("");
+ c.innerHTML="<div class='row'><div><strong>🤖 Smart Assist 2.0</strong><div class='muted'>Explainable evidence • risk gates • signal tracking</div></div><span class='badge'>7.0</span></div><div class='sa-disclaimer' style='margin-top:10px'><b>Assist safeguard:</b> Smart Assist 2.0 does not predict the future. Setup score, evidence and risk levels describe observed provider-backed conditions only. They are not profit probabilities, financial advice or real-money instructions.</div><div class='mr-sa2grid'><div class='mr-sa2stat'><small>HIGH EVIDENCE</small><b>"+high+"</b></div><div class='mr-sa2stat'><small>MODERATE</small><b>"+med+"</b></div><div class='mr-sa2stat'><small>TRACKED</small><b>"+h.length+"</b></div><div class='mr-sa2stat'><small>WATCHED</small><b>"+w.length+"</b></div><div class='mr-sa2stat'><small>TIMEFRAME</small><b>"+esc(scan.range||"—")+"</b></div><div class='mr-sa2stat'><small>VERIFIED</small><b>"+esc(scan.verified||0)+"</b></div></div><div class='mr-sa2section'><div class='row'><b>🧠 Explainable Signals</b><span class='muted'>Top observed setups</span></div><div class='mr-sa2list'>"+(cards||"<div class='lb-note'>No buy/risk setup passed the current evidence rules.</div>")+"</div></div><div class='mr-sa2section'><div class='row'><b>📌 Signal History</b><button type='button' class='btn alt' id='mrSa2History'>Open</button></div><div class='lb-note'>Tracked signals are compared with later scans on this device. This records observations, not successful/failed predictions.</div></div><div class='mr-sa2section'><div class='row'><b>🛡️ Risk & Data Gate</b><span class='sa-pill'>ACTIVE</span></div><div class='lb-note'>Weak evidence stays WATCH. Missing prices stay UNAVAILABLE. Elevated volatility increases the caution level. Smart Assist will never manufacture missing market data.</div></div><div class='mr-sa2actions'><button type='button' class='btn' id='mrSa2Refresh'>↻ Refresh Analysis</button><button type='button' class='btn alt' id='mrSa2Clear'>Clear Tracked Signals</button></div>";
+ c.querySelector("#mrSa2Refresh").onclick=()=>render();
+ c.querySelector("#mrSa2Clear").onclick=()=>{if(confirm("Clear Smart Assist 2.0 tracked signals on this device?")){write(HKEY,[]);render()}};
+ c.querySelector("#mrSa2History").onclick=()=>openHistory();
+ c.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{const r=(scan.results||[]).find(x=>x.symbol===b.dataset.save);if(r)saveSignal(r)});
+ c.querySelectorAll("[data-watch]").forEach(b=>b.onclick=()=>{const r=(scan.results||[]).find(x=>x.symbol===b.dataset.watch);if(r)saveWatch(r)});
+ c.querySelectorAll("[data-explain]").forEach(b=>b.onclick=()=>{const r=(scan.results||[]).find(x=>x.symbol===b.dataset.explain);if(r)openExplain(r)});
+}
+function openExplain(r){const rk=risk(r),q=quality(r),reasons=(r.reasons||[]).map(x=>"<li>"+esc(x)+"</li>").join("");modal("Explain "+r.symbol,"<div class='mr-sa2grid'><div class='mr-sa2stat'><small>SETUP SCORE</small><b>"+esc(r.score)+"/100</b></div><div class='mr-sa2stat'><small>EVIDENCE</small><b>"+q+"/100</b></div><div class='mr-sa2stat'><small>RISK GATE</small><b>"+rk.level+"</b></div></div><div class='mr-sa2section'><b>Observed factors</b><ul>"+reasons+"</ul></div><div class='mr-sa2section'><b>Derived observations</b><p>"+explanation(r).map(esc).join("<br>")+"</p></div><div class='notice'>Interpretation: this is an educational classification of current provider-backed observations. It is not a forecast, probability of profit or trading instruction.</div>")}
+function openHistory(){const h=read(HKEY,[]);const w=read(WKEY,[]);const rows=h.map(x=>"<div class='mr-sa2item'><div class='mr-sa2row'><b>"+esc(x.symbol)+" • "+esc(x.type)+"</b><span class='mr-sa2tag'>"+esc(x.status)+"</span></div><small>"+new Date(x.time).toLocaleString()+" • entry observation "+esc(x.price)+" • evidence "+esc(x.evidence)+"/100</small><div class='muted' style='margin-top:5px'>"+(x.move==null?"Waiting for a later scan.":"Later observed move: "+(x.move>=0?"+":"")+Number(x.move).toFixed(2)+"%")+" </div></div>").join("")||"<div class='lb-note'>No tracked signals yet.</div>";const watches=w.map(x=>"<span class='mr-sa2tag'>👀 "+esc(x.symbol)+"</span>").join(" ")||"None";modal("Smart Assist 2.0 History","<div class='mr-sa2section'><b>Tracked signals</b><div class='mr-sa2list'>"+rows+"</div></div><div class='mr-sa2section'><b>Watched symbols</b><div style='margin-top:8px'>"+watches+"</div></div><div class='notice' style='margin-top:14px'>History is stored locally on this device. Later moves are observations after the scan, not proof that Smart Assist predicted the move.</div>")}
+function boot(){css();setTimeout(render,500);const v=document.getElementById("saSignalTitle");if(v){new MutationObserver(()=>{setTimeout(render,50)}).observe(v,{childList:true,characterData:true,subtree:true})}}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+window.MaliRadarSmartAssist2={version:"7.0",refresh:render,history:openHistory};
+})();
