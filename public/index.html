@@ -2406,7 +2406,7 @@ function deleteTrustData(){
   "use strict";
   function el(id){return document.getElementById(id)}
   function money(v){try{return typeof orderMoney==="function"?orderMoney(v):("KSh "+Number(v||0).toLocaleString(undefined,{maximumFractionDigits:2}))}catch(e){return "KSh "+Number(v||0).toFixed(2)}}
-  function getHistory(){return Array.isArray(window.state?.history)?window.state.history:[]}
+  function getHistory(){try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}");return Array.isArray(s.history)?s.history:[]}catch(e){return []}}
   function build(){
     const p=el("portfolio"); if(!p)return;
     let card=el("mr46JournalCard");
