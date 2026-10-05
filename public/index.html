@@ -245,6 +245,40 @@ body.compact-header #smartAssistView #saWorkspace{
   margin-top:8px!important;
   padding-bottom:18px!important;
 }
+</style><style id="v7-secondary-position-final">
+/* v7.1: secondary tabs must start at the physical top of the viewport. */
+body.compact-header,
+body.compact-header .app,
+body.compact-header main{
+  margin-top:0!important;
+  padding-top:0!important;
+}
+body.compact-header main{
+  display:block!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:visible!important;
+}
+body.compact-header .screen{
+  position:relative!important;
+  top:0!important;
+  transform:none!important;
+  margin-top:0!important;
+  padding-top:0!important;
+}
+body.compact-header .screen.active{
+  position:relative!important;
+  top:0!important;
+  transform:none!important;
+  margin-top:0!important;
+  padding-top:0!important;
+}
+body.compact-header #newsView,
+body.compact-header #smartAssistView{
+  margin-top:0!important;
+  padding-top:0!important;
+  scroll-margin-top:0!important;
+}
 </style></head><body><script id="mr-stock-directory-bridge">
 (function(){
   // Top-level `let STOCKS` is a global lexical binding, not window.STOCKS.
@@ -964,7 +998,8 @@ function nav(id,btn){
   if(id==="leaderboardView" && window.renderLeaderboards)window.renderLeaderboards();
   if(id==="newsView" && window.renderMarketIntelligence)window.renderMarketIntelligence();
   if(id==="accountScreen" && window.renderAccount)window.renderAccount();
-  requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;});
+  requestAnimationFrame(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;const t=document.getElementById(id);if(t){t.style.scrollMarginTop="0px";t.scrollIntoView({block:"start",behavior:"instant"});window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;}});
+  setTimeout(()=>{window.scrollTo(0,0);document.documentElement.scrollTop=0;document.body.scrollTop=0;},80);
 }
 function alerts(){
   nav("alertsScreen",null);
