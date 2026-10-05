@@ -80,8 +80,20 @@
       write(fresh);root.remove();refresh();
     };
   }
+  function renderPending(){
+    const p=document.getElementById("portfolio");if(!p)return;
+    let card=document.getElementById("mr50PendingCard");
+    if(!card){card=document.createElement("div");card.id="mr50PendingCard";card.className="card";p.insertBefore(card,p.firstElementChild?.nextElementSibling||p.firstChild);}
+    const st=read(),arr=Array.isArray(st.pendingOrders)?st.pendingOrders:[];
+    card.innerHTML='<div class="row"><div><b>⏳ Pending Paper Orders</b><div class="muted">Limit orders awaiting provider price</div></div><span class="badge">'+arr.length+' OPEN</span></div>'+
+      (arr.length?arr.map(o=>'<div class="metric" style="margin-top:8px"><div><b>'+esc(o.side)+' • '+esc(o.sym)+'</b><br><span class="muted">'+o.q+' shares • target KSh '+fmt(o.limitPrice)+'</span></div><button class="btn alt" data-mr50-cancel="'+esc(o.id)+'">Cancel</button></div>').join(''):'<div class="notice" style="margin-top:10px">No pending limit orders.</div>')+
+      '<p class="notice" style="margin-top:10px">Limit execution checks use provider-backed prices and the provider delay. This is educational simulation only.</p>';
+    card.querySelectorAll("[data-mr50-cancel]").forEach(b=>b.onclick=()=>{
+      const s=read();s.pendingOrders=(Array.isArray(s.pendingOrders)?s.pendingOrders:[]).filter(x=>x.id!==b.dataset.mr50Cancel);write(s);renderPending();
+    });
+  }
   window.MaliRadarOrderTicket={version:"2.0",open:ticket,checkLimits};
   window.buy=s=>ticket("BUY",s);window.sell=s=>ticket("SELL",s);
   document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-mr49-order]");if(b)ticket(b.dataset.mr49Order,b.dataset.symbol)});
-  setInterval(checkLimits,60000);setTimeout(checkLimits,1500);
+  setInterval(()=>{checkLimits();renderPending()},60000);setTimeout(()=>{checkLimits();renderPending()},1500);
 })();
