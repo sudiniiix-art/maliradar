@@ -176,14 +176,17 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
   function cloudState(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}}
   function saveCloudState(s){localStorage.setItem(KEY,JSON.stringify(s))}
   window.maliRadarCloud={
-    status:function(){return cloudState().status||'LOCAL DEMO'},
-    markReady:function(){const s=cloudState();s.status='SERVER READY';saveCloudState(s);renderCloud();},
+    status:function(){return 'LOCAL ACCOUNT • SERVER COMPETITION'},
+    markReady:function(){renderCloud();},
     render:renderCloud
   };
   function renderCloud(){
     const el=document.getElementById('cloudFoundationPanel'); if(!el)return;
     const s=cloudState();
-    el.querySelector('.cloud-state').textContent=s.status||'LOCAL DEMO';
+    const legacy=s.status==='LOCAL DEMO'||s.status==='SERVER READY';
+    const state=el.querySelector('.cloud-state');
+    if(state)state.textContent='LOCAL ACCOUNT • SERVER COMPETITION';
+    if(legacy){s.status='LOCAL ACCOUNT • SERVER COMPETITION';saveCloudState(s);}
   }
   window.addEventListener('DOMContentLoaded',function(){setTimeout(renderCloud,50)});
 })();
@@ -769,13 +772,12 @@ renderNews();renderEvents();
   <div class="cloud-status"><span class="cloud-dot"></span> Account & Competition: <span class="cloud-state">LOCAL ACCOUNT • SERVER COMPETITION</span></div>
   <div class="cloud-grid">
     <div class="cloud-item"><b>👤 Profile</b>Saved on this device</div>
-    <div class="cloud-item"><b>🏆 Leaderboards</b>Server-recorded rankings
     <div class="cloud-item"><b>🏆 Leaderboards</b>Server-recorded rankings</div>
     <div class="cloud-item"><b>🔔 Alerts</b>Provider-backed on this device</div>
     <div class="cloud-item"><b>🎓 Learning</b>XP and achievements saved locally</div>
     <div class="cloud-item"><b>📊 Transactions</b>Paper-trade history saved locally</div>
   </div>
-  <div class="cloud-note">v2.0 status: local account data + server competition. No multi-device cloud account is claimed yet. Existing local demo data remains the source of truth until the backend is connected.</div>
+  <div class="cloud-note">v2.1 status: local account data + server-recorded competition. No multi-device cloud account is claimed yet.</div>
 </section>
 
 <section id="trustView" class="screen">
