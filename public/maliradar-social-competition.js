@@ -91,26 +91,23 @@
     }catch(e){c.innerHTML='<div class="row"><strong>⚔️ Social Competition 3.0</strong><span class="badge">OFFLINE</span></div><div class="lb-note" style="margin-top:10px">Social competition is temporarily unavailable. Your paper portfolio remains unaffected.</div>'}
   }
   function enhanceFriends(){
-    const hub=document.getElementById("mrFriendsStaticHub");if(!hub||hub.dataset.mrSc3Friends==="1")return;
-    hub.dataset.mrSc3Friends="1";
-    hub.addEventListener("click",e=>{
-      const btn=e.target.closest("[data-mr-remove]");if(btn)return;
-      const row=e.target.closest(".lb-row");if(!row)return;
-      const id=row.querySelector("[data-mr-remove]")?.dataset.mrRemove;if(!id)return;
-      const a=me();if(!a?.id)return;
-      const actions=row.querySelector(".lb-name")?.parentElement;
-      if(actions&&!row.querySelector("[data-mr-compare]")){
-        const b=document.createElement("button");b.className="btn alt";b.dataset.mrCompare=id;b.textContent="Compare";actions.appendChild(b);
-      }
-    });
-    // Friends Hub re-renders rows; add compare buttons repeatedly without altering its logic.
-    setInterval(()=>{
-      hub.querySelectorAll("[data-mr-remove]").forEach(x=>{
-        const row=x.closest(".lb-row");if(!row||row.querySelector("[data-mr-compare]"))return;
-        const b=document.createElement("button");b.className="btn alt";b.dataset.mrCompare=x.dataset.mrRemove;b.textContent="Compare";row.appendChild(b);
-        b.onclick=()=>compare(me()?.id,x.dataset.mrRemove,row.querySelector(".lb-name b")?.textContent||"friend");
+    const hub=document.getElementById("mrFriendsStaticHub");if(!hub)return;
+    if(hub.dataset.mrSc3Bound!=="1"){
+      hub.dataset.mrSc3Bound="1";
+      hub.addEventListener("click",e=>{
+        const b=e.target.closest("[data-mr-compare]");
+        if(!b)return;
+        const a=me();if(!a?.id)return;
+        const row=b.closest(".lb-row"),name=row?.querySelector(".lb-name b")?.textContent||"friend";
+        compare(a.id,b.dataset.mrCompare,name);
       });
-    },1000);
+    }
+    hub.querySelectorAll("[data-mr-remove]").forEach(x=>{
+      const row=x.closest(".lb-row");if(!row||row.querySelector("[data-mr-compare]"))return;
+      const b=document.createElement("button");
+      b.className="btn alt";b.dataset.mrCompare=x.dataset.mrRemove;b.textContent="Compare";
+      row.appendChild(b);
+    });
   }
   function boot(){css();enhanceFriends();render()}
   window.MaliRadarSocialCompetition={version:"3.0",refresh:render,compare};
