@@ -29,7 +29,8 @@
    try{await fetch("/api/competitive/profile",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(p)});}catch(e){}
  }
  async function load(metric,scope){
-   try{const r=await fetch("/api/competitive/leaderboard?metric="+encodeURIComponent(metric)+"&scope="+encodeURIComponent(scope));if(!r.ok)throw 0;return await r.json();}catch(e){return null}
+   try{const a=account(); const extra=scope==="friends"&&a?.id?"&id="+encodeURIComponent(a.id):"";
+   const r=await fetch("/api/competitive/leaderboard?metric="+encodeURIComponent(metric)+"&scope="+encodeURIComponent(scope)+extra);if(!r.ok)throw 0;return await r.json();}catch(e){return null}
  }
  function mark(){
    const n=document.querySelector(".lb-note");
@@ -64,8 +65,20 @@
      const card=document.querySelector("#leaderboardView .lb-card");
      if(card){let demo=card.querySelector(".mr-competitive-demo-note");if(!demo){demo=document.createElement("div");demo.className="lb-note mr-competitive-demo-note";demo.style.marginTop="8px";card.appendChild(demo)}demo.textContent="Demo participants are not mixed into the server ranking. Your position above uses server-recorded MaliRadar profiles only.";}
    };
+   // Remove the old demo click handlers. They call the original lexical renderer
+   // directly, which could overwrite the server ranking after a tap.
+   const oldTabs=document.querySelectorAll("#lbMetricTabs button,#lbScopeTabs button");
+   oldTabs.forEach(b=>{
+     const fresh=b.cloneNode(true);
+     b.replaceWith(fresh);
+   });
    const tabs=document.querySelectorAll("#lbMetricTabs button,#lbScopeTabs button");
-   tabs.forEach(b=>b.addEventListener("click",()=>setTimeout(()=>window.renderLeaderboards(),250)));
+   tabs.forEach(b=>b.addEventListener("click",()=>{
+     const group=b.closest("#lbMetricTabs,#lbScopeTabs");
+     if(group)group.querySelectorAll("button").forEach(x=>x.classList.remove("active"));
+     b.classList.add("active");
+     window.renderLeaderboards();
+   }));
  }
  window.MaliRadarCompetitive={version:"1.0",sync,load};
  setTimeout(()=>{sync();upgradeRender()},1200);
