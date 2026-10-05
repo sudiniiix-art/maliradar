@@ -3,7 +3,7 @@
   "use strict";
   const ACCOUNT="maliradar_account_v1";
   const me=()=>{try{return JSON.parse(localStorage.getItem(ACCOUNT)||"null")}catch(e){return null}};
-  const esc=v=>String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":">",""":"&quot;"}[m]));
+  const esc=v=>String(v??"").replace(/[&<>"]/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));
   const pct=n=>{const x=Number(n)||0;return (x>=0?"+":"")+x.toFixed(2)+"%"};
   async function api(u,opt={}){const c=new AbortController(),t=setTimeout(()=>c.abort(),5000);try{const r=await fetch(u,{...opt,cache:"no-store",signal:c.signal}),d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Request failed");return d}finally{clearTimeout(t)}}
   function css(){if(document.getElementById("mr-season4-css"))return;const s=document.createElement("style");s.id="mr-season4-css";s.textContent=
