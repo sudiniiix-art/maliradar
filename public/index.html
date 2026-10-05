@@ -251,7 +251,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 <section id="learn" class="screen" data-tour="learn">
 <div class="card hero" data-tour-target="learnHero"><div class="row"><div><div class="muted">MaliRadar Academy</div><div class="big">🎓 Learn to Trade</div></div><span class="badge">LEARNING MODE</span></div><p class="notice">Learn → Practice → Mission → Quiz → XP. Educational simulation only.</p><div class="grid"><div class="metric">XP<b id="learnXP">0</b></div><div class="metric">Rank<b id="learnRank">Market Rookie</b></div><div class="metric">Lessons<b id="learnDone">0 / 9</b></div><div class="metric">Achievements<b id="learnAch">0</b></div></div></div>
 <div class="card"><div class="row"><b>Learning Path</b><span class="muted">Choose your level</span></div><div class="actions"><button class="btn" onclick="setLearnLevel('beginner')">👶 Beginner</button><button class="btn alt" onclick="setLearnLevel('intermediate')">📈 Intermediate</button><button class="btn alt" onclick="setLearnLevel('expert')">🧠 Expert</button></div><div id="lessonList"></div></div>
-<div class="card" id="marketLabCard"><div class="row"><b>📡 Live Market Lab</b><span class="badge">PROVIDER DATA</span></div><p class="notice">Practice reading the market using MaliRadar's latest verified delayed quotes. This is educational, not a prediction.</p><div id="marketLab"></div><div class="actions"><button class="btn alt" onclick="renderMarketLab()">↻ Refresh Lesson</button></div></div><div class="card"><b>🏆 Achievements</b><div id="achievementList" class="grid"></div></div>
+<div class="card" id="mr52Academy"><div class="row"><div><b>🎮 Interactive Trading Academy</b><div class="muted">Practice the order tools step-by-step</div></div><span class="badge">PRACTICE</span></div><div class="grid"><div class="metric">Mission<b id="mr52Mission">1 / 5</b></div><div class="metric">Progress<b id="mr52Progress">0%</b></div></div><div id="mr52Lesson" class="intel-note" style="margin-top:10px"></div><div class="actions" style="margin-top:10px"><button class="btn" id="mr52Start">Start Practice</button><button class="btn alt" id="mr52Next" style="display:none">Next Mission</button></div><p class="notice" style="margin-top:10px">Practice only. No real money, no real orders, and no financial advice.</p></div><div class="card" id="marketLabCard"><div class="row"><b>📡 Live Market Lab</b><span class="badge">PROVIDER DATA</span></div><p class="notice">Practice reading the market using MaliRadar's latest verified delayed quotes. This is educational, not a prediction.</p><div id="marketLab"></div><div class="actions"><button class="btn alt" onclick="renderMarketLab()">↻ Refresh Lesson</button></div></div><div class="card"><b>🏆 Achievements</b><div id="achievementList" class="grid"></div></div>
 </section>
 <section id="alertsScreen" class="screen">
 <div class="card hero">
@@ -2635,7 +2635,35 @@ function boot(){ensure();if(!window.__mr51Timer)window.__mr51Timer=setInterval(e
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,700));else setTimeout(boot,700);
 })();
 </script>
-</body></html>
+<script id="mr52Academy-js">
+(function(){
+"use strict";
+const KEY="maliradar_academy_v1";
+const lessons=[
+ ["Market Order","A Market order executes immediately at the provider price. In the simulator, open a stock, choose Buy or Sell, select Market, and review the confirmation."],
+ ["Limit Order","A Limit order waits for your chosen price. For a Buy, the simulated order waits until the provider price is at or below your target."],
+ ["Stop-Loss","A Stop-Loss is an educational protection tool. It waits for the provider price to fall to your chosen stop price before simulating a sell."],
+ ["Take-Profit","A Take-Profit waits for the provider price to reach your chosen target before simulating a sell."],
+ ["Order Center","The Order Center lets you review pending and completed paper orders and understand the full order lifecycle."]
+];
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch(e){return {}}};
+const write=x=>localStorage.setItem(KEY,JSON.stringify(x));
+function render(){
+ const lesson=document.getElementById("mr52Lesson"),mission=document.getElementById("mr52Mission"),progress=document.getElementById("mr52Progress"),start=document.getElementById("mr52Start"),next=document.getElementById("mr52Next");
+ if(!lesson)return;
+ const s=read(),i=Math.min(Number(s.step||0),lessons.length-1),started=!!s.started;
+ mission.textContent=(i+1)+" / "+lessons.length;progress.textContent=Math.round((i/lessons.length)*100)+"%";
+ lesson.innerHTML="<b>"+lessons[i][0]+"</b><div style='margin-top:6px'>"+lessons[i][1]+"</div>";
+ start.textContent=started?"Restart Practice":"Start Practice";next.style.display=started&&i<lessons.length-1?"inline-block":"none";
+ if(i===lessons.length-1&&started)lesson.innerHTML+="<div style='margin-top:8px'><b>🏆 Academy complete.</b> You now understand MaliRadar's five paper-order tools.</div>";
+}
+document.addEventListener("click",e=>{
+ if(e.target.id==="mr52Start"){write({started:true,step:0});render();return}
+ if(e.target.id==="mr52Next"){const s=read();s.step=Math.min(Number(s.step||0)+1,lessons.length-1);write(s);render();}
+});
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(render,800));else setTimeout(render,800);
+})();
+</script></body></html>
 
 
 <!-- MaliRadar v2.6.1: universal button tap illumination -->
