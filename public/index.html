@@ -2586,9 +2586,12 @@ function render(){
  '<div class="mr48-box"><div class="mr48-label">Return</div><div class="mr48-value">'+(ret>=0?'+':'')+ret.toFixed(2)+'%</div><div class="muted" style="margin-top:5px">Based on simulated portfolio value</div></div>'+
  '<div class="mr48-box"><div class="mr48-label">Max drawdown</div><div class="mr48-value">'+dd.toFixed(2)+'%</div><div class="muted" style="margin-top:5px">Largest peak-to-trough move</div></div>'+
  '<div class="mr48-box"><div class="mr48-label">Recorded events</div><div class="mr48-value">'+h.length+'</div><div class="muted" style="margin-top:5px">BUY/SELL records</div></div>';
- const w=800,hgt=140,pad=8,min=Math.min(...pts.map(x=>x.v)),max=Math.max(...pts.map(x=>x.v)),span=max-min||1;
- const points=pts.map((x,i)=>((i/(Math.max(1,pts.length-1)))*(w-2*pad)+pad)+","+(hgt-pad-((x.v-min)/span)*(hgt-2*pad))).join(" ");
- chart.innerHTML=pts.length>1?'<svg viewBox="0 0 '+w+' '+hgt+'" preserveAspectRatio="none" aria-label="Paper portfolio equity curve"><polyline fill="none" stroke="currentColor" stroke-width="3" points="'+points+'"/><line x1="'+pad+'" x2="'+(w-pad)+'" y1="'+(hgt-pad)+'" y2="'+(hgt-pad)+'" stroke="currentColor" opacity=".18"/></svg>':'<div class="muted">Make paper trades to build the performance curve.</div>';
+ const curve=pts.concat([{t:"Current",v:currentV}]);
+ const w=800,hgt=140,pad=10,min=Math.min(...curve.map(x=>x.v)),max=Math.max(...curve.map(x=>x.v)),span=max-min||1;
+ const points=curve.map((x,i)=>((i/(Math.max(1,curve.length-1)))*(w-2*pad)+pad)+","+(hgt-pad-((x.v-min)/span)*(hgt-2*pad))).join(" ");
+ const dots=curve.map((x,i)=>{const cx=(i/(Math.max(1,curve.length-1)))*(w-2*pad)+pad;const cy=hgt-pad-((x.v-min)/span)*(hgt-2*pad);return '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="3.5" fill="#35e0b1"/>'}).join("");
+ const baseline=hgt-pad-((start-min)/span)*(hgt-2*pad);
+ chart.innerHTML=curve.length>1?'<svg viewBox="0 0 '+w+' '+hgt+'" preserveAspectRatio="none" aria-label="Paper portfolio equity curve"><line x1="'+pad+'" x2="'+(w-pad)+'" y1="'+baseline.toFixed(1)+'" y2="'+baseline.toFixed(1)+'" stroke="#35e0b1" opacity=".18" stroke-dasharray="6 5"/><polyline fill="none" stroke="#35e0b1" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" points="'+points+'"/>'+dots+'</svg>':'<div class="muted">Make paper trades to build the performance curve.</div>';
  note.innerHTML=current.missing?'⚠️ Some holdings have no verified provider price, so the current equity value may exclude those positions. MaliRadar does not invent prices.':'Educational simulation only. The curve is reconstructed from recorded paper-trade cash flows; it is not real investment performance or a prediction of future returns.';
 }
 function boot(){build();setInterval(build,5000)}
