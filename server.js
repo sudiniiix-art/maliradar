@@ -129,16 +129,33 @@ app.post("/api/competitive/challenges/:challengeId/join",(req,res)=>{
   const allowed=["october-paper-2026"];
   if(!allowed.includes(req.params.challengeId))return res.status(404).json({error:"Challenge not found"});
   const db=readDB(); if(!Array.isArray(db.challenges))db.challenges=[];
-  if(!db.users.some(u=>u.id===id))return res.status(404).json({error:"Profile not found"});
+  const user=db.users.find(u=>u.id===id);
+  if(!user)return res.status(404).json({error:"Profile not found"});
   const exists=db.challenges.some(x=>x.challengeId===req.params.challengeId&&x.id===id);
-  if(!exists)db.challenges.push({challengeId:req.params.challengeId,id,joinedAt:new Date().toISOString()});
+  if(!exists)db.challenges.push({
+    challengeId:req.params.challengeId,
+    id,
+    joinedAt:new Date().toISOString(),
+    baselineRet:Number(user.ret)||0,
+    baselineProfit:Number(user.profit)||0,
+    baselineTrades:Number(user.trades)||0
+  });
   writeDB(db); res.json({ok:true,joined:true});
 });
 app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
   const db=readDB();
-  const joined=new Set((db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId).map(x=>x.id));
-  const rows=(db.users||[]).filter(u=>joined.has(u.id)).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
-  res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,ret:u.ret,profit:u.profit,trades:u.trades}))});
+  const entries=(db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId);
+  const users=new Map((db.users||[]).map(u=>[u.id,u]));
+  const rows=entries.map(e=>{
+    const u=users.get(e.id); if(!u)return null;
+    return {
+      id:u.id,name:u.name,region:u.region,
+      ret:(Number(u.ret)||0)-(Number(e.baselineRet)||0),
+      profit:(Number(u.profit)||0)-(Number(e.baselineProfit)||0),
+      trades:Math.max(0,(Number(u.trades)||0)-(Number(e.baselineTrades)||0))
+    };
+  }).filter(Boolean).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
+  res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,metric:"return since join",participants:rows.slice(0,100)});
 });
 app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"0.5"}));
 
