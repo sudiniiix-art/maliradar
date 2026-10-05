@@ -2600,6 +2600,41 @@ window.MaliRadarEquityCurve={version:"1.0",render};
 })();
 </script>
 
+
+<style id="mr51-order-center-css">
+.mr51-order{padding:12px;border:1px solid #173b46;border-radius:12px;margin-top:8px;background:#07141a}
+.mr51-order .status{font-size:11px;letter-spacing:.05em}
+.mr51-pending{color:#ffe08a}.mr51-complete{color:#35e0b1}
+</style>
+<script id="mr51-order-center-js">
+(function(){
+"use strict";
+const KEY="maliradar_v07_state";
+const read=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}}};
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+const fmt=n=>Number(n||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2});
+function ensure(){
+ const p=document.getElementById("portfolio");if(!p)return;
+ let card=document.getElementById("mr51OrderCenter");
+ if(!card){card=document.createElement("div");card.id="mr51OrderCenter";card.className="card";p.appendChild(card)}
+ render(card);
+}
+function render(card){
+ const s=read(),pending=Array.isArray(s.pendingOrders)?s.pendingOrders:[],history=Array.isArray(s.history)?s.history:[];
+ const recent=history.slice().reverse().slice(0,10);
+ const label=o=>o.orderType==="STOP_LOSS"?"STOP-LOSS":o.orderType==="TAKE_PROFIT"?"TAKE-PROFIT":o.orderType==="LIMIT"?"LIMIT":"MARKET";
+ card.innerHTML='<div class="row"><div><b>📋 Order Center</b><div class="muted">Paper order lifecycle</div></div><span class="badge">'+pending.length+' PENDING</span></div>'+
+ '<div class="metric" style="margin-top:10px"><div>Pending orders</div><b>'+pending.length+'</b></div>'+
+ (pending.length?pending.map(o=>'<div class="mr51-order"><div class="row"><b class="mr51-pending">⏳ '+esc(label(o))+' • '+esc(o.side)+' '+esc(o.sym)+'</b><span class="mr51-pending">PENDING</span></div><div class="muted" style="margin-top:6px">'+o.q+' shares • '+(o.orderType==="STOP_LOSS"?"stop KSh "+fmt(o.triggerPrice):o.orderType==="TAKE_PROFIT"?"target KSh "+fmt(o.triggerPrice):"limit KSh "+fmt(o.limitPrice))+'</div></div>').join(""):'<div class="notice" style="margin-top:8px">No pending orders. Market orders are completed immediately.</div>')+
+ '<div style="margin-top:14px"><b>Recent completed orders</b></div>'+
+ (recent.length?recent.map(o=>'<div class="mr51-order"><div class="row"><b class="mr51-complete">✓ '+esc(label(o))+' • '+esc(o.type)+' '+esc(o.sym)+'</b><span class="mr51-complete">COMPLETED</span></div><div class="muted" style="margin-top:6px">'+o.q+' shares • KSh '+fmt(o.p)+' each • KSh '+fmt(o.value)+'</div><div class="muted" style="margin-top:4px">'+esc(o.time||"Unknown time")+'</div></div>').join(""):'<div class="notice" style="margin-top:8px">No completed paper orders yet.</div>')+
+ '<p class="notice" style="margin-top:10px">Simulation only. Provider prices are delayed. Order status is based on your paper-trading activity.</p>';
+}
+window.MaliRadarOrderCenter={version:"1.0",render:ensure};
+function boot(){ensure();if(!window.__mr51Timer)window.__mr51Timer=setInterval(ensure,3000)}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,700));else setTimeout(boot,700);
+})();
+</script>
 </body></html>
 
 
