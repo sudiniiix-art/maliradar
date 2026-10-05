@@ -309,7 +309,6 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     <button data-scope="global" class="active">🌍 Global</button>
     <button data-scope="kenya">🇰🇪 Kenya</button>
     <button data-scope="friends">👥 Friends</button>
-    <button type="button" id="mrAddFriendsTab">➕ Add Friends</button>
   </div>
 
   <div class="lb-card" style="margin-top:14px">
@@ -323,12 +322,15 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
     <div class="lb-note">🛡️ Ranking integrity: your row uses saved local learning XP and verified provider quotes. Demo participants are clearly labeled. Paper trading only.</div>
   </div>
 
-  <div class="lb-grid">
-    <div class="lb-card"><strong>👤 My Position</strong>
-      <div id="myPosition" style="font-size:28px;font-weight:900;margin-top:8px">#—</div>
-      <div class="lb-note" id="myStat">Your real position will be calculated after cloud accounts and server-side records are implemented.</div>
-    </div>
-    <div class="lb-card"><strong>🏆 Monthly Paper Portfolio Challenge</strong>
+  <div class="lb-card" style="margin-top:14px">
+    <div class="row"><strong>👤 My Position</strong><span class="badge">YOUR RANK</span></div>
+    <div id="myPosition" style="font-size:28px;font-weight:900;margin-top:8px">#—</div>
+    <div class="lb-note" id="myStat">Your real position will be calculated after cloud accounts and server-side records are implemented.</div>
+  </div>
+
+  <div id="mrFriendsMount"></div>
+
+  <div class="lb-card" style="margin-top:14px"><strong>🏆 Monthly Paper Portfolio Challenge</strong>
       <div style="margin-top:8px;font-weight:800" id="lbChallengeTitle">October Paper Challenge</div>
       <div class="grid" style="margin-top:10px">
         <div class="metric">Starting Capital<b>KSh 100,000</b></div>
