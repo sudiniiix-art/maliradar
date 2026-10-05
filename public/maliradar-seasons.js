@@ -26,11 +26,11 @@
       card=document.createElement("div");
       card.id="mrSeason4Card";
       card.className="lb-card mr-s4";
-      const pos=document.getElementById("myPosition");
-      const posCard=pos&&pos.closest(".lb-card");
-      if(posCard&&posCard.parentNode)posCard.parentNode.insertBefore(card,posCard.nextSibling);
-      else root.appendChild(card);
     }
+    const pos=document.getElementById("myPosition");
+    const posCard=pos&&pos.closest(".lb-card");
+    if(posCard&&posCard.parentNode)posCard.parentNode.insertBefore(card,posCard.nextSibling);
+    else if(!card.parentNode)root.appendChild(card);
     return card;
   }
   async function render(){
