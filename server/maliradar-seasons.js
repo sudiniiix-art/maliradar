@@ -49,6 +49,10 @@ function registerMaliRadarSeasons(app){
       {id:"veteran",icon:"🛡️",name:"Veteran",desc:"Complete 5 paper duels.",earned:p.played>=5}
     ];
   }
+  function seasonReward(div,status){
+    const rewards={Bronze:"Bronze Starter Badge",Silver:"Silver Division Badge",Gold:"Gold Division Badge",Platinum:"Platinum Division Badge",Diamond:"Diamond Division Badge"};
+    return {division:div,status,reward:rewards[div]||"Season Reward",promotionBonus:status==="PROMOTION ZONE"?"Promotion candidate":"Keep competing"};
+  }
   function rows(db){
     return (db.users||[]).map(u=>profile(db,u.id)).filter(Boolean).sort((a,b)=>b.points-a.points||b.ret-a.ret);
   }
@@ -57,11 +61,15 @@ function registerMaliRadarSeasons(app){
     const id=clean(req.query.id),db=read(),s=seasonInfo(),all=rows(db),me=id?profile(db,id):null;
     const rank=me?all.findIndex(x=>x.id===id)+1:0,total=all.length;
     const div=me?.division?.name||"Bronze";
+    const thresholds={Bronze:{min:0,next:"Silver",nextMin:650},Silver:{min:650,next:"Gold",nextMin:1000},Gold:{min:1000,next:"Platinum",nextMin:1400},Platinum:{min:1400,next:"Diamond",nextMin:1800},Diamond:{min:1800,next:null,nextMin:null}};
+    const prog=thresholds[div]||thresholds.Bronze;
+    const progress=prog.next?Math.max(0,Math.min(100,Math.round(((me.points-prog.min)/(prog.nextMin-prog.min))*100))):100;
+    const pointsToNext=prog.next?Math.max(0,prog.nextMin-me.points):0;
     const same=all.filter(x=>x.division.name===div);
     const divRank=me?same.findIndex(x=>x.id===id)+1:0;
     const promotion=Math.max(1,Math.ceil(same.length*.2)),relegation=Math.max(1,Math.floor(same.length*.2));
     const status=divRank&&divRank<=promotion&&div!=="Diamond"?"PROMOTION ZONE":divRank&&divRank>same.length-relegation&&div!=="Bronze"?"RELEGATION ZONE":"SAFE";
-    res.json({season:s,player:me?{...me,rank,total,divisionRank:divRank,divisionSize:same.length,seasonStatus:status,badges:badges(me,rank,total)}:null,standings:all.slice(0,50).map((x,i)=>({...x,rank:i+1,badges:badges(x,i+1,total)})),rules:{promotionTopPercent:20,relegationBottomPercent:20,points:"Return + learning/activity + competitive results",disclaimer:"Season points, divisions and badges are simulated game metrics. They are not a measure of real trading skill or future returns."}});
+    res.json({season:s,player:me?{...me,rank,total,divisionRank:divRank,divisionSize:same.length,seasonStatus:status,badges:badges(me,rank,total),progress:{current:div,min:prog.min,next:prog.next,nextMin:prog.nextMin,percent:progress,pointsToNext},reward:seasonReward(div,status)}:null,standings:all.slice(0,50).map((x,i)=>({...x,rank:i+1,badges:badges(x,i+1,total)})),rules:{promotionTopPercent:20,relegationBottomPercent:20,points:"Return + learning/activity + competitive results",disclaimer:"Season points, divisions and badges are simulated game metrics. They are not a measure of real trading skill or future returns."}});
   });
 
   app.get("/api/competitive/season/history/:id",(req,res)=>{
