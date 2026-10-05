@@ -1172,38 +1172,23 @@ function buy(s){
   const q=parseInt(prompt("How many paper shares?","10"));
   if(!q||q<1)return;
   const total=price*q,remaining=state.cash-total;
-  if(total>state.cash)return alert("Not enough paper cash.
-
-Order value: "+orderMoney(total)+"
-Available cash: "+orderMoney(state.cash));
+  if(total>state.cash)return alert("Not enough paper cash.\n\nOrder value: "+orderMoney(total)+"\nAvailable cash: "+orderMoney(state.cash));
   const name=x?.[1]||s;
   const confirmed=confirm(
-    "PAPER BUY CONFIRMATION
-
-"+
-    name+" ("+s+")
-"+
-    "Quantity: "+q+" shares
-"+
-    "Verified price: "+orderMoney(price)+"
-"+
-    "Order value: "+orderMoney(total)+"
-"+
-    "Cash after order: "+orderMoney(remaining)+"
-
-"+
-    "This uses simulated money only.
-Confirm this paper order?"
+    "PAPER BUY CONFIRMATION\n\n"+
+    name+" ("+s+")\n"+
+    "Quantity: "+q+" shares\n"+
+    "Verified price: "+orderMoney(price)+"\n"+
+    "Order value: "+orderMoney(total)+"\n"+
+    "Cash after order: "+orderMoney(remaining)+"\n\n"+
+    "This uses simulated money only.\nConfirm this paper order?"
   );
   if(!confirmed)return;
   state.cash=remaining;
   state.hold[s]=(state.hold[s]||0)+q;
   state.history.unshift({type:"BUY",sym:s,q,p:price,value:total,time:new Date().toLocaleString()});
   save();render();
-  alert("Paper BUY executed.
-
-"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"
-No real money was used.");
+  alert("Paper BUY executed.\n\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\nNo real money was used.");
 }
 function sell(s){
   const x=stock(s),price=paperPrice(s),owned=state.hold[s]||0;
@@ -1214,22 +1199,13 @@ function sell(s){
   const total=price*q,remaining=state.cash+total;
   const name=x?.[1]||s;
   const confirmed=confirm(
-    "PAPER SELL CONFIRMATION
-
-"+
-    name+" ("+s+")
-"+
-    "Quantity: "+q+" shares
-"+
-    "Verified price: "+orderMoney(price)+"
-"+
-    "Order value: "+orderMoney(total)+"
-"+
-    "Cash after order: "+orderMoney(remaining)+"
-
-"+
-    "This uses simulated money only.
-Confirm this paper order?"
+    "PAPER SELL CONFIRMATION\n\n"+
+    name+" ("+s+")\n"+
+    "Quantity: "+q+" shares\n"+
+    "Verified price: "+orderMoney(price)+"\n"+
+    "Order value: "+orderMoney(total)+"\n"+
+    "Cash after order: "+orderMoney(remaining)+"\n\n"+
+    "This uses simulated money only.\nConfirm this paper order?"
   );
   if(!confirmed)return;
   state.cash=remaining;
@@ -1237,10 +1213,7 @@ Confirm this paper order?"
   if(!state.hold[s])delete state.hold[s];
   state.history.unshift({type:"SELL",sym:s,q,p:price,value:total,time:new Date().toLocaleString()});
   save();render();
-  alert("Paper SELL executed.
-
-"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"
-No real money was used.");
+  alert("Paper SELL executed.\n\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\nNo real money was used.");
 }
 let detailMode=localStorage.getItem("maliradar_mode")||"beginner";
 let chartPeriod="1M";
