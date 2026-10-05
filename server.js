@@ -68,10 +68,17 @@ app.post("/api/competitive/profile",(req,res)=>{
 });
 app.get("/api/competitive/leaderboard",(req,res)=>{
   const metric=["xp","profit","ret","trades"].includes(req.query.metric)?req.query.metric:"xp";
-  const scope=req.query.scope==="kenya"?"kenya":"global";
+  const requestedScope=String(req.query.scope||"global").toLowerCase();
+  const scope=["global","kenya","friends"].includes(requestedScope)?requestedScope:"global";
   const db=readDB();
   let rows=(db.users||[]).filter(u=>u.xp!==undefined);
   if(scope==="kenya")rows=rows.filter(u=>String(u.region).toLowerCase()==="kenya");
+  // Friends is intentionally conservative in beta: until friend connections exist,
+  // never leak unrelated users or demo participants into a user's Friends ranking.
+  if(scope==="friends"){
+    const id=String(req.query.id||"");
+    rows=id?rows.filter(u=>u.id===id):[];
+  }
   rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
   res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
 });
