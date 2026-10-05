@@ -2459,7 +2459,85 @@ function deleteTrustData(){
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
   window.MaliRadarTradeJournal={version:"1.0",render};
 })();
-</script>\n</body></html>
+</script>\n
+<!-- MaliRadar v4.7: Portfolio Risk & Diversification -->
+<style id="mr47-risk-css">
+.mr47-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.mr47-box{padding:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
+.mr47-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.mr47-value{font-size:18px;font-weight:900;margin-top:4px}
+.mr47-meter{height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:7px}
+.mr47-fill{height:100%;border-radius:999px}
+@media(min-width:700px){.mr47-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<script id="mr47-risk-js">
+(function(){
+  "use strict";
+  function el(id){return document.getElementById(id)}
+  function money(v){try{return typeof orderMoney==="function"?orderMoney(v):("KSh "+Number(v||0).toLocaleString(undefined,{maximumFractionDigits:2}))}catch(e){return "KSh "+Number(v||0).toFixed(2)}}
+  function num(v){const n=Number(v);return Number.isFinite(n)?n:null}
+  function getState(){try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}");return s||{}}catch(e){return {}}}
+  function quote(sym){
+    const s=String(sym||"").toUpperCase().split(".")[0],store=window.maliRadarProviderQuotes||{};
+    for(const [k,q] of Object.entries(store)){
+      if(String(k).toUpperCase().split(".")[0]===s||String(q?.localSymbol||q?.symbol||"").toUpperCase().split(".")[0]===s)return q;
+    }
+    return null;
+  }
+  function build(){
+    const p=el("portfolio");if(!p)return;
+    let card=el("mr47RiskCard");
+    if(!card){
+      card=document.createElement("div");card.id="mr47RiskCard";card.className="card";
+      const journal=el("mr46JournalCard"),tx=el("history")?.closest(".card");
+      const before=journal||tx;
+      if(before&&before.parentNode)before.parentNode.insertBefore(card,before);else p.appendChild(card);
+    }
+    card.innerHTML='<div class="row"><div><b>🛡️ Portfolio Risk &amp; Diversification</b><div class="muted">A simulation-only view of concentration, cash and provider-verified holdings.</div></div><span class="badge">EDUCATIONAL</span></div>'+
+      '<div id="mr47Grid" class="mr47-grid"></div><div id="mr47Insight" class="intel-note" style="margin-top:10px"></div>'+
+      '<div class="notice" style="margin-top:10px">Risk scores are rule-based educational indicators, not predictions, investment advice, or a guarantee of safety.</div>';
+    render();
+  }
+  function render(){
+    const grid=el("mr47Grid"),ins=el("mr47Insight");if(!grid)return;
+    const s=getState(),hold=s.hold||{},cash=num(s.cash)||0;
+    const positions=[];
+    let invested=0,known=0;
+    Object.entries(hold).forEach(([sym,q0])=>{
+      const qn=num(q0);if(!qn||qn<=0)return;
+      const q=quote(sym),price=num(q?.price);
+      const value=price!=null?qn*price:0;
+      positions.push({sym,q:qn,price,value,verified:price!=null});
+      if(value>0){known+=value}
+    });
+    const total=known+cash;
+    const cashPct=total>0?cash/total*100:100;
+    const sorted=positions.filter(x=>x.value>0).sort((a,b)=>b.value-a.value);
+    const top=sorted.length&&total>0?sorted[0].value/total*100:0;
+    const verifiedPct=positions.length?positions.filter(x=>x.verified).length/positions.length*100:0;
+    const n=sorted.length;
+    const breadth=Math.min(100,n/6*100);
+    const concentrationPenalty=Math.min(70,top*.75);
+    const cashPenalty=cashPct>85?Math.min(25,(cashPct-85)*1.2):0;
+    const score=Math.max(0,Math.min(100,Math.round(0.55*breadth+0.35*(100-concentrationPenalty)+0.10*verifiedPct-cashPenalty)));
+    const label=score>=75?"BALANCED":score>=50?"MODERATE":n===0?"NO HOLDINGS":"CONCENTRATED";
+    const topName=sorted[0]?.sym||"—";
+    const topText=top>0?top.toFixed(1)+"% in "+topName:"—";
+    const riskText=n===0?"No open holdings yet. Make paper trades to activate portfolio risk analysis.":top>=60?"High concentration: one holding represents most of the verified portfolio value.":cashPct>=85?"High cash share: most simulated capital is currently uninvested.":n<3?"Low diversification: fewer than three verified holdings.":"Diversification looks reasonable for this simulation.";
+    const bar=Math.max(3,score);
+    grid.innerHTML='<div class="mr47-box"><div class="mr47-label">Diversification score</div><div class="mr47-value">'+score+'/100</div><div class="mr47-meter"><div class="mr47-fill" style="width:'+bar+'%"></div></div><div class="muted" style="margin-top:5px">'+label+'</div></div>'+
+      '<div class="mr47-box"><div class="mr47-label">Largest exposure</div><div class="mr47-value">'+(top?top.toFixed(1)+'%':'—')+'</div><div class="muted" style="margin-top:5px">'+topText+'</div></div>'+
+      '<div class="mr47-box"><div class="mr47-label">Cash allocation</div><div class="mr47-value">'+cashPct.toFixed(1)+'%</div><div class="muted" style="margin-top:5px">'+money(cash)+' simulated cash</div></div>'+
+      '<div class="mr47-box"><div class="mr47-label">Verified holdings</div><div class="mr47-value">'+Math.round(verifiedPct)+'%</div><div class="muted" style="margin-top:5px">'+positions.filter(x=>x.verified).length+'/'+positions.length+' with provider price</div></div>';
+    ins.innerHTML='<b>Portfolio read:</b> '+riskText+' '+(n?' Largest verified exposure: <b>'+topText+'</b>.':'');
+  }
+  function boot(){build();setInterval(build,5000)}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+  window.MaliRadarPortfolioRisk={version:"1.0",render};
+})();
+</script>
+
+</body></html>
 
 
 <!-- MaliRadar v2.6.1: universal button tap illumination -->
