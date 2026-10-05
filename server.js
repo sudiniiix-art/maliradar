@@ -98,7 +98,7 @@ app.get("/api/competitive/challenges",(req,res)=>{
   const joined=Array.isArray(db.challenges)?db.challenges:[];
   res.json({source:"MaliRadar competitive beta",challenges:challenges.map(x=>({
     ...x,
-    status:now<x.start?"UPCOMING":now>x.end?"ENDED":"ACTIVE",
+    status:now.getTime()<Date.parse(x.start)?"UPCOMING":now.getTime()>Date.parse(x.end)?"ENDED":"ACTIVE",
     joined:joined.some(j=>j.challengeId===x.id)
   }))});
 });
