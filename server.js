@@ -160,6 +160,8 @@ app.get("/api/alerts/:userId",(req,res)=>{const db=readDB();res.json(db.alerts.f
 
 const { registerMaliRadarSocialCompetition } = require('./server/maliradar-social-competition');
 registerMaliRadarSocialCompetition(app);
+const { registerMaliRadarSeasons } = require('./server/maliradar-seasons');
+registerMaliRadarSeasons(app);
 
 const { registerMaliRadarMarketDataRoutes } = require('./server/mystocks-market-data');
 registerMaliRadarMarketDataRoutes(app);
