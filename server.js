@@ -133,23 +133,45 @@ app.post("/api/competitive/challenges/:challengeId/join",(req,res)=>{
   const db=readDB(); if(!Array.isArray(db.challenges))db.challenges=[];
   const user=db.users.find(u=>u.id===id);
   if(!user)return res.status(404).json({error:"Profile not found"});
-  const exists=db.challenges.some(x=>x.challengeId===req.params.challengeId&&x.id===id);
-  if(!exists)db.challenges.push({
-    challengeId:req.params.challengeId,
-    id,
-    joinedAt:new Date().toISOString(),
-    baselineRet:Number(user.ret)||0,
-    baselineProfit:Number(user.profit)||0,
-    baselineTrades:Number(user.trades)||0
-  });
+  const existing=db.challenges.find(x=>x.challengeId===req.params.challengeId&&x.id===id);
+  if(!existing){
+    db.challenges.push({
+      challengeId:req.params.challengeId,
+      id,
+      joinedAt:new Date().toISOString(),
+      baselineRet:Number(user.ret)||0,
+      baselineProfit:Number(user.profit)||0,
+      baselineTrades:Number(user.trades)||0,
+      baselineVersion:2
+    });
+  }else if(Number(existing.baselineVersion||0)<2){
+    // Repair enrollments created by the earlier beta baseline logic.
+    // Their stored baseline could be stale/invalid, producing impossible
+    // challenge returns such as ~99% immediately after joining.
+    existing.joinedAt=new Date().toISOString();
+    existing.baselineRet=Number(user.ret)||0;
+    existing.baselineProfit=Number(user.profit)||0;
+    existing.baselineTrades=Number(user.trades)||0;
+    existing.baselineVersion=2;
+  }
   writeDB(db); res.json({ok:true,joined:true});
 });
 app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
   const db=readDB();
   const entries=(db.challenges||[]).filter(x=>x.challengeId===req.params.challengeId);
   const users=new Map((db.users||[]).map(u=>[u.id,u]));
+  let repaired=false;
   const rows=entries.map(e=>{
     const u=users.get(e.id); if(!u)return null;
+    // Any legacy entry that reaches the board is normalized to v2 as well.
+    if(Number(e.baselineVersion||0)<2){
+      e.joinedAt=new Date().toISOString();
+      e.baselineRet=Number(u.ret)||0;
+      e.baselineProfit=Number(u.profit)||0;
+      e.baselineTrades=Number(u.trades)||0;
+      e.baselineVersion=2;
+      repaired=true;
+    }
     return {
       id:u.id,name:u.name,region:u.region,
       ret:(Number(u.ret)||0)-(Number(e.baselineRet)||0),
@@ -157,6 +179,7 @@ app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
       trades:Math.max(0,(Number(u.trades)||0)-(Number(e.baselineTrades)||0))
     };
   }).filter(Boolean).sort((a,b)=>(Number(b.ret)||0)-(Number(a.ret)||0));
+  if(repaired)writeDB(db);
   res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,metric:"return since join",participants:rows.slice(0,100)});
 });
 app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"0.5"}));
