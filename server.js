@@ -11,7 +11,7 @@ app.use((req,res,next)=>{
   if(req.method==="GET" && req.path==="/"){
     const file=path.join(__dirname,"public","index.html");
     let html=fs.readFileSync(file,"utf8");
-    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-competitive.js?v=3.2"></script><script src="/maliradar-challenge-dashboard.js?v=3.3"></script><script src="/maliradar-progression.js?v=2.0"></script><script src="/maliradar-friends-hub.js?v=4.0"></script><script src="/maliradar-social-competition.js?v=3.0"></script>';
+    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-competitive.js?v=3.2"></script><script src="/maliradar-challenge-dashboard.js?v=3.3"></script><script src="/maliradar-progression.js?v=2.0"></script><script src="/maliradar-friends-hub.js?v=4.0"></script><script src="/maliradar-social-competition.js?v=3.0"></script><script src="/maliradar-seasons.js?v=4.0"></script>';
     if(!html.includes(tag)) html=html.replace("</body>",tag+"</body>");
     res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma","no-cache");
