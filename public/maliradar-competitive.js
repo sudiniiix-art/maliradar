@@ -21,7 +21,7 @@
    const xp=(guided?100:0)+(started?50:0)+(missions*50)+(trades>0?50:0)+(trades>=5?100:0)+(trades>=10?150:0);
    const achievements=(guided?1:0)+(started?1:0)+(missions>=5?1:0)+(trades>0?1:0)+(trades>=5?1:0)+(trades>=10?1:0);
    const region=(document.getElementById("regionSelect")?.value||"global").toLowerCase();
-   const name=document.getElementById("profileUsername")?.value||a.name||"MaliRadar User";
+   const name=(window.profileState?.username||document.getElementById("profileUsername")?.value||a.name||"MaliRadar User").trim()||"MaliRadar User";
    return {id:a.id,name,region,xp,profit,ret,trades,achievements};
  }
  async function sync(){
