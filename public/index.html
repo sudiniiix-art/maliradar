@@ -2537,6 +2537,66 @@ function deleteTrustData(){
 })();
 </script>
 
+<!-- MaliRadar v4.8: Performance Equity Curve & Drawdown -->
+<style id="mr48-equity-css">
+.mr48-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.mr48-box{padding:11px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.02)}
+.mr48-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.mr48-value{font-size:18px;font-weight:900;margin-top:4px}
+.mr48-chart{height:150px;margin-top:10px;padding:8px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mr48-chart svg{width:100%;height:100%}
+@media(min-width:700px){.mr48-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+</style>
+<script id="mr48-equity-js">
+(function(){
+"use strict";
+function el(id){return document.getElementById(id)}
+function num(v){const n=Number(v);return Number.isFinite(n)?n:null}
+function money(v){try{return typeof orderMoney==="function"?orderMoney(v):("KSh "+Number(v||0).toLocaleString(undefined,{maximumFractionDigits:2}))}catch(e){return "KSh "+Number(v||0).toFixed(2)}}
+function state(){try{return JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}")||{}}catch(e){return {}}}
+function price(sym){const s=String(sym||"").toUpperCase().split(".")[0],store=window.maliRadarProviderQuotes||{};for(const [k,q] of Object.entries(store)){if(String(k).toUpperCase().split(".")[0]===s||String(q?.localSymbol||q?.symbol||"").toUpperCase().split(".")[0]===s)return num(q?.price)}return null}
+function portfolioValue(s){
+ let v=num(s.cash)||0,missing=false;
+ Object.entries(s.hold||{}).forEach(([sym,q])=>{const n=num(q)||0,p=price(sym);if(n>0){if(p==null)missing=true;else v+=n*p}});
+ return {v,missing};
+}
+function build(){
+ const p=el("portfolio");if(!p)return;
+ let card=el("mr48EquityCard");
+ if(!card){card=document.createElement("div");card.id="mr48EquityCard";card.className="card";const risk=el("mr47RiskCard"),tx=el("history")?.closest(".card");const b=risk||tx;if(b&&b.parentNode)b.parentNode.insertBefore(card,b);else p.appendChild(card)}
+ card.innerHTML='<div class="row"><div><b>📈 Performance Curve &amp; Drawdown</b><div class="muted">A historical simulation curve reconstructed from your recorded paper trades.</div></div><span class="badge">SIMULATION</span></div><div id="mr48Grid" class="mr48-grid"></div><div id="mr48Chart" class="mr48-chart"></div><div id="mr48Note" class="notice" style="margin-top:10px"></div>';
+ render();
+}
+function render(){
+ const g=el("mr48Grid"),chart=el("mr48Chart"),note=el("mr48Note");if(!g)return;
+ const s=state(),h=Array.isArray(s.history)?s.history:[],start=100000;
+ let equity=start,peak=start,maxDD=0;
+ const pts=[{t:"Start",v:start}],realized=[];
+ [...h].reverse().forEach(t=>{
+   if(!t||!num(t.q)||!num(t.p))return;
+   if(t.type==="BUY"){equity-=num(t.value)||num(t.q)*num(t.p)}
+   if(t.type==="SELL"){equity+=num(t.value)||num(t.q)*num(t.p)}
+   peak=Math.max(peak,equity);maxDD=Math.min(maxDD,(equity-peak)/peak*100);
+   pts.push({t:t.time||"",v:equity});realized.push(equity);
+ });
+ const current=portfolioValue(s),currentV=current.v,change=currentV-start,ret=change/start*100;
+ const best=Math.max(...pts.map(x=>x.v)),worst=Math.min(...pts.map(x=>x.v));
+ const net=Math.max(1,best-worst),dd=Math.abs(maxDD);
+ g.innerHTML='<div class="mr48-box"><div class="mr48-label">Simulated equity</div><div class="mr48-value">'+money(currentV)+'</div><div class="muted" style="margin-top:5px">'+(change>=0?'+':'')+money(change)+' vs starting cash</div></div>'+
+ '<div class="mr48-box"><div class="mr48-label">Return</div><div class="mr48-value">'+(ret>=0?'+':'')+ret.toFixed(2)+'%</div><div class="muted" style="margin-top:5px">Based on simulated portfolio value</div></div>'+
+ '<div class="mr48-box"><div class="mr48-label">Max drawdown</div><div class="mr48-value">'+dd.toFixed(2)+'%</div><div class="muted" style="margin-top:5px">Largest peak-to-trough move</div></div>'+
+ '<div class="mr48-box"><div class="mr48-label">Recorded events</div><div class="mr48-value">'+h.length+'</div><div class="muted" style="margin-top:5px">BUY/SELL records</div></div>';
+ const w=800,hgt=140,pad=8,min=Math.min(...pts.map(x=>x.v)),max=Math.max(...pts.map(x=>x.v)),span=max-min||1;
+ const points=pts.map((x,i)=>((i/(Math.max(1,pts.length-1)))*(w-2*pad)+pad)+","+(hgt-pad-((x.v-min)/span)*(hgt-2*pad))).join(" ");
+ chart.innerHTML=pts.length>1?'<svg viewBox="0 0 '+w+' '+hgt+'" preserveAspectRatio="none" aria-label="Paper portfolio equity curve"><polyline fill="none" stroke="currentColor" stroke-width="3" points="'+points+'"/><line x1="'+pad+'" x2="'+(w-pad)+'" y1="'+(hgt-pad)+'" y2="'+(hgt-pad)+'" stroke="currentColor" opacity=".18"/></svg>':'<div class="muted">Make paper trades to build the performance curve.</div>';
+ note.innerHTML=current.missing?'⚠️ Some holdings have no verified provider price, so the current equity value may exclude those positions. MaliRadar does not invent prices.':'Educational simulation only. The curve is reconstructed from recorded paper-trade cash flows; it is not real investment performance or a prediction of future returns.';
+}
+function boot(){build();setInterval(build,5000)}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+window.MaliRadarEquityCurve={version:"1.0",render};
+})();
+</script>
+
 </body></html>
 
 
