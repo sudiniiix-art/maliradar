@@ -12,5 +12,5 @@ async function render(){const c=mount();if(!c)return;const a=acct();if(!a?.id){c
 window.MaliRadarCompetition6={version:"6.0",refresh:render};
 function boot(){css();setTimeout(render,1000)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
-setInterval(()=>{if(document.getElementById("leaderboardView"))render()},30000);
+setInterval(()=>{if(document.visibilityState==="visible"&&document.getElementById("leaderboardView")?.classList.contains("active"))render()},45000);
 })();
