@@ -156,7 +156,8 @@ app.post("/api/competitive/profile",(req,res)=>{
   const db=readDB(); if(!Array.isArray(db.users)) db.users=[];
   let u=db.users.find(x=>x.id===id);
   if(!u){u={id,createdAt:new Date().toISOString()};db.users.push(u);}
-  u.name=String(name||"MaliRadar User").slice(0,24);\n  if(typeof profilePhoto==="string") u.profilePhoto=profilePhoto.slice(0,700000);
+  u.name=String(name||"MaliRadar User").slice(0,24);
+  if(typeof profilePhoto==="string") u.profilePhoto=profilePhoto.slice(0,700000);
   u.region=String(region||"global").slice(0,32);
   u.xp=Number.isFinite(Number(xp))?Number(xp):0;
   u.profit=Number.isFinite(Number(profit))?Number(profit):0;
