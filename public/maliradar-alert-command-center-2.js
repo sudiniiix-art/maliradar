@@ -124,9 +124,9 @@ function smartAssistHook(){
  obs.observe(el,{childList:true,subtree:true,characterData:true});
 }
 function render(){
- const root=document.getElementById("alerts");if(!root)return;
+ const root=document.getElementById("alertsScreen")||document.getElementById("alerts");if(!root)return;
  const s=seedLegacy(), active=s.alerts.filter(a=>a.active), hist=s.alertHistory||[];
- root.innerHTML=`<div class="card hero">
+ root.innerHTML=`<div class="card hero" id="mrAlertCenterRoot">
  <div class="ac-head"><div><div class="ac-title">🚨 Alert Command Center</div><div class="ac-sub">One place for price, movement, position, Smart Assist, market and data-quality alerts.</div></div><span class="badge">PAPER ONLY</span></div>
  <div class="ac-stats"><div class="ac-stat"><span>ACTIVE</span><b>${active.length}</b></div><div class="ac-stat"><span>TRIGGERED</span><b>${hist.length}</b></div><div class="ac-stat"><span>UNREAD</span><b class="green">${unreadCount(s)}</b></div></div></div>
  <div class="card"><div class="row"><b>Create alert</b><span class="muted">Provider observations</span></div>
