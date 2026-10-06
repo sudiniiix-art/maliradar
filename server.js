@@ -11,7 +11,7 @@ app.use((req,res,next)=>{
   if(req.method==="GET" && req.path==="/"){
     const file=path.join(__dirname,"public","index.html");
     let html=fs.readFileSync(file,"utf8");
-    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-progression.js?v=5.2.1"></script><script src="/maliradar-friends-hub.js?v=5.2.1"></script><script src="/maliradar-social-competition.js?v=5.2.1"></script><script src="/maliradar-seasons.js?v=5.2.1"></script><script src="/maliradar-competitive-profile.js?v=5.2.1"></script><script src="/maliradar-tournaments.js?v=6.0"></script><script src="/maliradar-competition-6.js?v=6.0"></script><script src="/maliradar-smart-assist-2.js?v=7.0"></script><script src="/maliradar-command-center.js?v=8.0"></script><script src="/maliradar-personal-intelligence-8-2.js?v=8.2"></script><script src="/maliradar-adaptive-radar-8-3.js?v=8.3"></script><script src="/maliradar-watchlist-3.js?v=8.0"></script><script src="/maliradar-watchlist-add-fix.js?v=8.1"></script>';
+    const tag='<script src="/maliradar-order-ticket.js"></script><script src="/maliradar-guided-academy.js"></script><script src="/maliradar-learning-profile.js"></script><script src="/maliradar-account-center.js"></script><script src="/maliradar-progression.js?v=5.2.1"></script><script src="/maliradar-friends-hub.js?v=5.2.1"></script><script src="/maliradar-social-competition.js?v=5.2.1"></script><script src="/maliradar-seasons.js?v=5.2.1"></script><script src="/maliradar-competitive-profile.js?v=5.2.1"></script><script src="/maliradar-tournaments.js?v=6.0"></script><script src="/maliradar-competition-6.js?v=6.0"></script><script src="/maliradar-smart-assist-2.js?v=7.0"></script><script src="/maliradar-command-center.js?v=8.0"></script><script src="/maliradar-personal-intelligence-8-2.js?v=8.2"></script><script src="/maliradar-adaptive-radar-8-3.js?v=8.3"></script><script src="/maliradar-alert-command-center-2.js?v=2.0"></script><script src="/maliradar-watchlist-3.js?v=8.0"></script><script src="/maliradar-watchlist-add-fix.js?v=8.1"></script>';
     if(!html.includes(tag)) html=html.replace("</body>",tag+"</body>");
     res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma","no-cache");
@@ -148,7 +148,7 @@ app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
   if(repaired)writeDB(db);
   res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,metric:"return since join",participants:rows.slice(0,100)});
 });
-app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"8.0"}));
+app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"8.4"}));
 
 app.get("/api/stocks",(req,res)=>res.json({source:"demo",warning:"Illustrative data only",stocks:[{symbol:"SCOM",name:"Safaricom",price:35.95},{symbol:"KCB",name:"KCB Group",price:92.50},{symbol:"EQTY",name:"Equity Group",price:105.00},{symbol:"EABL",name:"EABL",price:286.75}]}));
 app.post("/api/demo-user",(req,res)=>{const db=readDB(),id="demo-"+Date.now(),user={id,name:req.body.name||"Demo User",createdAt:new Date().toISOString()};db.users.push(user);writeDB(db);res.status(201).json(user)});
