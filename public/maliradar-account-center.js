@@ -26,7 +26,7 @@ const KEY="maliradar_account_v1";
 const state=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}}};
 const save=x=>localStorage.setItem(KEY,JSON.stringify(x));
 function profileStats(){try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}"),h=Array.isArray(s.history)?s.history:[],q=window.maliRadarProviderQuotes||{},hold=s.hold||{};let value=Number(s.cash??100000);Object.keys(hold).forEach(k=>{const p=Number(q[String(k).toUpperCase()]?.price);if(Number.isFinite(p))value+=Number(hold[k]||0)*p});return{trades:h.length,value,profit:value-100000,returnPct:(value-100000)/100000*100}}catch(e){return{trades:0,value:100000,profit:0,returnPct:0}}}
-function sync(){const a=state(),rank=document.getElementById("profileRank"),name=document.getElementById("profileName"),av=document.getElementById("profileAvatar"),input=document.getElementById("profileUsername"),ai=document.getElementById("profileAvatarInput");if(name)name.textContent=a.name||"MaliRadar User";if(input&&document.activeElement!==input)input.value=a.name&&a.name!=="MaliRadar User"?a.name:"";if(ai&&document.activeElement!==ai)ai.value=a.avatar||"👤";if(av&&!a.profilePhoto)av.textContent=a.avatar||"👤";const xp=Number(a.xp||0);if(rank)rank.textContent=(xp>=1000?"Market Strategist":xp>=500?"Market Analyst":xp>=200?"Market Learner":"Market Rookie")+" • "+xp+" XP";const x=document.getElementById("accountXP");if(x)x.textContent=xp+" XP";const ach=document.getElementById("accountAchievements");if(ach)ach.textContent=String(Number(a.achievements||0));return{a,p:profileStats()}}
+function sync(){const a=state(),rank=document.getElementById("profileRank"),name=document.getElementById("profileName"),av=document.getElementById("profileAvatar"),input=document.getElementById("profileUsername"),ai=document.getElementById("profileAvatarInput");if(name)name.textContent=a.name||"MaliRadar User";if(input&&document.activeElement!==input)input.value=a.name&&a.name!=="MaliRadar User"?a.name:"";if(ai&&document.activeElement!==ai)ai.value=a.profilePhoto?"":(a.avatar||"👤");if(av&&!a.profilePhoto)av.textContent=a.avatar||"👤";const xp=Number(a.xp||0);if(rank)rank.textContent=(xp>=1000?"Market Strategist":xp>=500?"Market Analyst":xp>=200?"Market Learner":"Market Rookie")+" • "+xp+" XP";const x=document.getElementById("accountXP");if(x)x.textContent=xp+" XP";const ach=document.getElementById("accountAchievements");if(ach)ach.textContent=String(Number(a.achievements||0));return{a,p:profileStats()}}
 window.saveProfile=function(){const a=state(),n=String(document.getElementById("profileUsername")?.value||"").trim(),av=String(document.getElementById("profileAvatarInput")?.value||"👤").trim().slice(0,2);if(n)a.name=n;a.avatar=av||"👤";save(a);sync();if(window.MaliRadarLeaderboardFriends7?.refresh)window.MaliRadarLeaderboardFriends7.refresh();if(window.MaliRadarCompetitiveProfile?.refresh)window.MaliRadarCompetitiveProfile.refresh()};
 window.MaliRadarAccountProfile={version:"2.1",get:state,save:sync,stats:profileStats,update:function(p){const a=state();Object.assign(a,p||{});save(a);sync()}};
 const boot=()=>sync();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();setInterval(sync,3000);
@@ -36,25 +36,36 @@ const boot=()=>sync();if(document.readyState==="loading")document.addEventListen
 const PROFILE_KEY="maliradar_account_v1",PHOTO_KEY="maliradar_profile_photo_v1";
 function read(){try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||"{}")}catch(e){return {}}}
 function save(a){localStorage.setItem(PROFILE_KEY,JSON.stringify(a))}
+function photo(a){return a.profilePhoto||localStorage.getItem(PHOTO_KEY)||""}
 function renderPhoto(){
- const a=read(),src=a.profilePhoto||localStorage.getItem(PHOTO_KEY)||"";
- const av=document.getElementById("profileAvatar");
- if(av){
-   av.textContent="";
-   if(src){const img=document.createElement("img");img.src=src;img.alt="Profile photo";img.style.width="100%";img.style.height="100%";img.style.objectFit="cover";img.style.borderRadius="50%";av.appendChild(img)}
-   else av.textContent=a.avatar||"👤";
- }
- const preview=document.getElementById("mrProfilePhotoPreview");if(preview)preview.src=src||"";
+ const a=read(),src=photo(a),av=document.getElementById("profileAvatar");
+ if(av){av.textContent="";if(src){const img=document.createElement("img");img.src=src;img.alt="Profile photo";img.style.width="100%";img.style.height="100%";img.style.objectFit="cover";img.style.borderRadius="50%";av.appendChild(img)}else av.textContent=a.avatar||"👤"}
+ const preview=document.getElementById("mrProfilePhotoPreview");if(preview){preview.src=src||"";preview.style.display=src?"block":"none"}
+ const input=document.getElementById("mrProfilePhotoInput");if(input&&src)input.value="";
+ const mode=document.getElementById("mrProfileChoice");if(mode)mode.textContent=src?"Profile photo selected":"Avatar selected";
+ const remove=document.getElementById("mrRemoveProfilePhoto");if(remove)remove.style.display=src?"inline-block":"none";
+}
+function chooseAvatar(){
+ const a=read();delete a.profilePhoto;localStorage.removeItem(PHOTO_KEY);a.avatar=(document.getElementById("profileAvatarInput")?.value||"👤").trim().slice(0,2)||"👤";save(a);renderPhoto();
+}
+function choosePhoto(file){
+ if(!file)return;
+ if(!file.type.startsWith("image/"))return;
+ if(file.size>5*1024*1024){alert("Please choose an image under 5 MB.");return}
+ const rd=new FileReader();
+ rd.onload=()=>{const src=String(rd.result||""),a=read();a.profilePhoto=src;a.avatar="";save(a);localStorage.setItem(PHOTO_KEY,src);const ai=document.getElementById("profileAvatarInput");if(ai)ai.value="";renderPhoto()};
+ rd.readAsDataURL(file);
 }
 function addPhotoUI(){
- const form=document.querySelector("#accountScreen .profile-form");if(!form||document.getElementById("mrProfilePhotoInput"))return;
- const wrap=document.createElement("div");wrap.style.margin="8px 0 12px";
- wrap.innerHTML='<label>Profile photo</label><input id="mrProfilePhotoInput" type="file" accept="image/*" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#071016;color:var(--text);margin:6px 0 8px"><div id="mrProfilePhotoBox" style="display:none"><img id="mrProfilePhotoPreview" style="width:76px;height:76px;object-fit:cover;border-radius:50%;border:1px solid var(--line)"><button type="button" class="btn alt" id="mrRemoveProfilePhoto" style="margin-left:8px">Remove Photo</button></div><div class="muted">Choose a photo from your phone gallery. Your photo is stored locally on this device.</div>';
+ const form=document.querySelector("#accountScreen .profile-form");if(!form||document.getElementById("mrProfileChoice"))return;
+ const wrap=document.createElement("div");wrap.id="mrProfileChoiceWrap";wrap.style.margin="8px 0 12px";
+ wrap.innerHTML='<div class="row" style="margin-bottom:7px"><label style="margin:0">Profile identity</label><span class="demo-badge" id="mrProfileChoice">Avatar selected</span></div><div class="actions" style="margin-top:0"><button type="button" class="btn alt" id="mrChooseAvatar">👤 Use Avatar</button><button type="button" class="btn alt" id="mrChoosePhoto">📸 Use Profile Photo</button></div><input id="mrProfilePhotoInput" type="file" accept="image/*" style="display:none"><div id="mrProfilePhotoBox" style="display:none;margin-top:9px"><img id="mrProfilePhotoPreview" alt="Profile photo preview" style="width:76px;height:76px;object-fit:cover;border-radius:50%;border:1px solid var(--line)"><button type="button" class="btn alt" id="mrRemoveProfilePhoto" style="margin-left:8px">Remove Photo / Use Avatar</button></div><div class="muted" style="margin-top:7px">Choose one: an emoji avatar or a photo. They cannot be active together.</div>';
  form.insertBefore(wrap,form.querySelector("button"));
- const input=wrap.querySelector("#mrProfilePhotoInput"),box=wrap.querySelector("#mrProfilePhotoBox"),preview=wrap.querySelector("#mrProfilePhotoPreview");
- input.onchange=()=>{const file=input.files&&input.files[0];if(!file)return;if(!file.type.startsWith("image/"))return;if(file.size>5*1024*1024){alert("Please choose an image under 5 MB.");input.value="";return}const rd=new FileReader();rd.onload=()=>{const src=String(rd.result||"");localStorage.setItem(PHOTO_KEY,src);const a=read();a.profilePhoto=src;save(a);preview.src=src;box.style.display="flex";renderPhoto()};rd.readAsDataURL(file)};
- wrap.querySelector("#mrRemoveProfilePhoto").onclick=()=>{const a=read();delete a.profilePhoto;save(a);localStorage.removeItem(PHOTO_KEY);input.value="";box.style.display="none";renderPhoto()};
- const src=read().profilePhoto||localStorage.getItem(PHOTO_KEY)||"";if(src){preview.src=src;box.style.display="flex"}
+ const input=wrap.querySelector("#mrProfilePhotoInput");
+ wrap.querySelector("#mrChooseAvatar").onclick=chooseAvatar;
+ wrap.querySelector("#mrChoosePhoto").onclick=()=>input.click();
+ wrap.querySelector("#mrRemoveProfilePhoto").onclick=chooseAvatar;
+ input.onchange=()=>{const f=input.files&&input.files[0];choosePhoto(f)};
 }
 function boot(){addPhotoUI();renderPhoto()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
