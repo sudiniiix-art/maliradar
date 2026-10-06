@@ -61,3 +61,6 @@ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",
 })();
 // Intelligence Fusion bridge
 try{const s=document.createElement("script");s.src="/maliradar-intelligence-fusion-1.js?v=1.0";document.head.appendChild(s)}catch(e){}
+
+// Leaderboard + Friends Hub 7.0 bridge
+try{const s=document.createElement("script");s.src="/maliradar-leaderboard-friends-7.js?v=7.0";document.head.appendChild(s)}catch(e){}
