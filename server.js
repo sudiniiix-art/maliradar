@@ -133,10 +133,10 @@ app.get("/api/news",async(req,res)=>{
     const rr=await fetch(rss,{headers:{"User-Agent":"MaliRadar/2.0 news intelligence"}});
     if(!rr.ok)throw new Error("News provider HTTP "+rr.status);
     const xml=await rr.text();
-    const items=[...xml.matchAll(/<item>([\\s\\S]*?)<\\/item>/gi)].slice(0,30).map(m=>{
+    const items=[...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)].slice(0,30).map(m=>{
       const z=m[1], val=k=>{const a=z.match(new RegExp("<"+k+"[^>]*>([\\s\\S]*?)<\\/"+k+">","i"));return a?String(a[1]).replace(/<!\\[CDATA\\[|\\]\\]>/g,"").trim():""};
       const title=val("title"),link=val("link"),pub=val("pubDate"),desc=val("description"),source=val("source");
-      const clean=s=>String(s||"").replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\\s+/g," ").trim();
+      const clean=s=>String(s||"").replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\s+/g," ").trim();
       const t=clean(title+" "+desc).toLowerCase();
       let category=market==="nse"?"nse":market==="forex"?"forex":market==="crypto"?"crypto":market==="global"?"global":"market";
       let asset="MARKET"; if(/safaricom|scOM/i.test(t))asset="SCOM";else if(/kcb/i.test(t))asset="KCB";else if(/equity/i.test(t))asset="EQTY";else if(/eabl/i.test(t))asset="EABL";else if(/absa/i.test(t))asset="ABSA";else if(/usd\\s*[/:-]\\s*kes|forex|currency/i.test(t))asset="USD/KES";else if(/bitcoin|btc|ethereum|crypto/i.test(t))asset="BTC";else asset="MARKET";
