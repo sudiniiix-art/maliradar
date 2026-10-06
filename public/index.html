@@ -341,30 +341,7 @@ body.compact-header #smartAssistView{
 <div class="card" id="mr52Academy"><div class="row"><div><b>🎮 Interactive Trading Academy</b><div class="muted">Practice the order tools step-by-step</div></div><span class="badge">PRACTICE</span></div><div class="grid"><div class="metric">Mission<b id="mr52Mission">1 / 5</b></div><div class="metric">Progress<b id="mr52Progress">0%</b></div></div><div id="mr52Lesson" class="intel-note" style="margin-top:10px"></div><div class="actions" style="margin-top:10px"><button class="btn" id="mr52Start">Start Practice</button><button class="btn alt" id="mr52Next" style="display:none">Next Mission</button></div><p class="notice" style="margin-top:10px">Practice only. No real money, no real orders, and no financial advice.</p></div><div class="card" id="marketLabCard"><div class="row"><b>📡 Live Market Lab</b><span class="badge">PROVIDER DATA</span></div><p class="notice">Practice reading the market using MaliRadar's latest verified delayed quotes. This is educational, not a prediction.</p><div id="marketLab"></div><div class="actions"><button class="btn alt" onclick="renderMarketLab()">↻ Refresh Lesson</button></div></div><div class="card"><b>🏆 Achievements</b><div id="achievementList" class="grid"></div></div>
 </section>
 <section id="alertsScreen" class="screen">
-<div class="card hero">
-  <div class="row"><div><div class="muted">MaliRadar</div><div class="big">⚡ Alert Command Center</div></div><span class="badge">DEMO ENGINE</span></div>
-  <p class="notice">Create conditions that MaliRadar will monitor against the current demo price. Alerts are informational and do not provide guaranteed trading outcomes.</p>
-  <div class="grid">
-    <div class="metric">Active Alerts<b id="activeAlertCount">0</b></div>
-    <div class="metric">Triggered<b id="triggeredAlertCount">0</b></div>
-  </div>
-</div>
-<div class="card">
-  <div class="row"><b>Create Smart Alert</b><span class="muted">Beginner</span></div>
-  <div class="actions">
-    <button class="btn" onclick="createPriceAlert()">＋ Price Target</button>
-    <button class="btn alt" onclick="createMoveAlert()">↕ % Movement</button>
-    <button class="btn alt" onclick="createCrossAlert()">⇄ Crossing</button>
-  </div>
-</div>
-<div class="card">
-  <div class="row"><b>Active Alerts</b><span class="muted">Monitoring</span></div>
-  <div id="alertList"></div>
-</div>
-<div class="card">
-  <div class="row"><b>Alert History</b><span class="muted">Recent</span></div>
-  <div id="alertHistory"></div>
-</div>
+  <div id="mrAlertCenterMount"></div>
 </section><section id="accountScreen" class="screen" data-tour-target="accountHero">
 <div class="card"><div class="account-hero"><div class="avatar" id="profileAvatar">👤</div><div><div class="profile-name" id="profileName">MaliRadar User</div><span class="pill" id="profileRank">Market Rookie • 0 XP</span><div style="margin-top:7px"><span class="demo-badge">LOCAL DEMO ACCOUNT</span></div></div></div></div>
 <div class="card"><div class="row"><b>👤 Profile</b><span class="muted">v1.7</span></div><div class="profile-form"><label>Username</label><input id="profileUsername" maxlength="20" placeholder="Choose a username"><label>Avatar emoji</label><input id="profileAvatarInput" maxlength="2" placeholder="👤"><button class="btn" onclick="saveProfile()">Save Profile</button></div></div>
