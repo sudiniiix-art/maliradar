@@ -100,6 +100,6 @@
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,250));
   else setTimeout(boot,250);
   setTimeout(boot,1200);
-  setInterval(boot,3000);
+  const root=document.getElementById("leaderboardView");if(root&&!window.__mrFriendsObserver){window.__mrFriendsObserver=new MutationObserver(()=>{if(root.classList.contains("active"))boot()});window.__mrFriendsObserver.observe(root,{childList:true,subtree:true});}
   window.MaliRadarFriendsHub={version:"4.0",mount:boot};
 })();
