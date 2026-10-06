@@ -59,7 +59,8 @@ function impact(){
 }
 
 function stockAvailable(sym){
- return !!sym && !["MARKET","USD/KES","BTC"].includes(sym);
+ const s=String(sym||"").trim().toUpperCase();
+ return /^[A-Z0-9]{2,8}$/.test(s) && !["MARKET","USD","BTC"].includes(s);
 }
 
 function openStock(sym,button){
@@ -103,7 +104,7 @@ function renderPanels(){
  x.wrap.innerHTML=
   '<div class="detail-section"><div class="detail-label">1 • EVENT SUMMARY</div><div class="detail-text">'+esc(state.summary||state.title||"No summary available.")+'</div></div>'+
   '<div class="detail-section"><div class="detail-label">2 • FULL NEWS</div><div class="detail-text">'+esc(state.full||state.summary||state.title||"No expanded provider summary is available.")+'</div><div class="muted" style="margin-top:10px">Provider-supplied expanded news only. MaliRadar does not invent missing article text.</div></div>'+
-  '<div class="detail-section"><div class="detail-label">3 • MARKET IMPACT</div><div class="grid" style="margin-top:8px"><div class="metric">STATUS<b>'+esc(imp.status)+'</b></div><div class="metric">CURRENT PRICE<b>'+esc(price)+'</b></div><div class="metric">OBSERVED MOVE<b>'+esc(move)+'</b></div><div class="metric">LINKED ASSET<b>'+esc(sym)+'</b></div></div><div class="detail-text" style="margin-top:12px">'+esc(imp.copy)+'</div><div class="actions" style="margin-top:12px"><button type="button" class="btn" id="mrNews3Open">OPEN STOCK</button></div></div>';
+  '<div class="detail-section"><div class="detail-label">3 • MARKET IMPACT</div><div class="grid" style="margin-top:8px"><div class="metric">STATUS<b>'+esc(imp.status)+'</b></div><div class="metric">CURRENT PRICE<b>'+esc(price)+'</b></div><div class="metric">OBSERVED MOVE<b>'+esc(move)+'</b></div><div class="metric">LINKED ASSET<b>'+esc(sym)+'</b></div></div><div class="detail-text" style="margin-top:12px">'+esc(imp.copy)+'</div><div class="actions" style="margin-top:12px">'+(stockAvailable(sym)?'<button type="button" class="btn" id="mrNews3Open">OPEN STOCK</button>':'<button type="button" class="btn" id="mrNews3Open" disabled>NO NSE STOCK LINK</button>')+'</div></div>';
  const b=x.wrap.querySelector("#mrNews3Open");
  if(b){
   b.setAttribute("data-mr-news-symbol",sym);
