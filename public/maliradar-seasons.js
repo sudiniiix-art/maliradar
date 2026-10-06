@@ -87,5 +87,5 @@
   window.MaliRadarSeasons={version:"4.0",refresh:render};
   function boot(){setTimeout(render,500);}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
-  setInterval(function(){if(document.getElementById("leaderboardView"))render();},20000);
+  setInterval(function(){if(document.visibilityState==="visible"&&document.getElementById("leaderboardView")?.classList.contains("active"))render();},30000);
 })();
