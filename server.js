@@ -148,7 +148,7 @@ app.get("/api/competitive/challenges/:challengeId/leaderboard",(req,res)=>{
   if(repaired)writeDB(db);
   res.json({source:"MaliRadar competitive beta",challengeId:req.params.challengeId,metric:"return since join",participants:rows.slice(0,100)});
 });
-app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"7.0"}));
+app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",version:"8.0"}));
 
 app.get("/api/stocks",(req,res)=>res.json({source:"demo",warning:"Illustrative data only",stocks:[{symbol:"SCOM",name:"Safaricom",price:35.95},{symbol:"KCB",name:"KCB Group",price:92.50},{symbol:"EQTY",name:"Equity Group",price:105.00},{symbol:"EABL",name:"EABL",price:286.75}]}));
 app.post("/api/demo-user",(req,res)=>{const db=readDB(),id="demo-"+Date.now(),user={id,name:req.body.name||"Demo User",createdAt:new Date().toISOString()};db.users.push(user);writeDB(db);res.status(201).json(user)});
