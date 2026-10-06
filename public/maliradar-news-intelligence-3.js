@@ -2,6 +2,13 @@
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const local=s=>String(s||"").toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,"");
 const state={tab:"summary",summary:"",full:"",asset:"MARKET",title:"",source:"",published:""};
+function resolveAsset(raw,title,summary){
+  const a=local(raw); if(["SCOM","KCB","EQTY","EABL","ABSA"].includes(a))return a;
+  const t=String((title||"")+" "+(summary||"")).toLowerCase();
+  if(/safaricom/.test(t))return "SCOM"; if(/\bkcb\b|kenya commercial bank/.test(t))return "KCB";
+  if(/equity bank|equity group/.test(t))return "EQTY"; if(/eabl|east african breweries/.test(t))return "EABL";
+  if(/absa bank/.test(t))return "ABSA"; return a;
+}
 function quote(asset){
   const q=window.maliRadarProviderQuotes||{};
   const key=local(asset);
@@ -48,7 +55,7 @@ function renderPanel(){
     const x=impact(),move=x.move==null?"—":(x.move>0?"+":"")+x.move.toFixed(2)+"%";
     const price=x.price==null?"—":"KSh "+x.price.toFixed(2);
     p.innerHTML='<div class="detail-label">MARKET IMPACT • OBSERVED ONLY</div><div class="grid" style="margin-top:8px"><div class="metric">STATUS<b>'+esc(x.status)+'</b></div><div class="metric">CURRENT PRICE<b>'+esc(price)+'</b></div><div class="metric">OBSERVED MOVE<b>'+esc(move)+'</b></div><div class="metric">LINKED ASSET<b>'+esc(state.asset)+'</b></div></div><div class="detail-text" style="margin-top:12px">'+esc(x.copy)+'</div><div class="actions" style="margin-top:12px"><button type="button" class="btn" id="mrNews3Open">OPEN STOCK</button></div>';
-    const b=p.querySelector("#mrNews3Open");if(b){const s=local(state.asset);b.setAttribute("data-mr-news-symbol",s);b.onclick=function(e){e.preventDefault();e.stopPropagation();const sym=String(this.getAttribute("data-mr-news-symbol")||"").trim().toUpperCase();if(!sym||sym==="MARKET"||sym==="USD/KES"||sym==="BTC"){b.textContent="STOCK DATA UNAVAILABLE";b.disabled=true;return}try{closeNewsDetail();if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==="function"){window.MaliRadarMarketPro.open(sym,"1M");return}if(window.MaliRadarStockIntel&&typeof window.MaliRadarStockIntel.open==="function"){window.MaliRadarStockIntel.open(sym,"1M");return}if(typeof window.details==="function"){window.details(sym);return}throw new Error("Stock detail engine unavailable")}catch(err){console.error("MaliRadar News Open Stock failed",err);const ov=document.getElementById("newsDetailOverlay");if(ov){const p=ov.querySelector("#mrNews3Panel");if(p)p.innerHTML='<div class="detail-label">STOCK DETAIL ERROR</div><div class="detail-text">Unable to open verified stock detail right now.</div>'}}}}
+    const b=p.querySelector("#mrNews3Open");if(b){const s=resolveAsset(ov.dataset.newsAsset||state.asset,state.title,state.summary);b.setAttribute("data-mr-news-symbol",s);b.onclick=function(e){e.preventDefault();e.stopPropagation();const sym=String(this.getAttribute("data-mr-news-symbol")||"").trim().toUpperCase();if(!sym||sym==="MARKET"||sym==="USD/KES"||sym==="BTC"){b.textContent="STOCK DATA UNAVAILABLE";b.disabled=true;return}try{closeNewsDetail();if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==="function"){window.MaliRadarMarketPro.open(sym,"1M");return}if(window.MaliRadarStockIntel&&typeof window.MaliRadarStockIntel.open==="function"){window.MaliRadarStockIntel.open(sym,"1M");return}if(typeof window.details==="function"){window.details(sym);return}throw new Error("Stock detail engine unavailable")}catch(err){console.error("MaliRadar News Open Stock failed",err);const ov=document.getElementById("newsDetailOverlay");if(ov){const p=ov.querySelector("#mrNews3Panel");if(p)p.innerHTML='<div class="detail-label">STOCK DETAIL ERROR</div><div class="detail-text">Unable to open verified stock detail right now.</div>'}}}}
   }
 }
 function closeNewsDetail(){
@@ -60,7 +67,7 @@ function capture(){
   const ov=document.getElementById("newsDetailOverlay");if(!ov||ov.style.display!=="flex")return;
   const sum=ov.querySelector(".detail-summary"),why=ov.querySelector(".detail-why");
   state.summary=sum?.textContent||"";state.full=why?.textContent?.replace(/FULL NEWS/i,"").trim()||state.summary;
-  state.asset=ov.querySelector(".detail-asset")?.textContent||"MARKET";
+  state.asset=resolveAsset(ov.dataset.newsAsset||ov.querySelector(".detail-asset")?.textContent||"MARKET",state.title,state.summary);
   state.title=ov.querySelector(".detail-title")?.textContent||"";
   state.source=ov.querySelector(".detail-source")?.textContent||"";
   state.published=ov.querySelector(".detail-time")?.textContent||"";
@@ -84,5 +91,5 @@ function boot(){
     setTimeout(decorateCards,300);
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
-window.MaliRadarNewsIntelligence3={version:"3.1-key-moments",refresh:()=>{decorateCards();capture()}};
+window.MaliRadarNewsIntelligence3={version:"3.2-key-moments",refresh:()=>{decorateCards();capture()}};
 })();
