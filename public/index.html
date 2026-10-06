@@ -1019,7 +1019,12 @@ function renderMarketStatus(){
   if($("marketStatusBar"))$("marketStatusBar").innerHTML=html;
 }
 function renderRadar(){
-  $("radar").innerHTML=STOCKS.slice(0,3).map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</span></div><div class="muted">${x[0]} • ${x[2]} • ${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div></div>`).join("")
+  const provider=Object.values(window.maliRadarProviderQuotes||{}).filter(q=>q&&q.price!=null).slice(0,3);
+  if(provider.length){
+    $("radar").innerHTML=provider.map(q=>{const s=String(q.localSymbol||q.symbol||"").toUpperCase().split(".")[0],d=Number(q.changePct);const cls=Number.isFinite(d)?(d>=0?"green":"red"):"muted";const mv=Number.isFinite(d)?((d>=0?"▲ ":"▼ ")+Math.abs(d).toFixed(2)+"%"):"—";return `<div class="stock"><div class="row"><b>${q.name||s}</b><span class="${cls}">${mv}</span></div><div class="muted">${s} • ${q.exchange||getMaliRegion?.()||"NSE"} • KSh ${Number(q.price).toFixed(2)}</div></div>`}).join("");
+    return;
+  }
+  $("radar").innerHTML=STOCKS.slice(0,3).map(x=>`<div class="stock"><div class="row"><b>${x[1]}</b><span class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</span></div><div class="muted">${x[0]} • ${x[2]} • ${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</div></div>`).join("");
 }
 let marketFilter="all";
 function setMarketFilter(f){marketFilter=f;renderMarkets()}
