@@ -27,5 +27,27 @@ function boot(){css();setTimeout(render,500);const v=document.getElementById("sa
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.MaliRadarSmartAssist2={version:"7.0",refresh:render,history:openHistory};
 })();
+
+/* MALIRADAR Smart Assist 2.0 enhancement layer
+   Command cockpit + verified-data actions. Keeps the existing scanner/rules intact. */
+(()=>{"use strict";
+ const esc2=v=>String(v==null?"":v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+ const q2=()=>window.MaliRadarSmartScan||null;
+ function css2(){if(document.getElementById("mr-sa2x-css"))return;const s=document.createElement("style");s.id="mr-sa2x-css";s.textContent=".mr-sa2x{margin:10px 0 12px;padding:12px;border:1px solid #204954;border-radius:15px;background:linear-gradient(145deg,#0b1a22,#08131a)}.mr-sa2xgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:9px}.mr-sa2xstat{padding:9px;border:1px solid #173943;border-radius:11px}.mr-sa2xstat small{display:block;color:#8ea8af;font-size:9px}.mr-sa2xstat b{display:block;margin-top:4px;font-size:16px}.mr-sa2x-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}@media(max-width:520px){.mr-sa2xgrid{grid-template-columns:1fr 1fr}}";document.head.appendChild(s)}
+ function mount2(){const w=document.getElementById("saWorkspace")||document.getElementById("smartAssistView");if(!w)return null;let x=document.getElementById("mrSa2x");if(!x){x=document.createElement("div");x.id="mrSa2x";x.className="mr-sa2x";w.insertBefore(x,w.firstElementChild||null)}return x}
+ function render2(){css2();const x=mount2(),s=q2();if(!x)return;if(!s){x.innerHTML="<b>🧠 Assist Command Cockpit</b><div class='muted' style='margin-top:5px'>Run the verified whole-market scan to activate the intelligence layer.</div>";return}
+ const rows=Array.isArray(s.results)?s.results:[],v=rows.filter(r=>Number.isFinite(Number(r.price))),strong=rows.filter(r=>r.type==="buy"&&Number(r.score)>=62).sort((a,b)=>Number(b.score)-Number(a.score)),risk=rows.filter(r=>r.type==="sell").sort((a,b)=>Number(a.score)-Number(b.score)),top=strong[0]||risk[0]||null;
+ const avg=v.length?v.reduce((n,r)=>n+(Number(r.day)||0),0)/v.length:null;
+ x.innerHTML="<div class='row'><div><b>🧠 Assist Command Cockpit</b><div class='muted'>Verified evidence → explain → act in paper mode</div></div><span class='badge'>2.0</span></div><div class='mr-sa2xgrid'><div class='mr-sa2xstat'><small>MARKET</small><b>"+esc2(s.market||"—")+"</b></div><div class='mr-sa2xstat'><small>VERIFIED</small><b>"+esc2(s.verified||0)+"/"+esc2(s.scanned||0)+"</b></div><div class='mr-sa2xstat'><small>DEEP DATA</small><b>"+esc2(s.deepAnalyzed||0)+"</b></div><div class='mr-sa2xstat'><small>BUY WATCH</small><b>"+strong.length+"</b></div><div class='mr-sa2xstat'><small>RISK</small><b>"+risk.length+"</b></div><div class='mr-sa2xstat'><small>AVG MOVE</small><b>"+(avg==null?"—":(avg>=0?"+":"")+avg.toFixed(2)+"%")+"</b></div></div>"+(top?"<div class='notice' style='margin-top:9px'><b>Top observed focus: "+esc2(top.symbol)+"</b><br>Setup "+esc2(top.score)+"/100 • evidence "+esc2(top.evidence||0)+"/100 • "+esc2(top.label||"WATCH")+". This is an observation, not a forecast.</div>":"<div class='notice' style='margin-top:9px'>No setup currently clears the Assist focus threshold. Staying in WATCH is intentional when evidence is weak or incomplete.</div>")+"<div class='mr-sa2x-actions'><button type='button' class='btn' data-sa2x-refresh>↻ Re-scan</button>"+(top?"<button type='button' class='btn alt' data-sa2x-open='+"+"""+esc2(top.symbol)+"""+">📈 Open Focus</button><button type='button' class='btn alt' data-sa2x-alert='+"+"""+esc2(top.symbol)+"""+">🔔 Create Alert</button>":"")+"</div>";
+ x.querySelector("[data-sa2x-refresh]")?.addEventListener("click",()=>{if(typeof window.MaliRadarRunSmartScan43==="function")window.MaliRadarRunSmartScan43();else if(typeof window.renderSmartAssist==="function")window.renderSmartAssist()});
+ x.querySelector("[data-sa2x-open]")?.addEventListener("click",e=>{const sym=e.currentTarget.getAttribute("data-sa2x-open");try{if(window.MaliRadarMarketPro?.open){window.MaliRadarMarketPro.open(sym,"1M");return}if(window.details)window.details(sym)}catch(err){console.error(err)}});
+ x.querySelector("[data-sa2x-alert]")?.addEventListener("click",e=>{const sym=e.currentTarget.getAttribute("data-sa2x-alert");window.__maliRadarOpenSymbol=sym;if(typeof window.nav==="function")window.nav("alertsScreen");setTimeout(()=>{try{if(typeof window.alertForm==="function")window.alertForm(sym)}catch(err){console.error(err)}},80)});
+ }
+ let last=null;
+ function boot2(){render2();setInterval(()=>{const s=q2();if(s!==last){last=s;render2()}},1200)}
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot2,250));else setTimeout(boot2,250);
+ window.MaliRadarSmartAssist20={version:"2.0-cockpit",refresh:render2};
+})();
+
 // MALIRADAR 8.0 loader: the Command Center is a separate resilient module so the core scanner remains isolated.
 (()=>{if(document.getElementById("mr80-loader"))return;const s=document.createElement("script");s.id="mr80-loader";s.src="/maliradar-command-center.js?v=8.0";s.async=true;document.head.appendChild(s)})();
