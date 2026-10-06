@@ -29,7 +29,7 @@ async function enhance(sym){
  let q=quoteFor(s);if(!q){await new Promise(r=>setTimeout(r,250));q=quoteFor(s)}
  const engine=window.MaliRadarMarketIntelligence;if(!q||!engine)return;
  let a=[];try{const j=await api("/api/market-data/stock/"+encodeURIComponent(s)+"/candles?market="+encodeURIComponent(market())+"&range=1M&_mr="+Date.now());a=candles(j)}catch(e){}
- const r=derive(q,a,engine),old=document.getElementById("mr30");if(old)old.remove();
+ const shared=window.MaliRadarIntelligenceFusion?.getContext?.(s)||null; if(shared?.quote&&q==null)q=shared.quote; const r=derive(q,a,engine),old=document.getElementById("mr30");if(old)old.remove();
  const card=document.createElement("div");card.id="mr30";
  const cls=r.label.c==="positive"?"mr30-positive":r.label.c==="risk"?"mr30-risk":r.label.c==="limited"?"mr30-limited":"mr30-watch";
  card.innerHTML='<div class="h"><div><div class="t">🧠 Stock Intelligence</div><div class="sub">Shared evidence layer • observed conditions only</div></div><span class="badge '+cls+'">'+esc(r.label.t)+" • "+esc(r.label.conf)+'</span></div><div class="grid"><div class="stat"><span>SETUP SCORE</span><b class="score">'+r.score+'/100</b></div><div class="stat"><span>EVIDENCE</span><b>'+esc(r.label.conf)+'</b></div><div class="stat"><span>TREND</span><b>'+esc(r.trend)+'</b></div><div class="stat"><span>MOMENTUM</span><b>'+esc(r.momentum)+'</b></div><div class="stat"><span>DAY RANGE POSITION</span><b>'+esc(r.range)+'</b></div><div class="stat"><span>VOLUME</span><b>'+esc(r.vol)+'</b></div></div><div class="why"><b>Why this classification</b><br>'+r.reasons.map(x=>"◈ "+esc(x)).join("<br>")+'<br><br>Setup Score summarizes provider-backed observations. It is not a prediction, probability, or financial advice.</div>';
@@ -54,7 +54,7 @@ function install(){
    if(i?.open)return i.open(sym,"1M");
    if(typeof currentDetails==="function")return currentDetails(sym)
  };
- window.MaliRadarStockIntelligence={version:"3.2",open:sym=>window.details(sym),refresh:()=>enhance(window.__maliRadarOpenSymbol||"")};
+ window.MaliRadarStockIntelligence={version:"3.3-fusion",open:sym=>window.details(sym),refresh:()=>enhance(window.__maliRadarOpenSymbol||"")};
 }
 function boot(){install();setTimeout(install,800);setTimeout(install,1800)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
