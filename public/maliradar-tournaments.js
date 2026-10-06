@@ -53,5 +53,5 @@ async function openHistory(){
  try{const d=await api("/api/competitive/tournaments/history");modal("Tournament History",(d.history||[]).length?d.history.map(x=>"<div class='mr-t52event'><b>"+esc(x.title)+"</b><div class='mr-t52meta'>"+esc(x.region)+" • ended "+new Date(x.end).toLocaleDateString()+" • "+esc(x.count)+" entrants</div><div class='notice'>"+(x.rewards||[]).map(esc).join(" • ")+"</div></div>").join(""):"<div class='lb-note'>No completed tournaments yet.</div>")}catch(e){alert(e.message)}
 }
 window.MaliRadarTournaments={version:"5.2",refresh:render,openStandings,openBracket};
-function boot(){setTimeout(render,700)}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();setInterval(()=>{if(document.getElementById("leaderboardView"))render()},20000);
+function boot(){setTimeout(render,700)}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();setInterval(()=>{if(document.visibilityState==="visible"&&document.getElementById("leaderboardView")?.classList.contains("active"))render()},30000);
 })();
