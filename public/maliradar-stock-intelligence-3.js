@@ -46,8 +46,15 @@ function install(){
  wrap(window.MaliRadarMarketPro,"MarketPro");
  wrap(window.MaliRadarStockIntel,"StockIntel");
  const currentDetails=window.details;
- window.details=function(sym){window.__maliRadarOpenSymbol=local(sym);const p=window.MaliRadarMarketPro,i=window.MaliRadarStockIntel;if(p?.open&&!p.__mr31)return p.open(sym,"1M");if(i?.open)return i.open(sym,"1M");if(typeof currentDetails==="function")return currentDetails(sym)};
- window.MaliRadarStockIntelligence={version:"3.1",open:sym=>window.details(sym),refresh:()=>enhance(window.__maliRadarOpenSymbol||"")};
+ window.details=function(sym){
+   window.__maliRadarOpenSymbol=local(sym);
+   const p=window.MaliRadarMarketPro;
+   if(p?.open)return p.open(sym,"1M");
+   const i=window.MaliRadarStockIntel;
+   if(i?.open)return i.open(sym,"1M");
+   if(typeof currentDetails==="function")return currentDetails(sym)
+ };
+ window.MaliRadarStockIntelligence={version:"3.2",open:sym=>window.details(sym),refresh:()=>enhance(window.__maliRadarOpenSymbol||"")};
 }
 function boot(){install();setTimeout(install,800);setTimeout(install,1800)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
