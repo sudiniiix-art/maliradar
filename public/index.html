@@ -2993,11 +2993,16 @@ button{position:relative;overflow:hidden}
   }
   function renderSelect(){
     const sel=document.getElementById('mr45Symbol');if(!sel)return;
-    const list=rows(),saved=new Set(load().map(local));
-    sel.innerHTML=list.length?list.map(q=>{
+    const saved=new Set(load().map(local));
+    const list=rows();
+    const fallback=Object.values(window.maliRadarProviderQuotes||{}).filter(q=>q&&q.price!=null);
+    const merged=[...list,...fallback].reduce((a,q)=>{const s=local(q.localSymbol||q.symbol);if(s&&!a.some(x=>local(x.localSymbol||x.symbol)===s))a.push(q);return a},[]);
+    sel.innerHTML=merged.length?merged.map(q=>{
       const s=local(q.localSymbol||q.symbol);
       return '<option value="'+esc(s)+'">'+esc(q.name||s)+' — '+esc(s)+(saved.has(s)?' • added':'')+'</option>';
-    }).join(''):'<option value="">Provider directory unavailable</option>';
+    }).join(''):'<option value="">No provider symbols loaded</option>';
+    const st=document.getElementById('mr45Status');
+    if(st&&!list.length&&merged.length)st.textContent='Provider directory temporarily unavailable • using verified quote symbols instead.';
   }
   function render(){
     ensureCard();renderSelect();
@@ -3016,6 +3021,8 @@ button{position:relative;overflow:hidden}
     const items=load();
     if(!items.map(local).includes(s)){items.push(s);save(items)}
     render();
+    const status=document.getElementById('mr45Status');
+    if(status)status.textContent='Added '+s+' • saved locally and ready for provider monitoring.';
   }
   function remove(sym){save(load().filter(x=>local(x)!==local(sym)));render()}
   function open(sym){
