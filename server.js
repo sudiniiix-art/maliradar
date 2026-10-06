@@ -114,6 +114,41 @@ async function pushAlertSweep(){
 setInterval(()=>{pushAlertSweep().catch(()=>{})},60000);
 
 
+// News Intelligence 2.0 — server-side RSS aggregation.
+// Keeps live-news retrieval off the browser so CORS does not block the feed.
+app.get("/api/news",async(req,res)=>{
+  const market=String(req.query.market||"all").toLowerCase();
+  const q=String(req.query.query||"").trim();
+  const defaults={
+    all:"Kenya NSE stocks OR Safaricom OR KCB",
+    nse:"Kenya NSE stocks",
+    forex:"USD KES forex",
+    crypto:"crypto markets",
+    global:"global stock markets",
+    watchlist:q||"Kenya stocks"
+  };
+  const query=q||defaults[market]||defaults.all;
+  const rss="https://news.google.com/rss/search?q="+encodeURIComponent(query)+"&hl=en-KE&gl=KE&ceid=KE:en";
+  try{
+    const rr=await fetch(rss,{headers:{"User-Agent":"MaliRadar/2.0 news intelligence"}});
+    if(!rr.ok)throw new Error("News provider HTTP "+rr.status);
+    const xml=await rr.text();
+    const items=[...xml.matchAll(/<item>([\\s\\S]*?)<\\/item>/gi)].slice(0,30).map(m=>{
+      const z=m[1], val=k=>{const a=z.match(new RegExp("<"+k+"[^>]*>([\\s\\S]*?)<\\/"+k+">","i"));return a?String(a[1]).replace(/<!\\[CDATA\\[|\\]\\]>/g,"").trim():""};
+      const title=val("title"),link=val("link"),pub=val("pubDate"),desc=val("description"),source=val("source");
+      const clean=s=>String(s||"").replace(/<[^>]+>/g," ").replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\\s+/g," ").trim();
+      const t=clean(title+" "+desc).toLowerCase();
+      let category=market==="nse"?"nse":market==="forex"?"forex":market==="crypto"?"crypto":market==="global"?"global":"market";
+      if(/safaricom|scOM/i.test(t))asset="SCOM";else if(/kcb/i.test(t))asset="KCB";else if(/equity/i.test(t))asset="EQTY";else if(/eabl/i.test(t))asset="EABL";else if(/absa/i.test(t))asset="ABSA";else if(/usd\\s*[/:-]\\s*kes|forex|currency/i.test(t))asset="USD/KES";else if(/bitcoin|btc|ethereum|crypto/i.test(t))asset="BTC";else asset="MARKET";
+      return {title:clean(title),summary:clean(desc).slice(0,420),url:link,published:pub,source:clean(source)||"Google News",category,asset,time:pub?new Date(pub).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"}):"RECENT"};
+    }).filter(x=>x.title);
+    res.setHeader("Cache-Control","no-store");
+    res.json({ok:true,market,query,count:items.length,items,provider:"Google News RSS"});
+  }catch(e){
+    res.status(502).json({ok:false,error:"News provider unavailable",items:[]});
+  }
+});
+
 // Competitive profile + leaderboard beta. Uses the existing demo DB; no real-money data.
 app.post("/api/competitive/profile",(req,res)=>{
   const {id,name,region,xp,profit,ret,trades,achievements}=req.body||{};
