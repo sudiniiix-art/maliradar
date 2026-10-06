@@ -150,6 +150,6 @@ function boot(){
  document.addEventListener("click",e=>{const t=e.target.closest?.(".tabs button");if(t&&t.textContent.includes("Alerts"))setTimeout(render,80)});
  setInterval(()=>{if(document.visibilityState==="visible"&&document.getElementById("alerts")?.classList.contains("active")){evaluate();render()}},30000);
 }
-window.MaliRadarAlertCenter={version:"2.0",render,evaluate,markRead,clearHistory};
+window.MaliRadarAlertCenter={version:"2.0",render,evaluate,markRead,clearHistory};\nwindow.renderAlerts=render;\nwindow.checkAlerts=evaluate;
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,300));else setTimeout(boot,300);
 })();
