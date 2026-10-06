@@ -40,6 +40,79 @@ if (!fs.existsSync(dbFile)) {
 }
 function readDB(){ return JSON.parse(fs.readFileSync(dbFile,"utf8")); }
 function writeDB(db){ fs.writeFileSync(dbFile, JSON.stringify(db,null,2)); }
+function pushReady(){
+  return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+}
+let webPush=null;
+try{ webPush=require("web-push"); }catch(e){ console.warn("Web Push package unavailable; push notifications disabled until dependency is installed."); }
+if(webPush && pushReady()){
+  webPush.setVapidDetails(process.env.VAPID_SUBJECT||"mailto:admin@maliradar.app",process.env.VAPID_PUBLIC_KEY,process.env.VAPID_PRIVATE_KEY);
+}
+function pushDB(){
+  const db=readDB();
+  if(!Array.isArray(db.pushSubscriptions))db.pushSubscriptions=[];
+  return db;
+}
+app.get("/api/push/config",(req,res)=>{
+  res.json({enabled:!!(webPush&&pushReady()),publicKey:process.env.VAPID_PUBLIC_KEY||null});
+});
+app.post("/api/push/subscribe",(req,res)=>{
+  if(!(webPush&&pushReady()))return res.status(503).json({ok:false,error:"Push notifications are not configured on the server yet."});
+  const {clientId,subscription,alerts,enabled}=req.body||{};
+  if(!clientId||typeof clientId!=="string"||clientId.length>120||!subscription?.endpoint)return res.status(400).json({ok:false,error:"Invalid push subscription."});
+  const db=pushDB(), i=db.pushSubscriptions.findIndex(x=>x.clientId===clientId);
+  const item={clientId,subscription,alerts:Array.isArray(alerts)?alerts.filter(a=>a&&a.active).slice(0,100):[],enabled:enabled!==false,updatedAt:new Date().toISOString()};
+  if(i>=0)db.pushSubscriptions[i]=item;else db.pushSubscriptions.push(item);
+  writeDB(db);res.json({ok:true});
+});
+app.post("/api/push/unsubscribe",(req,res)=>{
+  const {clientId}=req.body||{}; if(!clientId)return res.status(400).json({ok:false});
+  const db=pushDB();db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.clientId!==clientId);writeDB(db);res.json({ok:true});
+});
+app.post("/api/push/sync",(req,res)=>{
+  const {clientId,alerts,enabled}=req.body||{};
+  if(!clientId)return res.status(400).json({ok:false});
+  const db=pushDB(),x=db.pushSubscriptions.find(x=>x.clientId===clientId);
+  if(!x)return res.status(404).json({ok:false,error:"Push subscription not found."});
+  x.alerts=Array.isArray(alerts)?alerts.filter(a=>a&&a.active).slice(0,100):[];
+  x.enabled=enabled!==false;x.updatedAt=new Date().toISOString();writeDB(db);res.json({ok:true});
+});
+async function pushAlertSweep(){
+  if(!(webPush&&pushReady()))return;
+  const db=pushDB(); let changed=false;
+  for(const item of db.pushSubscriptions){
+    if(!item.enabled||!item.subscription||!Array.isArray(item.alerts)||!item.alerts.length)continue;
+    const alerts=item.alerts, symbols=[...new Set(alerts.filter(a=>a.type!=="market"&&a.type!=="data"&&a.type!=="smart"&&a.symbol).map(a=>String(a.symbol).toUpperCase().split(".")[0]))];
+    if(!symbols.length)continue;
+    try{
+      const u="http://127.0.0.1:"+PORT+"/api/market-data/quotes?market=NSE&symbols="+encodeURIComponent(symbols.join(","))+"&_push="+Date.now();
+      const rr=await fetch(u); if(!rr.ok)continue;
+      const body=await rr.json(); const qs=Array.isArray(body?.quotes)?body.quotes:[];
+      const map=new Map(qs.map(q=>[String(q.localSymbol||q.symbol||"").toUpperCase().split(".")[0],q]));
+      const nowMs=Date.now();
+      for(const a of alerts){
+        if(!a.active||!a.symbol)continue;
+        const q=map.get(String(a.symbol).toUpperCase().split(".")[0]); if(!q)continue;
+        const price=Number(q.price),move=Number(q.changePct??q.change??q.percentChange);
+        if(!Number.isFinite(price))continue;
+        let hit=false,reason="";
+        if(a.type==="price")hit=a.operator==="below"?price<=Number(a.value):price>=Number(a.value),reason="Price reached KSh "+price.toFixed(2);
+        else if(a.type==="move")hit=Number.isFinite(move)&&(a.operator==="down"?move<=-Math.abs(Number(a.value)):move>=Math.abs(Number(a.value))),reason="Observed move "+move.toFixed(2)+"%";
+        if(!hit)continue;
+        const last=Date.parse(a.lastPushAt||""); const cooldown=Math.max(5,Number(a.cooldownMinutes)||30)*60000;
+        if(Number.isFinite(last)&&nowMs-last<cooldown)continue;
+        a.lastPushAt=new Date().toISOString();a.lastPushPrice=price;
+        const payload={title:"MaliRadar Alert • "+a.symbol,body:reason+" • "+String(a.priority||"WATCH").toUpperCase(),tag:"maliradar-"+a.id,url:"/"};
+        try{await webPush.sendNotification(item.subscription,JSON.stringify(payload),{TTL:300});}
+        catch(err){if(err?.statusCode===404||err?.statusCode===410){item.enabled=false;item.pushError="subscription expired";}else item.pushError=String(err?.message||err).slice(0,180);}
+        changed=true;
+      }
+    }catch(e){ item.pushError=String(e?.message||e).slice(0,180); }
+  }
+  if(changed)writeDB(db);
+}
+setInterval(()=>{pushAlertSweep().catch(()=>{})},60000);
+
 
 // Competitive profile + leaderboard beta. Uses the existing demo DB; no real-money data.
 app.post("/api/competitive/profile",(req,res)=>{
