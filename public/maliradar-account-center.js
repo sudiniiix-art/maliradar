@@ -27,7 +27,7 @@ const state=()=>{try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e)
 const save=x=>localStorage.setItem(KEY,JSON.stringify(x));
 function profileStats(){try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}"),h=Array.isArray(s.history)?s.history:[],q=window.maliRadarProviderQuotes||{},hold=s.hold||{};let value=Number(s.cash??100000);Object.keys(hold).forEach(k=>{const p=Number(q[String(k).toUpperCase()]?.price);if(Number.isFinite(p))value+=Number(hold[k]||0)*p});return{trades:h.length,value,profit:value-100000,returnPct:(value-100000)/100000*100}}catch(e){return{trades:0,value:100000,profit:0,returnPct:0}}}
 function sync(){const a=state(),rank=document.getElementById("profileRank"),name=document.getElementById("profileName"),av=document.getElementById("profileAvatar"),input=document.getElementById("profileUsername"),ai=document.getElementById("profileAvatarInput");if(name)name.textContent=a.name||"MaliRadar User";if(input&&document.activeElement!==input)input.value=a.name&&a.name!=="MaliRadar User"?a.name:"";if(ai&&document.activeElement!==ai)ai.value=a.profilePhoto?"":(a.avatar||"👤");if(av&&!a.profilePhoto)av.textContent=a.avatar||"👤";const xp=Number(a.xp||0);if(rank)rank.textContent=(xp>=1000?"Market Strategist":xp>=500?"Market Analyst":xp>=200?"Market Learner":"Market Rookie")+" • "+xp+" XP";const x=document.getElementById("accountXP");if(x)x.textContent=xp+" XP";const ach=document.getElementById("accountAchievements");if(ach)ach.textContent=String(Number(a.achievements||0));return{a,p:profileStats()}}
-window.saveProfile=function(){const a=state(),n=String(document.getElementById("profileUsername")?.value||"").trim(),av=String(document.getElementById("profileAvatarInput")?.value||"👤").trim().slice(0,2);if(n)a.name=n;a.avatar=av||"👤";save(a);sync();if(window.MaliRadarLeaderboardFriends7?.refresh)window.MaliRadarLeaderboardFriends7.refresh();if(window.MaliRadarCompetitiveProfile?.refresh)window.MaliRadarCompetitiveProfile.refresh()};
+window.saveProfile=function(){const a=state(),n=String(document.getElementById("profileUsername")?.value||"").trim();if(n)a.name=n;if(a.identityMode==="photo"&&a.profilePhoto){a.avatar="";}else{a.identityMode="avatar";a.profilePhoto="";localStorage.removeItem("maliradar_profile_photo_v1");a.avatar="👤";}save(a);sync();if(window.MaliRadarLeaderboardFriends7?.refresh)window.MaliRadarLeaderboardFriends7.refresh();if(window.MaliRadarCompetitiveProfile?.refresh)window.MaliRadarCompetitiveProfile.refresh()};
 window.MaliRadarAccountProfile={version:"2.1",get:state,save:sync,stats:profileStats,update:function(p){const a=state();Object.assign(a,p||{});save(a);sync()}};
 const boot=()=>sync();if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();setInterval(sync,3000);
 })();
@@ -46,7 +46,7 @@ function renderPhoto(){
  const remove=document.getElementById("mrRemoveProfilePhoto");if(remove)remove.style.display=src?"inline-block":"none";
 }
 function chooseAvatar(){
- const a=read();delete a.profilePhoto;localStorage.removeItem(PHOTO_KEY);a.avatar=(document.getElementById("profileAvatarInput")?.value||"👤").trim().slice(0,2)||"👤";save(a);renderPhoto();
+ const a=read();delete a.profilePhoto;localStorage.removeItem(PHOTO_KEY);a.identityMode="avatar";a.avatar="👤";save(a);renderPhoto();if(window.MaliRadarLeaderboardFriends7?.refresh)window.MaliRadarLeaderboardFriends7.refresh();
 }
 function choosePhoto(file){
  if(!file)return;
