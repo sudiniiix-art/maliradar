@@ -112,5 +112,5 @@
   function boot(){css();enhanceFriends();render()}
   window.MaliRadarSocialCompetition={version:"3.0",refresh:render,compare};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,700));else setTimeout(boot,700);
-  setInterval(()=>{enhanceFriends();render()},8000);
+  setInterval(()=>{if(document.visibilityState==="visible"&&document.getElementById("leaderboardView")?.classList.contains("active")){enhanceFriends();render()}},20000);
 })();
