@@ -178,7 +178,7 @@ function addPhotoUI(){
  if(!form||document.getElementById("mrProfilePhotoInput"))return;
  const wrap=document.createElement("div");
  wrap.style.margin="8px 0 12px";
- wrap.innerHTML='<label>Profile photo</label><input id="mrProfilePhotoInput" type="file" accept="image/*" capture="user" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#071016;color:var(--text);margin:6px 0 8px"><div id="mrProfilePhotoBox" style="display:none"><img id="mrProfilePhotoPreview" style="width:76px;height:76px;object-fit:cover;border-radius:50%;border:1px solid var(--line)"><button type="button" class="btn alt" id="mrRemoveProfilePhoto" style="margin-left:8px">Remove Photo</button></div><div class="muted">Choose a photo from your phone gallery. Your photo is stored locally on this device.</div>';
+ wrap.innerHTML='<label>Profile photo</label><input id="mrProfilePhotoInput" type="file" accept="image/*" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#071016;color:var(--text);margin:6px 0 8px"><div id="mrProfilePhotoBox" style="display:none"><img id="mrProfilePhotoPreview" style="width:76px;height:76px;object-fit:cover;border-radius:50%;border:1px solid var(--line)"><button type="button" class="btn alt" id="mrRemoveProfilePhoto" style="margin-left:8px">Remove Photo</button></div><div class="muted">Choose a photo from your phone gallery. Your photo is stored locally on this device.</div>';
  form.insertBefore(wrap,form.querySelector("button"));
  const input=wrap.querySelector("#mrProfilePhotoInput"), box=wrap.querySelector("#mrProfilePhotoBox"), preview=wrap.querySelector("#mrProfilePhotoPreview");
  input.onchange=()=>{
