@@ -1,6 +1,7 @@
 /* MaliRadar Account Center v1 — local identity + portable backup/restore */
 (function(){
   "use strict";
+  const injectFixStyle=()=>{if(document.getElementById("mr54FixCss"))return;const s=document.createElement("style");s.id="mr54FixCss";s.textContent="#mr54AccountCard #mr54Backup,#mr54AccountCard #mr54NewId,#mr54AccountCard #mr54Restore{font-weight:900;min-height:42px}#mr54AccountCard #mr54NewId{color:var(--text)!important;min-width:92px;display:inline-flex;align-items:center;justify-content:center}";document.head.appendChild(s)};
   const KEY="maliradar_account_v1";
   const STATE_KEYS=[
     "maliradar_v07_state",
@@ -90,6 +91,7 @@
   function mount(){
     const screen=document.getElementById("accountScreen");
     if(!screen||document.getElementById("mr54AccountCard"))return;
+    injectFixStyle();
     const card=document.createElement("div");
     card.className="card"; card.id="mr54AccountCard";
     card.innerHTML='<div class="row"><div><b>☁️ MaliRadar Account Center</b><div class="muted">Portable progress & device identity</div></div><span class="demo-badge">V1</span></div>'+
