@@ -65,7 +65,7 @@ function stockAvailable(sym){
 function openStock(sym,button){
  const s=String(sym||"").trim().toUpperCase();
  if(!stockAvailable(s)){
-  button.disabled=true;button.textContent="STOCK DATA UNAVAILABLE";return;
+  button.disabled=true;button.textContent="NO NSE STOCK LINK";return;
  }
  try{
   button.disabled=true;button.textContent="OPENING STOCK…";
