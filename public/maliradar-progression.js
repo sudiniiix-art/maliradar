@@ -218,8 +218,8 @@
     hookLeaderboard();
     decorateRows();
     refresh();
-    setInterval(()=>{renderAccount();decorateRows()},4000);
-    setInterval(refresh,15000);
+    setInterval(()=>{if(document.visibilityState==="visible"&&(document.getElementById("accountScreen")?.classList.contains("active")||document.getElementById("leaderboardView")?.classList.contains("active"))){renderAccount();decorateRows()}},12000);
+    setInterval(()=>{if(document.visibilityState==="visible"&&(document.getElementById("accountScreen")?.classList.contains("active")||document.getElementById("leaderboardView")?.classList.contains("active")))refresh()},30000);
   }
 
   window.MaliRadarProgression={version:"2.0",achievements:ACH,refresh,showProfile,renderAccount};
