@@ -140,7 +140,7 @@ app.get("/api/news",async(req,res)=>{
       const t=clean(title+" "+desc).toLowerCase();
       let category=market==="nse"?"nse":market==="forex"?"forex":market==="crypto"?"crypto":market==="global"?"global":"market";
       let asset="MARKET"; if(/safaricom|scOM/i.test(t))asset="SCOM";else if(/kcb/i.test(t))asset="KCB";else if(/equity/i.test(t))asset="EQTY";else if(/eabl/i.test(t))asset="EABL";else if(/absa/i.test(t))asset="ABSA";else if(/usd\\s*[/:-]\\s*kes|forex|currency/i.test(t))asset="USD/KES";else if(/bitcoin|btc|ethereum|crypto/i.test(t))asset="BTC";else asset="MARKET";
-      return {title:clean(title),summary:clean(desc).slice(0,420),url:link,published:pub,source:clean(source)||"Google News",category,asset,time:pub?new Date(pub).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"}):"RECENT"};
+      const cleanDesc=clean(desc); return {title:clean(title),summary:cleanDesc.slice(0,420),fullNews:cleanDesc,providerArticle:cleanDesc.length>420,published:pub,source:clean(source)||"Google News",category,asset,time:pub?new Date(pub).toLocaleTimeString("en-KE",{hour:"2-digit",minute:"2-digit"}):"RECENT"};
     }).filter(x=>x.title);
     res.setHeader("Cache-Control","no-store");
     res.json({ok:true,market,query,count:items.length,items,provider:"Google News RSS"});
