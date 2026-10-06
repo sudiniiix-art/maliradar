@@ -1364,6 +1364,25 @@ function registerMaliRadarMarketDataRoutes(app) {
     }
   );
 
+  // =====================================
+  // GLOBAL MARKET EXPANSION ENGINE
+  // =====================================
+  app.get('/api/market-data/global-markets',(req,res)=>{
+    const markets=[
+      {id:'ke',country:'Kenya',exchange:'NSE',name:'Nairobi Securities Exchange',currency:'KES',suffix:'.KE',assetClass:'EQUITIES'},
+      {id:'ng',country:'Nigeria',exchange:'NGX',name:'Nigerian Exchange',currency:'NGN',suffix:'.NG',assetClass:'EQUITIES'},
+      {id:'za',country:'South Africa',exchange:'JSE',name:'Johannesburg Stock Exchange',currency:'ZAR',suffix:'.ZA',assetClass:'EQUITIES'},
+      {id:'gh',country:'Ghana',exchange:'GSE',name:'Ghana Stock Exchange',currency:'GHS',suffix:'.GH',assetClass:'EQUITIES'},
+      {id:'eg',country:'Egypt',exchange:'EGX',name:'Egyptian Exchange',currency:'EGP',suffix:'.EG',assetClass:'EQUITIES'},
+      {id:'ma',country:'Morocco',exchange:'CSE',name:'Casablanca Stock Exchange',currency:'MAD',suffix:'.MA',assetClass:'EQUITIES'},
+      {id:'tz',country:'Tanzania',exchange:'DSE',name:'Dar es Salaam Stock Exchange',currency:'TZS',suffix:'.TZ',assetClass:'EQUITIES'},
+      {id:'ug',country:'Uganda',exchange:'USE',name:'Uganda Securities Exchange',currency:'UGX',suffix:'.UG',assetClass:'EQUITIES'},
+      {id:'rw',country:'Rwanda',exchange:'RSE',name:'Rwanda Stock Exchange',currency:'RWF',suffix:'.RW',assetClass:'EQUITIES'},
+      {id:'us',country:'United States',exchange:'US',name:'NYSE / Nasdaq',currency:'USD',suffix:'',assetClass:'EQUITIES'}
+    ];
+    res.json({version:'1.0',source:'MaliRadar global market registry',provider:'MyStocks Africa Sandbox',delayMinutes:15,markets});
+  });
+
 }
 
 
