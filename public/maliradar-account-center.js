@@ -160,3 +160,46 @@ const boot=()=>sync();
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 setInterval(sync,3000);
 })();
+(function(){
+"use strict";
+const PROFILE_KEY="maliradar_account_v1";
+const PHOTO_KEY="maliradar_profile_photo_v1";
+function read(){try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||"{}")}catch(e){return {}}}
+function save(a){localStorage.setItem(PROFILE_KEY,JSON.stringify(a))}
+function renderPhoto(){
+ const a=read(), src=a.profilePhoto||localStorage.getItem(PHOTO_KEY)||"";
+ const av=document.getElementById("profileAvatar");
+ if(av) av.innerHTML=src ? '<img src="'+String(src).replace(/"/g,"&quot;")+'" alt="Profile photo">' : (a.avatar||"👤");
+ let preview=document.getElementById("mrProfilePhotoPreview");
+ if(preview)preview.src=src||"";
+}
+function addPhotoUI(){
+ const form=document.querySelector("#accountScreen .profile-form");
+ if(!form||document.getElementById("mrProfilePhotoInput"))return;
+ const wrap=document.createElement("div");
+ wrap.style.margin="8px 0 12px";
+ wrap.innerHTML='<label>Profile photo</label><input id="mrProfilePhotoInput" type="file" accept="image/*" capture="user" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#071016;color:var(--text);margin:6px 0 8px"><div id="mrProfilePhotoBox" style="display:none"><img id="mrProfilePhotoPreview" style="width:76px;height:76px;object-fit:cover;border-radius:50%;border:1px solid var(--line)"><button type="button" class="btn alt" id="mrRemoveProfilePhoto" style="margin-left:8px">Remove Photo</button></div><div class="muted">Choose a photo from your phone gallery. Your photo is stored locally on this device.</div>';
+ form.insertBefore(wrap,form.querySelector("button"));
+ const input=wrap.querySelector("#mrProfilePhotoInput"), box=wrap.querySelector("#mrProfilePhotoBox"), preview=wrap.querySelector("#mrProfilePhotoPreview");
+ input.onchange=()=>{
+  const file=input.files&&input.files[0]; if(!file)return;
+  if(!file.type.startsWith("image/"))return;
+  if(file.size>5*1024*1024){alert("Please choose an image under 5 MB.");input.value="";return}
+  const rd=new FileReader();
+  rd.onload=()=>{
+   const src=String(rd.result||""); localStorage.setItem(PHOTO_KEY,src);
+   const a=read();a.profilePhoto=src;save(a);preview.src=src;box.style.display="flex";renderPhoto();
+  };
+  rd.readAsDataURL(file);
+ };
+ wrap.querySelector("#mrRemoveProfilePhoto").onclick=()=>{
+  const a=read();delete a.profilePhoto;save(a);localStorage.removeItem(PHOTO_KEY);input.value="";box.style.display="none";renderPhoto();
+ };
+ const src=read().profilePhoto||localStorage.getItem(PHOTO_KEY)||"";
+ if(src){preview.src=src;box.style.display="flex"}
+}
+function boot(){addPhotoUI();renderPhoto()}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+setTimeout(boot,800);
+setInterval(()=>{if(document.getElementById("accountScreen"))boot()},2500);
+})();
