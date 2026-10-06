@@ -51,9 +51,22 @@ function chooseAvatar(){
 function choosePhoto(file){
  if(!file)return;
  if(!file.type.startsWith("image/"))return;
- if(file.size>5*1024*1024){alert("Please choose an image under 5 MB.");return}
+ if(file.size>10*1024*1024){alert("Please choose an image under 10 MB.");return}
  const rd=new FileReader();
- rd.onload=()=>{const src=String(rd.result||""),a=read();a.profilePhoto=src;a.avatar="";save(a);localStorage.setItem(PHOTO_KEY,src);const ai=document.getElementById("profileAvatarInput");if(ai)ai.value="";renderPhoto()};
+ rd.onload=()=>{
+   const img=new Image();
+   img.onload=()=>{
+     const max=256,scale=Math.min(1,max/Math.max(img.width,img.height));
+     const w=Math.max(1,Math.round(img.width*scale)),h=Math.max(1,Math.round(img.height*scale));
+     const canvas=document.createElement("canvas");canvas.width=w;canvas.height=h;
+     const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0,w,h);
+     const src=canvas.toDataURL("image/jpeg",0.78);
+     const a=read();a.profilePhoto=src;a.avatar="";a.identityMode="photo";save(a);localStorage.setItem(PHOTO_KEY,src);
+     const ai=document.getElementById("profileAvatarInput");if(ai)ai.value="";renderPhoto();
+   };
+   img.onerror=()=>alert("Could not process that image. Please choose another photo.");
+   img.src=String(rd.result||"");
+ };
  rd.readAsDataURL(file);
 }
 function addPhotoUI(){
