@@ -34,9 +34,9 @@ function description(a,q){
 }
 function install(){
  css();
- const root=document.getElementById("mrAlertCenterMount");if(!root)return;
- let old=root.querySelector("#mrAlertIntel");
- if(!old){old=document.createElement("div");old.id="mrAlertIntel";old.className="card ai4";root.insertBefore(old,root.firstChild)}
+ const root=document.getElementById("mrAlertIntelMount")||document.getElementById("mrAlertCenterMount");if(!root)return;
+ let old=document.getElementById("mrAlertIntel");
+ if(!old){old=document.createElement("div");old.id="mrAlertIntel";old.className="card ai4";root.appendChild(old)}
  render();
  if(!window.__mrAI4RenderHook&&typeof window.renderAlerts==="function"){const base=window.renderAlerts;window.renderAlerts=function(){const r=base.apply(this,arguments);setTimeout(render,0);return r};window.__mrAI4RenderHook=true}
 }
