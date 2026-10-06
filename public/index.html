@@ -468,60 +468,8 @@ body.compact-header #smartAssistView{
 </section>
 
 
-<script>
-(function(){
-const stories=[
- {cat:"nse",asset:"SCOM",title:"Safaricom market update",time:"Today • 09:30",summary:"Demonstration market item showing how MaliRadar can connect an event with an affected listed company.",why:"The example illustrates how company-related information can be displayed beside market data.",tags:["SCOM","Telecom"]},
- {cat:"nse",asset:"KCB",title:"Banking sector event",time:"Today • 10:15",summary:"Demonstration item for a banking-sector development and its potential relevance to market monitoring.",why:"Sector information can help users understand the context around individual companies.",tags:["KCB","Banking"]},
- {cat:"global",asset:"MARKET",title:"Global markets watch",time:"Today • 11:05",summary:"Demonstration global-market headline showing how international events can appear in the feed.",why:"Global developments can be relevant context for market participants.",tags:["Global","Markets"]},
- {cat:"forex",asset:"USD/KES",title:"Forex monitor update",time:"Today • 11:40",summary:"Demonstration foreign-exchange event for the future Forex intelligence feed.",why:"Currency movements can affect businesses with foreign-currency exposure.",tags:["USD/KES","Forex"]},
- {cat:"crypto",asset:"BTC",title:"Crypto market monitor",time:"Today • 12:20",summary:"Demonstration crypto-market item for the future digital-asset intelligence section.",why:"It demonstrates the same source, time and affected-asset structure used across markets.",tags:["BTC","Crypto"]}
-];
-const events=[
- {time:"09:00",title:"Market session monitoring begins",asset:"NSE"},
- {time:"10:15",title:"Banking sector event",asset:"KCB"},
- {time:"11:40",title:"Forex monitor update",asset:"USD/KES"},
- {time:"12:20",title:"Crypto market monitor",asset:"BTC"}
-];
-let filter="all";
-function openNewsDetail(i){
- const s=stories[i]; const ov=document.getElementById("newsDetailOverlay");
- if(!ov||!s)return;
- ov.querySelector(".detail-type").textContent=s.cat.toUpperCase()+" INTELLIGENCE";
- ov.querySelector(".detail-asset").textContent=s.asset;
- ov.querySelector(".detail-title").textContent=s.title;
- ov.querySelector(".detail-time").textContent=s.time;
- ov.querySelector(".detail-summary").textContent=s.summary;
- ov.querySelector(".detail-why").textContent=s.why;
- ov.querySelector(".detail-source").textContent="MaliRadar demonstration feed";
- ov.style.display="flex";
-}
-function closeNewsDetail(){const x=document.getElementById("newsDetailOverlay");if(x)x.style.display="none";}
-window.openNewsDetail=openNewsDetail; window.closeNewsDetail=closeNewsDetail;
-function renderNews(){
- const feed=document.getElementById("newsFeed"); if(!feed)return;
- let arr=stories.map((s,i)=>({...s,idx:i})).filter(s=>filter==="all"||s.cat===filter||(filter==="watchlist"&&["SCOM","KCB"].includes(s.asset)));
- feed.innerHTML=arr.map(s=>`<article class="news-card">
-   <div class="news-kicker"><span class="news-type">${s.cat.toUpperCase()} • ${s.time}</span><span class="news-asset">${s.asset}</span></div>
-   <h3>${s.title}</h3>
-   <div class="news-tags">${s.tags.map(t=>`<span class="news-tag">${t}</span>`).join("")}</div>
-   <div class="news-summary">${s.summary}</div>
-   <div class="news-source"><span class="news-meta">MaliRadar Demo Feed</span><span class="news-open"><button onclick="openNewsDetail(${s.idx})">OPEN INTELLIGENCE ↗</button></span></div>
- </article>`).join("")||'<div class="news-card">No items match this filter.</div>';
-}
-function renderEvents(){
- const e=document.getElementById("eventRadar"); if(!e)return;
- e.innerHTML=events.map(x=>`<div class="event-line">
-   <div class="event-time">${x.time} • MARKET EVENT</div>
-   <div class="event-title">${x.title}</div>
-   <div class="event-asset">Affected area: ${x.asset}</div>
- </div>`).join("");
-}
-document.querySelectorAll("#newsFilters button").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.filter;document.querySelectorAll("#newsFilters button").forEach(x=>x.classList.remove("active"));b.classList.add("active");renderNews();}));
-window.renderMarketIntelligence=function(){renderNews();renderEvents();};
-renderNews();renderEvents();
-})();
-</script>
+<!-- News Intelligence 2.0 owns the News feed; legacy demo renderer removed. -->
+
 
 
 <div id="newsDetailOverlay" class="news-detail-overlay" onclick="if(event.target===this)closeNewsDetail()">
