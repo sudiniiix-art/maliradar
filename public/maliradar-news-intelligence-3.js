@@ -48,7 +48,7 @@ function renderPanel(){
     const x=impact(),move=x.move==null?"—":(x.move>0?"+":"")+x.move.toFixed(2)+"%";
     const price=x.price==null?"—":"KSh "+x.price.toFixed(2);
     p.innerHTML='<div class="detail-label">MARKET IMPACT • OBSERVED ONLY</div><div class="grid" style="margin-top:8px"><div class="metric">STATUS<b>'+esc(x.status)+'</b></div><div class="metric">CURRENT PRICE<b>'+esc(price)+'</b></div><div class="metric">OBSERVED MOVE<b>'+esc(move)+'</b></div><div class="metric">LINKED ASSET<b>'+esc(state.asset)+'</b></div></div><div class="detail-text" style="margin-top:12px">'+esc(x.copy)+'</div><div class="actions" style="margin-top:12px"><button type="button" class="btn" id="mrNews3Open">OPEN STOCK</button></div>';
-    const b=p.querySelector("#mrNews3Open");if(b){const s=local(state.asset);b.setAttribute("data-mr-news-symbol",s);b.onclick=()=>{const sym=String(b.getAttribute("data-mr-news-symbol")||"").trim().toUpperCase();if(!sym||sym==="MARKET"||sym==="USD/KES"||sym==="BTC")return;try{if(window.MaliRadarStockIntel&&typeof window.MaliRadarStockIntel.open==="function"){window.MaliRadarStockIntel.open(sym,"1M");return}if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==="function"){window.MaliRadarMarketPro.open(sym,"1M");return}if(typeof window.details==="function"){window.details(sym);return}if(window.MaliRadarProviderDetail&&typeof window.MaliRadarProviderDetail.open==="function"){window.MaliRadarProviderDetail.open(sym,"1M");return}}catch(err){console.error("MaliRadar News Open Stock failed",err)}}}
+    const b=p.querySelector("#mrNews3Open");if(b){const s=local(state.asset);b.setAttribute("data-mr-news-symbol",s);b.onclick=function(e){e.preventDefault();e.stopPropagation();const sym=String(this.getAttribute("data-mr-news-symbol")||"").trim().toUpperCase();if(!sym||sym==="MARKET"||sym==="USD/KES"||sym==="BTC")return;try{if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==="function"){window.MaliRadarMarketPro.open(sym,"1M");return}if(window.MaliRadarStockIntel&&typeof window.MaliRadarStockIntel.open==="function"){window.MaliRadarStockIntel.open(sym,"1M");return}if(typeof window.details==="function"){window.details(sym);return}}catch(err){console.error("MaliRadar News Open Stock failed",err)}}}
   }
 }
 function capture(){
@@ -76,8 +76,7 @@ function decorateCards(){
 function boot(){
   const ov=document.getElementById("newsDetailOverlay");if(!ov)return;
   const mo=new MutationObserver(()=>capture());mo.observe(ov,{attributes:true,attributeFilter:["style"]});
-  document.addEventListener("click",e=>{const b=e.target&&e.target.closest?e.target.closest("#mrNews3Open"):null;if(b){e.preventDefault();e.stopPropagation();const sym=String(b.getAttribute("data-mr-news-symbol")||"").trim().toUpperCase();if(sym&&sym!=="MARKET"&&sym!=="USD/KES"&&sym!=="BTC"){try{if(window.MaliRadarStockIntel&&typeof window.MaliRadarStockIntel.open==="function"){window.MaliRadarStockIntel.open(sym,"1M");return}if(window.MaliRadarMarketPro&&typeof window.MaliRadarMarketPro.open==="function"){window.MaliRadarMarketPro.open(sym,"1M");return}if(typeof window.details==="function"){window.details(sym);return}}catch(err){console.error("MaliRadar News Open Stock failed",err)}}return}setTimeout(()=>{decorateCards();capture()},80)},true);
-  setTimeout(decorateCards,300);
+    setTimeout(decorateCards,300);
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
 window.MaliRadarNewsIntelligence3={version:"3.0-key-moments",refresh:()=>{decorateCards();capture()}};
