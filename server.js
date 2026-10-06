@@ -151,12 +151,12 @@ app.get("/api/news",async(req,res)=>{
 
 // Competitive profile + leaderboard beta. Uses the existing demo DB; no real-money data.
 app.post("/api/competitive/profile",(req,res)=>{
-  const {id,name,region,xp,profit,ret,trades,achievements}=req.body||{};
+  const {id,name,profilePhoto,region,xp,profit,ret,trades,achievements}=req.body||{};
   if(!id||typeof id!=="string"||id.length>80) return res.status(400).json({error:"Invalid MaliRadar ID"});
   const db=readDB(); if(!Array.isArray(db.users)) db.users=[];
   let u=db.users.find(x=>x.id===id);
   if(!u){u={id,createdAt:new Date().toISOString()};db.users.push(u);}
-  u.name=String(name||"MaliRadar User").slice(0,24);
+  u.name=String(name||"MaliRadar User").slice(0,24);\n  if(typeof profilePhoto==="string") u.profilePhoto=profilePhoto.slice(0,700000);
   u.region=String(region||"global").slice(0,32);
   u.xp=Number.isFinite(Number(xp))?Number(xp):0;
   u.profit=Number.isFinite(Number(profit))?Number(profit):0;
@@ -171,7 +171,7 @@ app.get("/api/competitive/profile/search",(req,res)=>{
   if(q.length<2)return res.json({profiles:[]});
   const db=readDB();
   const profiles=(db.users||[]).filter(u=>String(u.id).toLowerCase().includes(q)||String(u.name||"").toLowerCase().includes(q)).slice(0,10)
-    .map(u=>({id:u.id,name:u.name,region:u.region}));
+    .map(u=>({id:u.id,name:u.name,profilePhoto:u.profilePhoto||"",region:u.region}));
   res.json({profiles});
 });
 app.post("/api/competitive/friends/add",(req,res)=>{
@@ -230,7 +230,7 @@ app.get("/api/competitive/leaderboard",(req,res)=>{
     rows=id?rows.filter(u=>ids.has(u.id)):[];
   }
   rows.sort((a,b)=>(Number(b[metric])||0)-(Number(a[metric])||0));
-  res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
+  res.json({source:"MaliRadar competitive beta",metric,scope,participants:rows.slice(0,100).map(u=>({id:u.id,name:u.name,profilePhoto:u.profilePhoto||"",region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements}))});
 });
 app.get("/api/competitive/challenges",(req,res)=>{
   const now=new Date();
