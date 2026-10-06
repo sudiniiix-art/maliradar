@@ -27,9 +27,19 @@ function css(){
 function seedLegacy(){
  const s=getAlerts(); let changed=false;
  s.alerts=s.alerts.map(a=>{
-   if(a&&a.id&&a.type)return a;
-   changed=true;
-   return {id:"legacy-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),symbol:String(a?.s||a?.symbol||"").toUpperCase(),type:"price",operator:"above",value:num(a?.p??a?.value)||0,priority:"watch",active:true,createdAt:now(),legacy:true};
+   if(!a)return a;
+   const x={...a};
+   if(!x.id){x.id="legacy-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);changed=true}
+   if(!x.symbol)x.symbol=String(x.s||"").toUpperCase();
+   if(x.type==="cross"){x.type="price";x.operator=String(x.dir||"above")==="below"?"below":"above";changed=true}
+   if(x.type==="move"&&!x.operator){x.operator=String(x.dir||"up")==="down"?"down":"above";changed=true}
+   if(!x.type){x.type="price";x.operator="above";x.value=num(x.p??x.value)||0;changed=true}
+   if(x.type==="price"&&!x.operator)x.operator=String(x.dir||"above")==="below"?"below":"above";
+   if((x.value==null||!Number.isFinite(Number(x.value)))&&x.p!=null)x.value=num(x.p)||0;
+   if(x.priority==null)x.priority="watch";
+   if(x.active==null)x.active=true;
+   if(!x.createdAt)x.createdAt=now();
+   return x;
  });
  if(changed)save(s);
  return s;
