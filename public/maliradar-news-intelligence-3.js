@@ -7,11 +7,32 @@ function resolveAsset(raw,title,summary){
  const a=local(raw);
  if(["SCOM","KCB","EQTY","EABL","ABSA"].includes(a))return a;
  const t=String((title||"")+" "+(summary||"")).toLowerCase();
- if(/safaricom/.test(t))return "SCOM";
+ if(/safaricom|\bscom\b/.test(t))return "SCOM";
  if(/\bkcb\b|kenya commercial bank/.test(t))return "KCB";
- if(/equity bank|equity group/.test(t))return "EQTY";
+ if(/equity bank|equity group|\beqty\b/.test(t))return "EQTY";
  if(/eabl|east african breweries/.test(t))return "EABL";
- if(/absa bank/.test(t))return "ABSA";
+ if(/absa bank|\babsa\b/.test(t))return "ABSA";
+ if(/co-operative bank|co-op bank|cooperative bank|\bcoop\b/.test(t))return "COOP";
+ if(/ncba group|ncba bank|\bncba\b/.test(t))return "NCBA";
+ if(/standard chartered|\bscbk\b/.test(t))return "SCBK";
+ if(/i&m group|i&m bank|i\&m|\bimh\b/.test(t))return "IMH";
+ if(/kenya pipeline|\bkpc\b/.test(t))return "KPC";
+ if(/kenya power|\bkplc\b/.test(t))return "KPLC";
+ if(/kengen|kenya electricity generating|\bkegn\b/.test(t))return "KEGN";
+ if(/nation media|\bnmg\b/.test(t))return "NMG";
+ if(/kenya airways|\bkq\b/.test(t))return "KQ";
+ if(/jubilee holdings|\bjub\b/.test(t))return "JUB";
+ if(/diamond trust|dtb kenya|\bdtk\b/.test(t))return "DTK";
+ if(/hf group|\bhfck\b/.test(t))return "HFCK";
+ if(/cic group|\bcic\b/.test(t))return "CIC";
+ if(/stanbic|\bsbic\b/.test(t))return "SBIC";
+ if(/british american tobacco|\bbat\b/.test(t))return "BAT";
+ if(/totalenergies kenya|\btotl\b/.test(t))return "TOTL";
+ if(/bamburi cement|\bbamb\b/.test(t))return "BAMB";
+ if(/crown paints|\bcrwn\b/.test(t))return "CRWN";
+ if(/bank of baroda|\bbob\b/.test(t))return "BOB";
+ if(/bank of africa kenya|\bboa\b/.test(t))return "BOA";
+ if(/boc kenya|\bboc\b/.test(t))return "BOC";
  return a||"MARKET";
 }
 
