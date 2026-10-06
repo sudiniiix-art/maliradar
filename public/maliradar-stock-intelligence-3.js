@@ -1,0 +1,52 @@
+(()=>{"use strict";
+const ID="mr30css",MOD="MaliRadarStockIntelligence30";
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
+const local=s=>String(s||"").toUpperCase().split(".")[0];
+const pct=q=>num(q?.changePct??q?.change??q?.percentChange);
+const market=()=>{try{const r=window.getMaliRegion?.()||{};return({ke:"NSE",ng:"NGX",za:"JSE",gh:"GSE",eg:"EGX",ma:"CSE",tz:"DSE",ug:"USE",rw:"RSE",us:"US"})[r.id]||r.market||"NSE"}catch(e){return"NSE"}};
+const api=p=>fetch(p,{cache:"no-store",headers:{Accept:"application/json"}}).then(async r=>{const j=await r.json().catch(()=>null);if(!r.ok)throw Error(j?.error||("HTTP "+r.status));return j});
+const candles=j=>(Array.isArray(j?.candles)?j.candles:Array.isArray(j?.data)?j.data:Array.isArray(j)?j:[]).map(x=>({t:x.timestamp??x.time??x.date,p:num(x.close??x.c??x.price),o:num(x.open??x.o),h:num(x.high??x.h),l:num(x.low??x.l),v:num(x.volume??x.v)})).filter(x=>x.p!=null);
+function css(){if(document.getElementById(ID))return;const s=document.createElement("style");s.id=ID;s.textContent="#mr30{margin-top:12px;padding:12px;border:1px solid rgba(53,224,177,.18);border-radius:15px;background:rgba(255,255,255,.025)}#mr30 .h{display:flex;justify-content:space-between;gap:8px;align-items:center}#mr30 .t{font-weight:900;font-size:15px}#mr30 .sub{font-size:9px;color:var(--muted);margin-top:2px}#mr30 .badge{font-size:9px;padding:5px 7px;border-radius:999px;border:1px solid rgba(255,255,255,.12)}#mr30 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:9px}#mr30 .stat{padding:8px;border-radius:10px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06)}#mr30 .stat span{display:block;font-size:8px;color:var(--muted)}#mr30 .stat b{display:block;margin-top:3px;font-size:11px}#mr30 .score{font-size:25px;font-weight:900}#mr30 .positive{color:#65e6b7}.mr30-watch{color:#ffe08a}.mr30-risk{color:#ff9aa5}.mr30-limited{color:#b9c7d6}#mr30 .why{margin-top:9px;padding:9px;border-left:2px solid rgba(53,224,177,.45);font-size:9px;line-height:1.5;color:var(--muted)}#mr30 .why b{color:inherit}";document.head.appendChild(s)}
+function derive(q,a,engine){
+ const p=pct(q), score=typeof engine?.score==="function"?engine.score(q):50;
+ const label=typeof engine?.label==="function"?engine.label(score,q):{t:"WATCH",c:"watch",conf:"LIMITED"};
+ let trend="—",momentum="—",range="—",vol="—";
+ if(a.length>=2){const n=a.length,short=a.slice(Math.max(0,n-5)),long=a.slice(Math.max(0,n-20));const av=x=>x.reduce((z,d)=>z+d.p,0)/x.length;const sa=av(short),la=av(long);trend=sa>la*1.002?"UP":sa<la*.998?"DOWN":"FLAT";const first=a[Math.max(0,n-6)]?.p,last=a[n-1]?.p;momentum=first?((last-first)/first*100).toFixed(2)+"%":"—"}
+ const h=num(q?.high??q?.dayHigh),l=num(q?.low??q?.dayLow),price=num(q?.price);
+ if(price!=null&&h!=null&&l!=null&&h>=l){range=((price-l)/(h-l)*100);range=Math.max(0,Math.min(100,range)).toFixed(0)+"%"}
+ const v=num(q?.volume);if(v!=null)vol=v.toLocaleString();
+ const reasons=[];
+ if(p!=null)reasons.push("Observed move "+(p>=0?"+":"")+p.toFixed(2)+"%.");
+ if(trend!=="—")reasons.push("Recent candle trend: "+trend+".");
+ if(momentum!=="—")reasons.push("Recent momentum: "+momentum+".");
+ if(range!=="—")reasons.push("Price position within reported day range: "+range+".");
+ if(v!=null)reasons.push("Provider reported volume: "+vol+".");
+ if(label.conf==="LIMITED")reasons.push("Confidence is limited because supporting evidence is incomplete.");
+ else reasons.push("Classification uses the shared Market Intelligence evidence engine.");
+ return{score,label,trend,momentum,range,vol,reasons};
+}
+async function enhance(sym){
+ const mb=document.getElementById("mb");if(!mb)return;
+ const s=local(sym), q=(window.maliRadarProviderQuotes||{})[s]||Object.values(window.maliRadarProviderQuotes||{}).find(x=>local(x?.symbol)===s);
+ const engine=window.MaliRadarMarketIntelligence;
+ if(!q||!engine)return;
+ let a=[];try{const j=await api("/api/market-data/stock/"+encodeURIComponent(s)+"/candles?market="+encodeURIComponent(market())+"&range=1M&_mr="+Date.now());a=candles(j)}catch(e){}
+ const r=derive(q,a,engine), old=document.getElementById("mr30");if(old)old.remove();
+ const card=document.createElement("div");card.id="mr30";
+ card.innerHTML='<div class="h"><div><div class="t">🧠 Stock Intelligence</div><div class="sub">Shared evidence layer • observed conditions only</div></div><span class="badge '+esc(r.label.c)+'">'+esc(r.label.t)+' • '+esc(r.label.conf)+'</span></div><div class="grid"><div class="stat"><span>SETUP SCORE</span><b class="score">'+r.score+'/100</b></div><div class="stat"><span>EVIDENCE</span><b>'+esc(r.label.conf)+'</b></div><div class="stat"><span>TREND</span><b>'+esc(r.trend)+'</b></div><div class="stat"><span>MOMENTUM</span><b>'+esc(r.momentum)+'</b></div><div class="stat"><span>DAY RANGE POSITION</span><b>'+esc(r.range)+'</b></div><div class="stat"><span>VOLUME</span><b>'+esc(r.vol)+'</b></div></div><div class="why"><b>Why this classification</b><br>'+r.reasons.map(x=>"◈ "+esc(x)).join("<br>")+'<br><br>Setup Score summarizes provider-backed observations. It is not a prediction, probability, or financial advice.</div>';
+ mb.appendChild(card);
+}
+function init(){
+ css();
+ const apiObj=window.MaliRadarStockIntel;if(!apiObj||typeof apiObj.open!=="function")return;
+ if(apiObj[MOD])return;
+ const base=apiObj.open;
+ const enhanced=async function(sym,range){await base.call(this,sym,range);setTimeout(()=>enhance(sym),80)};
+ apiObj.open=enhanced;apiObj[MOD]=true;apiObj.baseOpen=base;
+ window.MaliRadarStockIntel=apiObj;
+ window.details=function(sym){enhanced(sym,"1M")};
+ window.MaliRadarStockIntelligence={version:"3.0",open:enhanced,refresh:()=>enhance(window.__maliRadarOpenSymbol||"")};
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(init,500),{once:true});else setTimeout(init,500);
+})();
