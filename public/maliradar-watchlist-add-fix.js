@@ -40,6 +40,6 @@ function patch(){
   }
   fallbackOptions();
 }
-function boot(){patch();setInterval(patch,2000)}
+function boot(){patch();const root=document.getElementById("markets");if(root&&!window.__mr83AddObserver){window.__mr83AddObserver=new MutationObserver(()=>patch());window.__mr83AddObserver.observe(root,{childList:true,subtree:true});}setInterval(patch,10000)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",()=>setTimeout(boot,500));else setTimeout(boot,500);
 })();
