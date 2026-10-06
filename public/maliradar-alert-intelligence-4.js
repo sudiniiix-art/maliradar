@@ -38,7 +38,7 @@ function install(){
  let old=root.querySelector("#mrAlertIntel");
  if(!old){old=document.createElement("div");old.id="mrAlertIntel";old.className="card ai4";root.insertBefore(old,root.firstChild)}
  render();
- if(!window.__mrAI4Observer){window.__mrAI4Observer=new MutationObserver(()=>{if(document.getElementById("mrAlertIntel"))setTimeout(render,0)});window.__mrAI4Observer.observe(root,{childList:true})}
+ if(!window.__mrAI4RenderHook&&typeof window.renderAlerts==="function"){const base=window.renderAlerts;window.renderAlerts=function(){const r=base.apply(this,arguments);setTimeout(render,0);return r};window.__mrAI4RenderHook=true}
 }
 function render(){
  const root=document.getElementById("mrAlertIntel");if(!root)return;
