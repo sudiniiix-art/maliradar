@@ -1,43 +1,20 @@
 (()=>{"use strict";
-const local=s=>String(s||"").toUpperCase().split(".")[0];
+const local=s=>String(s||"").toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,"").split(".")[0];
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:null};
-function quotes(){return window.maliRadarProviderQuotes||{}}
-function quote(sym){const k=local(sym),a=quotes();return a[k]||a[k+".KE"]||Object.values(a).find(x=>local(x?.symbol||x?.localSymbol)===k)||null}
-function scanRows(){return Array.isArray(window.MaliRadarSmartScan?.results)?window.MaliRadarSmartScan.results:[]}
+const now=()=>Date.now();
+const quoteStore=()=>window.maliRadarProviderQuotes||{};
+function quote(sym){const k=local(sym),a=quoteStore();return a[k]||a[k+".KE"]||Object.values(a).find(x=>local(x?.symbol||x?.localSymbol)===k)||null}
 function alerts(){try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}");return Array.isArray(s.alerts)?s.alerts.filter(x=>x&&x.active):[]}catch(e){return[]}}
-function readNews(){
- const feed=document.getElementById("newsFeed");
- const cards=feed?[...feed.querySelectorAll("article.news-card")]:[];
- return cards.map(card=>({
-  asset:local(card.querySelector(".news-asset")?.textContent),
-  sentiment:String(card.querySelector(".news-tag")?.textContent||"NEUTRAL").toUpperCase(),
-  eventType:String(card.querySelectorAll(".news-tag")[1]?.textContent||"MARKET").toUpperCase(),
-  title:card.querySelector("h3")?.textContent||""
- })).filter(x=>x.asset);
-}
-function readScanner(){
- const root=document.getElementById("smartAssistView")||document;
- const text=root.textContent||"";
- const m=text.match(/SCANNED\\s*(\\d+)/i);
- const buy=text.match(/BUY SETUPS\\s*(\\d+)/i);
- const sell=text.match(/SELL \/ RISK\\s*(\\d+)/i);
- const rows=document.querySelectorAll("#saBuyList .stock,#saSellList .stock,#saWatchList .stock");
- return {scanned:m?Number(m[1]):rows.length,buy:buy?Number(buy[1]):document.querySelectorAll("#saBuyList .stock").length,sell:sell?Number(sell[1]):document.querySelectorAll("#saSellList .stock").length};
-}
-function refresh(){
- const news=readNews();
- const scans=readScanner();
- const active=alerts().length;
- const events=news.filter(x=>x.eventType&&x.eventType!=="MARKET");
- const host=document.getElementById("newsView")||document.getElementById("smartAssistView"); if(!host)return;
- let el=document.getElementById("mrFusion");
- if(!el){el=document.createElement("div");el.id="mrFusion";host.insertBefore(el,host.firstElementChild?.nextElementSibling||host.firstChild)}
- el.style.cssText="margin:10px 0 12px;padding:14px;border-radius:18px;background:linear-gradient(145deg,rgba(10,27,39,.96),rgba(6,13,23,.96));border:1px solid rgba(56,200,255,.22);font-size:12px";
- el.innerHTML="<b>🧬 Intelligence Fusion</b><div style=\"color:var(--muted);margin-top:4px\">News + Event Radar + Whole-Market Scanner + Alerts</div><div style=\"display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px\"><span>NEWS<br><b>"+news.length+"</b></span><span>EVENTS<br><b>"+events.length+"</b></span><span>SCANNED<br><b>"+scans.scanned+"</b></span><span>ALERTS<br><b>"+active+"</b></span></div><div style=\"margin-top:9px;color:var(--muted)\">Scanner: "+scans.buy+" buy / "+scans.sell+" sell. Combined evidence is observational, not predictive.</div>";
- decorateNews();
-}
-function decorateNews(){const feed=document.getElementById("newsFeed");if(!feed)return;feed.querySelectorAll("article.news-card").forEach(card=>{if(card.querySelector(".mrFusionContext"))return;const sym=local(card.querySelector(".news-asset")?.textContent);if(!sym||sym==="MARKET")return;const z=scanRows().find(x=>local(x.symbol||x.ticker)===sym);const p=quote(sym);const mv=num(p?.changePct??p?.change??p?.percentChange);const n=(window.MaliRadarNewsIntelligence2?.getState?.()?.items||[]).filter(x=>local(x.asset)===sym).length;const a=alerts().filter(x=>local(x.symbol)===sym).length;const bits=[];if(z?.score!=null)bits.push("Setup "+z.score+"/100");if(mv!=null)bits.push("Move "+(mv>=0?"+":"")+mv.toFixed(2)+"%");if(n)bits.push(n+" news");if(a)bits.push(a+" alert"+(a===1?"":"s"));if(bits.length){const e=document.createElement("div");e.className="mrFusionContext";e.style.cssText="margin-top:9px;padding:8px 9px;border-radius:10px;border:1px solid rgba(56,200,255,.12);background:rgba(56,200,255,.04);font-size:10px";e.textContent="🧬 "+bits.join(" • ");card.appendChild(e)}})}
-function boot(){refresh();setInterval(refresh,3000)}
+function scannerRows(){return Array.isArray(window.MaliRadarSmartScan?.results)?window.MaliRadarSmartScan.results:[]}
+function newsRows(){const feed=document.getElementById("newsFeed");return feed?[...feed.querySelectorAll("article.news-card")].map(card=>({asset:local(card.querySelector(".news-asset")?.textContent),sentiment:String(card.querySelector(".news-tag")?.textContent||"NEUTRAL").toUpperCase(),eventType:String(card.querySelectorAll(".news-tag")[1]?.textContent||"MARKET").toUpperCase(),title:card.querySelector("h3")?.textContent||""})).filter(x=>x.asset):[]}
+function scanSummary(){const root=document.getElementById("smartAssistView")||document,text=root.textContent||"";const m=text.match(/SCANNED\s*(\d+)/i),b=text.match(/BUY SETUPS\s*(\d+)/i),r=text.match(/SELL \/ RISK\s*(\d+)/i);return{scanned:m?Number(m[1]):scannerRows().length,buy:b?Number(b[1]):document.querySelectorAll("#saBuyList .stock").length,sell:r?Number(r[1]):document.querySelectorAll("#saSellList .stock").length}}
+function context(sym){const s=local(sym),q=quote(s),rows=scannerRows(),z=rows.find(x=>local(x?.symbol||x?.ticker)===s)||null,n=newsRows().filter(x=>local(x.asset)===s),a=alerts().filter(x=>local(x.symbol)===s),mv=num(q?.changePct??q?.change??q?.percentChange);return{symbol:s,quote:q||null,setupScore:num(z?.score),scanner:z,movePct:mv,newsCount:n.length,positiveNews:n.filter(x=>x.sentiment==="POSITIVE").length,riskNews:n.filter(x=>x.sentiment==="RISK").length,eventCount:n.filter(x=>x.eventType&&x.eventType!=="MARKET").length,alerts:a.length,alertItems:a,news:n,observedAt:now()}}
+function snapshot(){const news=newsRows(),sc=scanSummary(),as=alerts();return{version:"2.0",observedAt:now(),newsCount:news.length,eventCount:news.filter(x=>x.eventType&&x.eventType!=="MARKET").length,scanner:sc,activeAlerts:as.length,items:news,events:news.filter(x=>x.eventType&&x.eventType!=="MARKET"),alerts:as}}
+function decorateNews(){const feed=document.getElementById("newsFeed");if(!feed)return;feed.querySelectorAll("article.news-card").forEach(card=>{const sym=local(card.querySelector(".news-asset")?.textContent);if(!sym||sym==="MARKET")return;const c=context(sym),bits=[];if(c.setupScore!=null)bits.push("Setup "+c.setupScore+"/100");if(c.movePct!=null)bits.push("Move "+(c.movePct>=0?"+":"")+c.movePct.toFixed(2)+"%");if(c.newsCount)bits.push(c.newsCount+" news");if(c.eventCount)bits.push(c.eventCount+" event"+(c.eventCount===1?"":"s"));if(c.alerts)bits.push(c.alerts+" alert"+(c.alerts===1?"":"s"));let e=card.querySelector(".mrFusionContext");if(!bits.length){if(e)e.remove();return}if(!e){e=document.createElement("div");e.className="mrFusionContext";e.style.cssText="margin-top:9px;padding:8px 9px;border-radius:10px;border:1px solid rgba(56,200,255,.12);background:rgba(56,200,255,.04);font-size:10px";card.appendChild(e)}e.textContent="🧬 "+bits.join(" • ")})}
+function render(){const host=document.getElementById("newsView")||document.getElementById("smartAssistView");if(!host)return;let el=document.getElementById("mrFusion");if(!el){el=document.createElement("div");el.id="mrFusion";host.insertBefore(el,host.firstElementChild?.nextElementSibling||host.firstChild)}const x=snapshot();el.style.cssText="margin:10px 0 12px;padding:14px;border-radius:18px;background:linear-gradient(145deg,rgba(10,27,39,.96),rgba(6,13,23,.96));border:1px solid rgba(56,200,255,.22);font-size:12px";el.innerHTML='<div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b>🧬 Intelligence Fusion 2.0</b><span style="font-size:9px;color:var(--muted)">SHARED EVIDENCE</span></div><div style="color:var(--muted);margin-top:4px">News + Events + Scanner + Alerts + Stock Intelligence</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:10px"><span>NEWS<br><b>'+x.newsCount+'</b></span><span>EVENTS<br><b>'+x.eventCount+'</b></span><span>SCANNED<br><b>'+x.scanner.scanned+'</b></span><span>ALERTS<br><b>'+x.activeAlerts+'</b></span></div><div style="margin-top:9px;color:var(--muted)">Scanner: '+x.scanner.buy+' buy / '+x.scanner.sell+' sell. Evidence is observational, provider-backed and non-predictive.</div>';decorateNews()}
+let timer=null;
+function refresh(){render();window.__maliRadarFusionSnapshot=snapshot()}
+function boot(){refresh();if(timer)clearInterval(timer);timer=setInterval(refresh,8000)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
-window.MaliRadarIntelligenceFusion={version:"1.0",refresh};
+window.MaliRadarIntelligenceFusion={version:"2.0",refresh,getContext:context,getSnapshot:snapshot};
 })();
