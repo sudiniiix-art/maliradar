@@ -646,8 +646,23 @@ body.compact-header #smartAssistView{
   function analyze(r,pack){
     const q=r.quote||{},a=pack.rows,meta=pack.meta||{};
     if(!a.length){
-      r.quality="INSUFFICIENT";r.evidence=10;r.trend="NO HISTORY";r.momentum="NO HISTORY";r.consistency=null;r.volatility=null;
-      r.reasons=["Verified quote available, but no candles were returned for "+intelTf+".","No historical classification was applied.","Evidence quality: INSUFFICIENT."];
+      // Keep statistics useful when provider history is temporarily unavailable.
+      // This is a quote-backed daily observation, NOT historical momentum.
+      const day=num(r.day), pos=num(r.pos);
+      const hasDay=day!=null, hasRange=pos!=null;
+      r.score=Math.round(clamp(50+(hasDay?clamp(day*4,-28,28):0)+(hasRange?clamp((pos-50)*.10,-5,5):0),0,100));
+      r.trend=hasDay?(day>0.25?"DAILY UP":day<-0.25?"DAILY DOWN":"DAILY FLAT"):"QUOTE ONLY";
+      r.momentum=hasDay?(day>0.25?"POSITIVE":day<-0.25?"NEGATIVE":"MIXED"):"QUOTE ONLY";
+      r.consistency=null;r.volatility=null;r.trendPct=day;r.momPct=day;r.drawdown=null;
+      r.evidence=hasDay&&hasRange?50:hasDay?40:20;
+      r.quality=r.evidence>=50?"MEDIUM":r.evidence>=40?"LOW":r.evidence>=20?"QUOTE ONLY":"INSUFFICIENT";
+      r.reasons=[
+        "Verified provider quote available.",
+        hasDay?"Daily move used as a quote-backed momentum proxy: "+(day>=0?"+":"")+day.toFixed(2)+"%.":"Daily move unavailable.",
+        hasRange?"Price position in the reported day range: "+pos.toFixed(0)+"%.":"Day range unavailable.",
+        "Historical candles are currently unavailable for this symbol/timeframe.",
+        "Quote-backed statistics are lower confidence than historical analysis."
+      ];
       return;
     }
     const closes=a.map(x=>x.p), first=closes[0],last=closes[closes.length-1];
