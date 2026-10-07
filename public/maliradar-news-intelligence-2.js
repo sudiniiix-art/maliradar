@@ -33,9 +33,11 @@ function refreshTape(){
  if(!tape)return;
  const items=tapeItems();
  if(!items.length){
-  tape.innerHTML='<div class="mr-news-tape-label">MARKET MOVES</div><div class="mr-news-tape-track"><span class="mr-news-tape-empty">Awaiting verified stock changes…</span></div>';
+  tape.style.display="none";
+  tape.innerHTML="";
   return;
  }
+ tape.style.display="flex";
  const chips=items.map(q=>{
   const sym=local(q?.localSymbol||q?.symbol);
   const move=Number(q?.changePct??q?.change??q?.percentChange);
