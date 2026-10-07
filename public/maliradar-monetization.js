@@ -3,6 +3,7 @@
 "use strict";
 const KEY="maliradar_entitlements_v1";
 const VERSION=1;
+const PRICING={currency:"KES",monthly:99,yearly:999};
 const DEFAULT={version:VERSION,tier:"free",pro:false,source:"none",verifiedAt:null,expiresAt:null};
 const FEATURES={
  advancedAssist:"Advanced Smart Assist",
@@ -42,7 +43,7 @@ function modal(){
 '<div id="mrProSheet"><div class="row"><div class="mrpro-orb">MR</div><button class="btn alt" id="mrProClose">✕</button></div>'+
 '<div class="mrpro-title">MALIRADAR PRO</div><div class="mrpro-sub">Go deeper without turning MaliRadar into a promise machine. Pro unlocks advanced tools, analysis depth and personalization — not guaranteed profits.</div>'+
 '<div class="mrpro-grid"><div class="mrpro-plan"><h4>FREE</h4><div>Core paper trading<br>Learning academy<br>Basic market intelligence<br>Basic alerts<br>Competition & profile</div></div>'+
-'<div class="mrpro-plan pro"><div class="row"><h4 style="margin:0">PRO</h4><span class="mrpro-badge">ADVANCED</span></div><div>Advanced Smart Assist<br>Advanced market scanner<br>Expanded alerts<br>Extended analysis<br>Expanded global tools</div></div></div>'+
+'<div class="mrpro-plan pro"><div class="row"><h4 style="margin:0">PRO</h4><span class="mrpro-badge">ADVANCED</span></div><div>Advanced Smart Assist<br>Advanced market scanner<br>Expanded alerts<br>Extended analysis<br>Expanded global tools</div><div style="margin-top:9px;font-size:14px;font-weight:950;color:var(--a)">KSh 99 / month</div><div style="font-size:10px;color:var(--muted)">or KSh 999 / year</div></div></div>'+
 '<div id="mrProFeatureNote" class="mrpro-note">Pro is designed around better tools and education, never guaranteed returns.</div>'+
 '<div class="mrpro-list">'+Object.values(FEATURES).map(x=>'<div class="mrpro-feature"><span class="mrpro-check">◆</span><div><b>'+x+'</b><br><span class="muted">Available in the Pro architecture.</span></div></div>').join("")+'</div>'+
 '<div class="mrpro-note">Billing is not connected in this release. The app will never show a fake purchase success. When Google Play Billing is connected, verified entitlements will activate Pro automatically.</div>'+
@@ -62,6 +63,6 @@ function mountAccount(){
 }
 function refresh(){const p=plan(),b=document.getElementById("mrProPlanBadge"),c=document.getElementById("mrProAccountCopy"),btn=document.getElementById("mrProOpen");if(b){b.textContent=p.label;b.classList.toggle("pro",p.pro)}if(c)c.textContent=p.pro?"MaliRadar Pro is active through a verified Google Play entitlement.":"You are on the free plan. Core paper trading, learning and intelligence remain available.";if(btn)btn.textContent=p.pro?"View Pro":"Explore Pro";}
 function init(){css();modal();const kick=()=>{mountAccount();refresh()};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",kick,{once:true});else kick();setTimeout(kick,1000);document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open();});}
-window.MaliRadarEntitlements={version:VERSION,get:read,plan,isPro,open,close,requirePro:gate,features:FEATURES,refresh};
+window.MaliRadarEntitlements={version:VERSION,get:read,plan,isPro,open,close,requirePro:gate,features:FEATURES,pricing:PRICING,refresh};
 init();
 })();
