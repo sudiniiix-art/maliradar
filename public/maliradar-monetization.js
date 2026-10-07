@@ -29,7 +29,7 @@ function gate(feature,action){
  if(typeof action==="function")window._mrProPendingAction=action;
  return false;
 }
-function css(){
+function themeStyles(){if(document.getElementById("mrPlanThemes"))return;const s=document.createElement("style");s.id="mrPlanThemes";s.textContent=".mr-plan-card{position:relative;overflow:hidden;border-radius:18px;border:1px solid rgba(255,255,255,.1);padding:14px}.mr-plan-free{border-color:rgba(72,255,150,.48);box-shadow:0 0 24px rgba(72,255,150,.18),inset 0 0 25px rgba(72,255,150,.04)}.mr-plan-free .mr-plan-accent{color:#5cffaa;text-shadow:0 0 12px rgba(72,255,150,.7)}.mr-plan-founder{border-color:rgba(185,95,255,.58);box-shadow:0 0 30px rgba(185,95,255,.25),inset 0 0 30px rgba(185,95,255,.06)}.mr-plan-founder .mr-plan-accent{color:#d29aff;text-shadow:0 0 14px rgba(185,95,255,.8)}.mr-plan-premium{border-color:rgba(255,202,72,.62);box-shadow:0 0 34px rgba(255,202,72,.27),inset 0 0 32px rgba(255,202,72,.06)}.mr-plan-premium .mr-plan-accent{color:#ffd75a;text-shadow:0 0 15px rgba(255,202,72,.85)}";document.head.appendChild(s)}function css(){
  if(document.getElementById("mrProCss"))return;
  const s=document.createElement("style");s.id="mrProCss";s.textContent=
 "#mrProModal{display:none;position:fixed;inset:0;z-index:10050;background:rgba(1,5,10,.82);backdrop-filter:blur(10px);align-items:flex-end;justify-content:center}"+
@@ -60,7 +60,7 @@ function mountAccount(){
  document.getElementById("mrProOpen").onclick=open;
 }
 function refresh(){const p=plan(),b=document.getElementById("mrProPlanBadge"),c=document.getElementById("mrProAccountCopy"),btn=document.getElementById("mrProOpen");if(b){b.textContent=p.label;b.classList.toggle("pro",p.pro)}if(c)c.textContent=p.pro?"MaliRadar Pro is active through a verified Google Play entitlement.":"You are on the free plan. Core paper trading, learning and intelligence remain available.";if(btn)btn.textContent=p.pro?"View Pro":"Explore Pro";}
-function init(){css();modal();const kick=()=>{mountAccount();refresh()};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",kick,{once:true});else kick();setTimeout(kick,1000);document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open();});}
+function init(){themeStyles();css();modal();const kick=()=>{mountAccount();refresh()};if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",kick,{once:true});else kick();setTimeout(kick,1000);document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open();});}
 window.MaliRadarEntitlements={version:VERSION,get:read,plan,isPro,open,close,requirePro:gate,features:FEATURES,pricing:PRICING,refresh};
 init();
 })();
