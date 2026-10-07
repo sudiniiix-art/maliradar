@@ -139,7 +139,15 @@ body.compact-header #smartAssistView #saWorkspace{padding-bottom:18px}
 .legal-actions .btn{flex:1}
 #legalAccept:disabled{opacity:.38;cursor:not-allowed;filter:saturate(.4)}
 .legal-version{font-size:10px;color:var(--muted);margin-top:10px}</style>
-<style>
+<style id="mr-top-market-status-css">
+.top-market-status{display:flex;align-items:center;gap:9px;margin:8px 0 0;padding:9px 11px;border:1px solid rgba(53,224,177,.28);border-radius:11px;background:linear-gradient(90deg,rgba(53,224,177,.09),rgba(56,200,255,.05));min-height:20px}
+.top-market-status.closed{border-color:rgba(255,204,102,.28);background:rgba(255,204,102,.045)}
+.top-market-status .top-pulse{width:9px;height:9px;border-radius:50%;background:var(--a);box-shadow:0 0 11px var(--a);flex:0 0 auto}
+.top-market-status.closed .top-pulse{background:#ffcc66;box-shadow:0 0 11px #ffcc66}
+.top-market-status .top-label{font-size:12px;font-weight:900;letter-spacing:.5px}
+.top-market-status .top-meta{font-size:10px;margin-left:auto;white-space:nowrap}
+@media(max-width:380px){.top-market-status .top-meta{font-size:9px}.top-market-status{padding:8px 9px}}
+</style><style>
 .market-status{display:flex;align-items:center;gap:8px;margin:10px 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#09151c}
 .market-status .pulse{width:9px;height:9px;border-radius:50%;background:var(--a);box-shadow:0 0 10px var(--a)}
 .market-status.closed .pulse{background:#ffcc66;box-shadow:0 0 10px #ffcc66}
@@ -306,7 +314,7 @@ body.compact-header #smartAssistView{
   };
 })();
 </script>
-<div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v8.0</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
+<div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v8.0</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready</span></div><div id="topMarketStatus" class="top-market-status" aria-live="polite"><span class="top-pulse"></span><b class="top-label">MARKET STATUS</b><span class="top-meta">NSE • -- EAT</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
 <section id="home" class="screen active" data-tour="home"><div class="card hero" data-tour-target="homeHero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">PAPER SIMULATION</span></div><div class="grid"><div class="metric">Cash<b>KSh <span id="cash">100,000</span></b></div><div class="metric">Total P/L<b id="pl">KSh 0</b></div></div></div><div class="card"><div class="row"><div><b>Market Radar</b></div><span class="muted">Provider snapshot</span></div><div id="radar"></div></div><div class="card"><b>Market Status</b><div id="homeMarketStatus"></div><p class="notice">Market status follows the device clock. Home radar displays verified provider quotes only. If provider data is unavailable, no placeholder or illustrative price is shown.</p></div><div id="mr90Mount"></div><div id="mr91Mount"></div></section>
 <section id="markets" class="screen" data-tour="markets"><div class="card" data-tour-target="marketsCard">
   <div class="row"><div><b>Markets</b><div class="muted">Provider-backed market directory</div></div><span class="badge">🟡 15-MIN DELAYED</span></div>
@@ -1026,6 +1034,13 @@ function renderMarketStatus(){
   const html=marketStatusHTML();
   if($("homeMarketStatus"))$("homeMarketStatus").innerHTML=html;
   if($("marketStatusBar"))$("marketStatusBar").innerHTML=html;
+  const top=$("topMarketStatus");
+  if(top){
+    const open=marketIsOpen();
+    const now=new Date();
+    top.className="top-market-status"+(open?"":" closed");
+    top.innerHTML='<span class="top-pulse"></span><b class="top-label">'+(open?"MARKET OPEN":"MARKET CLOSED")+'</b><span class="top-meta">NSE • '+now.toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})+' EAT</span>';
+  }
 }
 function renderRadar(){
   const provider=Object.values(window.maliRadarProviderQuotes||{}).filter(q=>q&&q.price!=null).slice(0,3);
@@ -2066,6 +2081,13 @@ function deleteTrustData(){
     var b=document.getElementById('marketStatusBar');
     if(a)a.innerHTML=html;
     if(b)b.innerHTML=html;
+    var top=document.getElementById('topMarketStatus');
+    if(top){
+      var open=window.marketIsOpen();
+      var now=new Date();
+      top.className='top-market-status'+(open?'':' closed');
+      top.innerHTML='<span class="top-pulse"></span><b class="top-label">'+(open?'MARKET OPEN':'MARKET CLOSED')+'</b><span class="top-meta">NSE • '+now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+' EAT</span>';
+    }
   };
 
   document.addEventListener('DOMContentLoaded',function(){
