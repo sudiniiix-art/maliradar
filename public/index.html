@@ -304,7 +304,22 @@ body.compact-header #smartAssistView{
   padding-top:0!important;
   scroll-margin-top:0!important;
 }
-</style></head><body><script id="mr-stock-directory-bridge">
+</style>
+<style id="mr-news-tape-foundation">
+.mr-news-market-tape{display:flex!important;align-items:center!important;gap:10px!important;overflow:hidden!important;margin:0 0 10px!important;padding:9px 11px!important;border:1px solid rgba(56,200,255,.2)!important;border-radius:12px!important;background:linear-gradient(90deg,rgba(56,200,255,.07),rgba(53,224,177,.045))!important;min-height:36px!important;box-sizing:border-box!important}
+.mr-news-tape-label{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:1px;white-space:nowrap}
+.mr-news-tape-live{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a)}
+.mr-news-tape-window{min-width:0;overflow:hidden;flex:1}
+.mr-news-tape-track{display:flex;align-items:center;gap:9px;min-width:max-content}
+.mr-news-tape-item{font-size:10px;white-space:nowrap}
+.mr-news-tape-item strong.up{color:var(--a)}.mr-news-tape-item strong.down{color:var(--r)}.mr-news-tape-item strong.flat{color:var(--muted)}
+.mr-news-tape-sep{color:#55727b;font-size:9px}.mr-news-tape-empty{font-size:10px;color:var(--muted);white-space:nowrap}
+@keyframes mrNewsTape{from{transform:translateX(0)}to{transform:translateX(-45%)}}
+.mr-news-tape-track{animation:mrNewsTape 24s linear infinite}
+.mr-news-market-tape:hover .mr-news-tape-track{animation-play-state:paused}
+@media(prefers-reduced-motion:reduce){.mr-news-tape-track{animation:none}}
+</style>
+</head><body><script id="mr-stock-directory-bridge">
 (function(){
   // Top-level `let STOCKS` is a global lexical binding, not window.STOCKS.
   // Expose the live array safely so provider modules can see the same directory.
@@ -469,6 +484,10 @@ body.compact-header #smartAssistView{
 
 
 <section id="newsView" class="screen" data-tour="news">
+  <div id="mrNewsMarketTape" class="mr-news-market-tape" aria-live="polite">
+    <div class="mr-news-tape-label"><span class="mr-news-tape-live"></span>STOCK MOVES</div>
+    <div class="mr-news-tape-window"><div class="mr-news-tape-track"><span class="mr-news-tape-empty">Awaiting verified stock changes…</span></div></div>
+  </div>
   <div class="section-head" data-tour-target="newsHead">
     <div>
       <div class="eyebrow">MALIRADAR INTELLIGENCE</div>
