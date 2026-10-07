@@ -1,5 +1,5 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MaliRadar v1.6.1</title><style>
-:root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
+:root{--bg:#071016;--card:#0d1a22;--line:#1b3944;--text:#e9f5f7;--muted:#8ea8af;--a:#35e0b1;--r:#ff6b7a;--c:#38c8ff}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% -10%,#12303a,#071016 48%);color:var(--text);font-family:Arial,sans-serif}.app{max-width:480px;margin:auto;min-height:100vh;padding-bottom:70px}header{padding:17px 14px 10px;position:sticky;top:0;background:#071016ee;backdrop-filter:blur(12px);z-index:5;border-bottom:1px solid var(--line)}.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.brand{font-size:23px;font-weight:900}.brand span{color:var(--a)}.sub,.muted{color:var(--muted);font-size:12px}.status{font-size:11px;color:var(--muted);margin-top:8px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#65747a;margin-right:5px}.dot.on{background:var(--a);box-shadow:0 0 9px var(--a)}.search{margin-top:9px;background:#0b151c;border:1px solid var(--line);border-radius:12px;padding:10px;color:var(--muted)}.search input{width:90%;border:0;outline:0;background:transparent;color:var(--text)}main{padding:13px}.screen{display:none}.screen.active{display:block}.card{background:linear-gradient(145deg,#0d1a22,#09151c);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}.hero{border-color:#1d5962}.big{font-size:26px;font-weight:900;margin-top:3px}.badge{font-size:10px;color:var(--a);border:1px solid #1f6659;border-radius:20px;padding:5px 8px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{background:#09151c;border:1px solid var(--line);border-radius:11px;padding:10px;color:var(--muted);font-size:11px}.metric b{display:block;color:var(--text);margin-top:5px}.stock{padding:12px 0;border-top:1px solid var(--line)}.stock:first-child{border-top:0}.green{color:var(--a)}.red{color:var(--r)}button{font:inherit}.btn{border:0;border-radius:10px;background:linear-gradient(90deg,#20cfa0,#38c8ff);color:#041015;font-weight:900;padding:10px 13px}.btn.alt{background:#10232c;color:var(--text);border:1px solid var(--line)}.btn.red{background:#35171e;color:#ff9aa5;border:1px solid #65303a}.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}.chart{height:145px;margin-top:12px;border:1px solid var(--line);border-radius:13px;background:#071116;position:relative;overflow:hidden}.chart:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 28px,#17333d 29px),repeating-linear-gradient(90deg,transparent 0 58px,#17333d 59px);opacity:.45}.line{position:absolute;left:5%;right:5%;bottom:22%;height:58%;border-bottom:2px solid var(--a);transform:skewY(-9deg);filter:drop-shadow(0 0 6px var(--a))}.tabs{position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:auto;background:#071016f5;border-top:1px solid var(--line);display:flex;z-index:20;padding-bottom:env(safe-area-inset-bottom);contain:layout paint}.tabs button{flex:1;border:0;background:transparent;color:var(--muted);padding:11px 2px 9px;font-size:11px;min-width:0}.app{padding-bottom:calc(70px + env(safe-area-inset-bottom))}.tabs button.active{color:var(--a);font-weight:900}.modal{display:none;position:fixed;inset:0;background:#000b;z-index:50;align-items:flex-end}.modal.show{display:flex}.sheet{background:#0c1820;border:1px solid var(--line);width:100%;max-width:480px;margin:auto;border-radius:20px 20px 0 0;padding:18px;max-height:85vh;overflow:auto}.notice{font-size:12px;line-height:1.5;color:#a9c0c5}
 .alert-item{padding:12px 0;border-top:1px solid var(--line)}
 .alert-item:first-child{border-top:0}
 .severity{font-size:9px;letter-spacing:.7px;border:1px solid var(--line);border-radius:20px;padding:4px 7px;color:var(--muted)}
@@ -251,8 +251,8 @@ function chart(T){x.clearRect(0,0,W,H);const o=cl(T,.1,.5)*(1-cl(T,3.85,4.55));i
  x.globalAlpha=o;x.fillStyle=col;x.fillRect(W-66,y-10,66,20);x.fillStyle='#001a10';x.fillText((1.0700+cur*.0420).toFixed(4),W-62,y+4);x.globalAlpha=1}
 let t0,raf;
 function frame(now){const T=(now-t0)/1000;chart(T);
- const a=eo(cl(T,3.45,4.35)),lg=intro$('lg'),sw=intro$('sw');
- const sc=.9+.1*a+.025*cl(T,4.0,5.0);intro$('wrap').style.transform=`translate(-50%,-50%) scale(${sc})`;
+ const a=eo(cl(T,4.45,5.15)),lg=intro$('lg'),sw=intro$('sw');
+ const sc=.9+.1*a+.025*cl(T,4.75,5.45);intro$('wrap').style.transform=`translate(-50%,-50%) scale(${sc})`;
  // Keep the logo completely hidden while the forex graph is still drawing.
  lg.style.opacity=a;lg.style.filter=a<1?`blur(${(1-a)*14}px)`:'none';
  intro$('glow').style.opacity=.95*eo(cl(T,3.35,4.6))*(1+.08*Math.sin(T*3))/1.08;
@@ -284,7 +284,7 @@ intro$('rp').onclick=play;play();
         if(welcome)welcome.style.display='none';
         if(intro){
           intro.style.opacity='0';
-          setTimeout(function(){intro.style.display='none';window.__MR_AFTER_STARTUP&&window.__MR_AFTER_STARTUP();},650);
+          setTimeout(function(){intro.style.display='none';},650);
         }
       },600);
     },2200);
@@ -302,7 +302,7 @@ intro$('rp').onclick=play;play();
   };
 })();
 </script>
-<div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v1.6.1</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" data-tour-target="alertsButton" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" data-tour-target="accountButton" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready • DEMO DATA</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
+<div class="app"><header><div class="row"><div><div class="brand">Mali<span>Radar</span></div><div class="sub">NSE market intelligence • v1.6.2</div></div><div class="actions" style="margin:0"><button class="btn alt" onclick="focusSearch()">🔎 Search</button><button class="btn alt" onclick="alerts()">🔔 Alerts <span id="alertCount"></span></button><button class="btn alt" onclick="account()">Account</button></div></div><div class="status"><span id="dot" class="dot"></span><span id="status">MaliRadar system ready • DEMO DATA</span></div><div id="globalSearchWrap" class="search-wrap"><div class="search">🔎 <div class="muted" style="margin-bottom:5px">Universal Search</div><input id="q" placeholder="Search stocks..." oninput="universalSearch()"></div><div id="globalSearchResults" class="search-results-panel"></div></div></header><main>
 <section id="home" class="screen active" data-tour="home"><div class="card hero" data-tour-target="homeHero"><div class="row"><div><div class="muted">Paper portfolio</div><div class="big">KSh <span id="total">100,000</span></div></div><span class="badge">DEMO DATA</span></div><div class="grid"><div class="metric">Cash<b>KSh <span id="cash">100,000</span></b></div><div class="metric">Total P/L<b id="pl">KSh 0</b></div></div></div><div class="card"><div class="row"><div><b>Market Radar</b></div><span class="muted">Illustrative</span></div><div id="radar"></div></div><div class="card"><b>Market Status</b><div id="homeMarketStatus"></div><p class="notice">Market status follows the device clock. Prices in this prototype are DEMO DATA until a legitimate market-data source is integrated.</p></div></section>
 <section id="markets" class="screen" data-tour="markets"><div class="card" data-tour-target="marketsCard"><div class="row"><b>Markets</b><span class="muted">NSE demo universe</span></div><div id="marketStatusBar"></div><div class="card">
   <div class="row"><b>All NSE Securities</b><span id="universeCount" class="muted"></span></div>
@@ -323,7 +323,7 @@ intro$('rp').onclick=play;play();
 </div>
 <div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div><div class="metric">Cash<b id="portfolioCash">KSh 100,000</b></div><div class="metric">Sectors<b id="sectorCount">0</b></div></div></div>
 <div class="card"><div class="row"><b>Portfolio Snapshot</b><span class="muted">Paper trading</span></div><div class="grid"><div class="metric">Largest Position<b id="largestPosition">—</b></div><div class="metric">Current Value<b id="currentValueMetric">KSh 100,000</b></div><div class="metric">Unrealized P/L<b id="unrealizedMetric">KSh 0</b></div><div class="metric">Avg Cost<b id="avgCostMetric">—</b></div></div></div>
-<div class="card"><div class="row"><b>Holdings</b><button class="btn alt" data-tour-target="modeButton" onclick="togglePortfolioMode()" id="portfolioModeBtn">👶 Beginner</button></div><div id="holdings"></div><div id="portfolioExplain" class="intel-note" style="margin-top:10px">P/L compares your paper position value with its estimated cost basis. No real money is involved.</div></div>
+<div class="card"><div class="row"><b>Holdings</b><button class="btn alt" onclick="togglePortfolioMode()" id="portfolioModeBtn">👶 Beginner</button></div><div id="holdings"></div><div id="portfolioExplain" class="intel-note" style="margin-top:10px">P/L compares your paper position value with its estimated cost basis. No real money is involved.</div></div>
 <div class="card"><div class="row"><b>Sector Allocation</b><span class="muted">By current value</span></div><div id="sectorAllocation"></div></div>
 <div class="card"><div class="row"><b>Transactions</b><span class="muted">Paper activity</span></div><div id="history"></div></div>
 </section>
@@ -363,9 +363,9 @@ intro$('rp').onclick=play;play();
 <div class="card"><div class="row"><b>🎨 Appearance</b><span class="muted">Choose your view</span></div><div class="theme-buttons"><button id="themeDark" onclick="setTheme('dark')">🌙 Dark</button><button id="themeLight" onclick="setTheme('light')">☀️ Light</button><button id="themeSystem" onclick="setTheme('system')">📱 System</button></div></div>
 
 <div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL DEMO</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
-<div class="card" data-tour-target="accountProgress"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
+<div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
 <div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local demo</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
-<div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Guided Tour</button><button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></div>
+<div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Guided Tour<button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></button></div>
 <button class="btn red" onclick="resetDemo()">Reset local demo</button>
 </section><!-- v1.3 Leaderboards -->
 <section id="leaderboardView" class="screen" data-tour="leaderboard">
@@ -484,7 +484,7 @@ intro$('rp').onclick=play;play();
     </div>
     <span class="news-badge">🟡 DEMO NEWS</span>
   </div>
-  <div class="news-filters" id="newsFilters" data-tour-target="newsFilters">
+  <div class="news-filters" id="newsFilters">
     <button class="active" data-filter="all">All</button>
     <button data-filter="watchlist">My Watchlist</button>
     <button data-filter="nse">NSE</button>
@@ -493,7 +493,7 @@ intro$('rp').onclick=play;play();
     <button data-filter="global">Global</button>
   </div>
   <div id="newsFeed" class="news-grid"></div>
-  <div class="event-panel" data-tour-target="eventRadar">
+  <div class="event-panel">
     <div class="row"><strong>⏱️ Event Radar</strong><span class="news-badge">LIVE LAYOUT</span></div>
     <div class="event-scroll" id="eventRadar"></div>
   </div>
@@ -997,7 +997,8 @@ function saveAlert(type){
   if(!value||value<=0)return alert("Enter a valid alert value.");
   let x=stock(sym);
   state.alerts.unshift({
-    id:Date.now()+Math.random(),    type,sym,dir,value,created:new Date().toLocaleString(),
+    id:Date.now()+Math.random(),
+    type,sym,dir,value,created:new Date().toLocaleString(),
     active:true,lastPrice:x[3],triggered:false
   });
   save();closeM();renderAlerts();updateAlertCount();
@@ -1078,7 +1079,7 @@ function migrateV06(){
   }
 }
 async function ping(){try{let r=await fetch("/api/health");if(r.ok){$("dot").classList.add("on");$("status").textContent="MaliRadar system online • DEMO DATA"}else throw new Error("offline")}catch(e){$("status").textContent="MaliRadar system ready • DEMO DATA"}}
-migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000);
+migrateV06();render();ping();checkAlerts();
 </script>
 
 <script id="v17-account-js">
@@ -1096,62 +1097,84 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
  window.addEventListener('load',()=>setTimeout(renderAccount,50));
 })();
 </script>
-<script id="v20-interactive-tutorial">
+<script id="v161-onboarding-js">
 (function(){
-  const KEY='maliradar_tutorial_v20_complete';
-  const overlay=document.getElementById('tourOverlay');
-  const title=document.getElementById('tourTitle');
-  const text=document.getElementById('tourText');
-  const tip=document.getElementById('tourTip');
-  const progress=document.getElementById('tourProgress');
-  const next=document.getElementById('tourNext');
-  const skip=document.getElementById('tourSkip');
-  if(!overlay||!title||!text||!tip||!progress||!next||!skip)return;
-  const steps=[
-    {id:'home',target:'homeHero',title:'Command Center',guide:'Home is your live starting point: paper portfolio value, cash, total P/L, Market Radar and market status. This is your quick scan before you dive deeper.',tap:'Tap the highlighted Home panel to begin.'},
-    {id:'search',target:'universalSearch',title:'Universal Search',guide:'Search across the MaliRadar stock universe from one place. Search a symbol or company name to jump toward the security you want.',tap:'Tap the highlighted search area.'},
-    {id:'markets',target:'marketsCard',title:'Markets',guide:'Markets is the security browser. Explore the NSE universe, filter by sector, watch securities, create alerts, and open a stock for deeper intelligence.',tap:'Tap Markets below.'},
-    {id:'stock',target:'marketsCard',title:'Stock Intelligence',guide:'Open any available stock to see provider-backed quote data, delayed status, chart history, OHLC information, data-source evidence, Paper Buy/Sell and alerts. Missing data is reported instead of invented.',tap:'First tap Markets, then use “Open Stock” if it is available. When ready, press Next.'},
-    {id:'portfolio',target:'portfolioHero',title:'Paper Portfolio',guide:'Your portfolio is a risk-free simulation. Track cash, holdings, invested value, sector allocation, transactions and paper-trading P/L.',tap:'Tap Portfolio below.'},
-    {id:'mode',target:'modeButton',title:'Beginner / Expert Mode',guide:'Use the mode control inside Portfolio to switch how much detail the interface explains. It is designed to let a new trader start simple and grow into deeper information.',tap:'Tap the highlighted mode control.'},
-    {id:'alerts',target:'alertsButton',title:'Alert Command Center',guide:'Create paper alerts for price targets, percentage moves and crossing levels. Triggered alerts are recorded locally in this demo.',tap:'Tap the highlighted Alerts button.'},
-    {id:'learn',target:'learnHero',title:'MaliRadar Academy',guide:'Learn is the education engine: Beginner, Intermediate and Expert paths, lessons, missions, quizzes, XP and achievements.',tap:'Tap Learn below.'},
-    {id:'rank',target:'leaderboardHead',title:'Leaderboards',guide:'Rank separates learning XP from simulated-profit, return and trading-activity statistics. Global, Kenya, Friends and time-period filters are available.',tap:'Tap Rank below.'},
-    {id:'news',target:'newsHead',title:'Market Intelligence News',guide:'News brings market and company information into one feed. Use filters for NSE, Forex, Crypto, Global or your watchlist.',tap:'Tap News below.'},
-    {id:'events',target:'eventRadar',title:'Event Radar',guide:'Event Radar is the timeline layer beneath the news feed. It is designed to connect events with the assets and sectors they may relate to.',tap:'Press Next to inspect Event Radar.'},
-    {id:'assist',target:'assistHero',title:'Smart Assist',guide:'Smart Assist provides educational market analysis and demo signals. It is not a financial adviser, and its analysis should never be treated as a guaranteed prediction.',tap:'Tap Assist below.'},
-    {id:'account',target:'accountHero',title:'Account Center',guide:'Account is your control room for profile, avatar, appearance, region and market selection, learning progress, privacy/data controls and the guided-tour replay.',tap:'Tap Account below.'},
-    {id:'theme',target:'accountProgress',title:'Personalize & Control',guide:'Your Account Center stores local demo preferences such as theme and learning progress. Region selection lets MaliRadar adapt the primary market as more legitimate integrations are added.',tap:'Press Next to continue.'},
-    {id:'done',target:'accountHero',title:'MALIRADAR SYSTEM TOUR COMPLETE',guide:'You now know the major MALIRADAR systems: Home, Search, Markets, Stock Intelligence, Portfolio, Modes, Alerts, Learning, Rankings, News, Event Radar, Smart Assist and Account controls.',tap:'Press ENTER MALIRADAR to finish.'}
-  ];
-  let i=0,phase='tap',started=false,current=null,handler=null;
-  const q=id=>document.querySelector('[data-tour-target="'+id+'"]');
-  const tab=id=>({home:'home',markets:'markets',portfolio:'portfolio',learn:'learn',rank:'leaderboardView',news:'newsView',assist:'smartAssistView',account:'accountScreen'}[id]||null);
-  const tabButton=id=>{const v=tab(id);if(!v)return null;return Array.from(document.querySelectorAll('.tabs button')).find(b=>(b.getAttribute('onclick')||'').includes("nav('"+v+"'"))||null};
-  function clear(){if(current){current.classList.remove('tour-highlight');current=null}if(handler&&handler.el){handler.el.removeEventListener('click',handler.fn,true);handler=null}}
-  function setHighlight(el){clear();if(!el)return;el.classList.add('tour-highlight');current=el}
-  function navTo(id){const b=tabButton(id);if(b){b.click();return true}return false}
-  function show(){
-    const s=steps[i];progress.textContent=(i+1)+' / '+steps.length;title.textContent=s.title;text.textContent=s.guide;
-    next.disabled=false;next.textContent=i===steps.length-1?'ENTER MALIRADAR →':(phase==='tap'?'Continue →':'Next →');
-    tip.textContent=phase==='tap'?s.tap:'SYSTEM GUIDE • Explore the highlighted feature, then continue.';
-    overlay.style.display='flex';document.body.classList.add('tour-open');
-    let el=q(s.target);
-    if(s.id==='search')el=q('universalSearch');
-    if(phase==='tap'&&['markets','portfolio','learn','rank','news','assist','account'].includes(s.id)){
-      const b=tabButton(s.id);if(b){clear();b.classList.add('tour-highlight');current=b;handler={el:b,fn:function(e){e.stopPropagation();phase='guide';show()}};b.addEventListener('click',handler.fn,true);return}
-    }
-    if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>{if(phase==='guide'||s.id==='done')setHighlight(el)},220)}
-    else setHighlight(null);
-  }
-  function finish(){clear();document.body.classList.remove('tour-open');overlay.style.display='none';localStorage.setItem(KEY,'1');localStorage.setItem('maliradar_onboarding_v161','done')}
-  function start(force){if(started)return;if(!force&&localStorage.getItem(KEY)==='1')return;started=true;i=0;phase='tap';show()}
-  function advance(){if(i===steps.length-1){finish();return}i++;phase='tap';show()}
-  next.addEventListener('click',advance);skip.addEventListener('click',finish);
-  window.startMaliRadarTour=function(){start(true)};
-  window.restartMaliRadarTour=function(){localStorage.removeItem(KEY);localStorage.removeItem('maliradar_onboarding_v161');started=false;start(true)};
-  window.__MR_AFTER_STARTUP=function(){setTimeout(()=>{if(!localStorage.getItem(KEY))start(false)},450)};
-  window.addEventListener('resize',()=>{if(current&&overlay.style.display!=='none'){const el=current;requestAnimationFrame(()=>{el.classList.remove('tour-highlight');void el.offsetWidth;el.classList.add('tour-highlight')})}});
+ const steps=[
+  {id:'home',title:'Home',prompt:'Tap Home below.',guide:'Home is your quick market snapshot.'},
+  {id:'markets',title:'Markets',prompt:'Tap Markets below.',guide:'Here you can search and explore stocks.'},
+  {id:'portfolio',title:'Portfolio',prompt:'Tap Portfolio below.',guide:'This is where your paper holdings and P/L live.'},
+  {id:'learn',title:'Learn',prompt:'Tap Learn below.',guide:'Learn market basics, complete lessons and earn XP.'},
+  {id:'leaderboard',title:'Rank',prompt:'Tap Rank below.',guide:'Rank shows learning and paper-trading statistics.'},
+  {id:'news',title:'News',prompt:'Tap News below.',guide:'News and Event Radar keep market information together.'},
+  {id:'assist',title:'Smart Assist',prompt:'Tap Assist below.',guide:'Smart Assist explains market conditions and demo signals.'}
+ ];
+ let i=0,phase='tap',started=false,highlight=null,clickTarget=null;
+ const $t=id=>document.getElementById(id);
+ const viewId=id=>id==='leaderboard'?'leaderboardView':id==='news'?'newsView':id==='assist'?'smartAssistView':id;
+ const navButton=id=>document.querySelector(`.tabs button[onclick*="nav('${viewId(id)}'"]`);
+ const sectionTarget=id=>{
+   const map={home:'[data-tour-target="homeHero"]',markets:'[data-tour-target="marketsCard"]',portfolio:'[data-tour-target="portfolioHero"]',learn:'[data-tour-target="learnHero"]',leaderboard:'[data-tour-target="leaderboardHead"]',news:'[data-tour-target="newsHead"]',assist:'[data-tour-target="assistHero"]'};
+   return document.querySelector(map[id]);
+ };
+ function clear(){
+   if(highlight){highlight.classList.remove('tour-highlight');highlight=null}
+   if(clickTarget){clickTarget.removeEventListener('click',onTargetClick,true);clickTarget=null}
+ }
+ function onTargetClick(e){
+   if(phase!=='tap')return;
+   e.stopPropagation();
+   phase='guide';
+   show();
+ }
+ function attachTarget(){
+   clear();
+   const el=navButton(steps[i].id);
+   if(!el)return;
+   clickTarget=el;
+   el.addEventListener('click',onTargetClick,true);
+   el.classList.add('tour-highlight');
+   highlight=el;
+ }
+ function show(){
+   const s=steps[i];
+   $t('tourProgress').textContent=`${i+1} / ${steps.length}`;
+   $t('tourTitle').textContent=phase==='tap'?s.title:s.title+' ✓';
+   $t('tourText').textContent=phase==='tap'?s.prompt:s.guide;
+   $t('tourTip').textContent=phase==='tap'?'Follow the highlighted button.':'You can explore this area now.';
+   $t('tourNext').textContent=phase==='tap'?'Tap the highlighted button':'Next →';
+   $t('tourNext').disabled=phase==='tap';
+   if(phase==='tap'){
+     attachTarget();
+   }else{
+     if(highlight){highlight.classList.remove('tour-highlight');highlight=null}
+     const target=sectionTarget(s.id);
+     if(target){
+       target.scrollIntoView({behavior:'smooth',block:'start'});
+       setTimeout(()=>{if(phase==='guide'){highlight=target;target.classList.add('tour-highlight')}},250);
+     }
+   }
+   $t('tourOverlay').style.display='flex';
+ }
+ function start(){
+   if(started)return;
+   started=true;i=0;phase='tap';document.body.classList.add('tour-open');show();
+ }
+ function finish(){
+   clear();document.body.classList.remove('tour-open');$t('tourOverlay').style.display='none';localStorage.setItem('maliradar_onboarding_v161','done');
+ }
+ function next(){
+   if(phase==='tap')return;
+   if(i<steps.length-1){i++;phase='tap';show()}else finish();
+ }
+ $t('tourNext').addEventListener('click',next);
+ $t('tourSkip').addEventListener('click',finish);
+ window.startMaliRadarTour=start;
+ window.restartMaliRadarTour=function(){localStorage.removeItem('maliradar_onboarding_v161');started=false;start()};
+ window.addEventListener('load',()=>{
+   // Migrate the old completion key so existing users are not forced through the tour again.
+   if(localStorage.getItem('maliradar_onboarding_v161')==='done')localStorage.setItem('maliradar_onboarding_v161','done');
+   if(!localStorage.getItem('maliradar_onboarding_v161'))setTimeout(start,700);
+ });
 })();
 </script>
 
@@ -1538,7 +1561,11 @@ function deleteTrustData(){
 
   document.addEventListener('DOMContentLoaded',function(){
     window.renderMarketStatus();
-    setInterval(window.renderMarketStatus,30000);
+    if(!window.__mrMarketStatusTimer){
+      window.__mrMarketStatusTimer=setInterval(function(){
+        if(!document.hidden) window.renderMarketStatus();
+      },30000);
+    }
   });
 })();
 </script>
@@ -1808,6 +1835,28 @@ function deleteTrustData(){
 })();
 </script>
 
+<script id="mr-final-ui-performance-hardening">
+(function(){
+  // Keep background work quiet while the app is not visible.
+  document.addEventListener('visibilitychange',function(){
+    if(document.hidden)return;
+    try{ if(typeof window.renderMarketStatus==='function') window.renderMarketStatus(); }catch(e){}
+  });
+  // Avoid accidental double-submission/tap storms on action buttons.
+  document.addEventListener('click',function(e){
+    const b=e.target.closest && e.target.closest('button');
+    if(!b || b.dataset.mrNoDebounce==='1' || b.disabled || b.id==='tourNext' || b.id==='tourSkip')return;
+    if(b.dataset.mrBusy==='1'){e.preventDefault();e.stopImmediatePropagation();return;}
+    if(b.matches('.btn') && !b.getAttribute('onclick')?.includes('nav(')){
+      b.dataset.mrBusy='1';
+      setTimeout(()=>{b.dataset.mrBusy='0'},450);
+    }
+  },true);
+  // Keep the fixed navigation from creating a horizontal overflow on very narrow phones.
+  const tidy=()=>{document.documentElement.style.overflowX='hidden';document.body.style.overflowX='hidden'};
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',tidy,{once:true});else tidy();
+})();
+</script>
 </body></html>
 
 
