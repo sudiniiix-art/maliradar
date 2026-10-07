@@ -1,13 +1,60 @@
-(()=>{"use strict";
+<style id="mr-news-market-tape-css">
+.mr-news-market-tape{display:flex;align-items:center;gap:10px;overflow:hidden;margin:0 0 10px;padding:9px 11px;border:1px solid rgba(56,200,255,.2);border-radius:12px;background:linear-gradient(90deg,rgba(56,200,255,.07),rgba(53,224,177,.045));box-shadow:0 7px 22px rgba(0,0,0,.12)}
+.mr-news-tape-label{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:1px;color:#b9d8df;white-space:nowrap}
+.mr-news-tape-live{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a)}
+.mr-news-tape-window{min-width:0;overflow:hidden;flex:1}
+.mr-news-tape-track{display:flex;align-items:center;gap:9px;min-width:max-content;animation:mrNewsTape 24s linear infinite}
+.mr-news-market-tape:hover .mr-news-tape-track{animation-play-state:paused}
+.mr-news-tape-item{font-size:10px;white-space:nowrap}
+.mr-news-tape-item strong.up{color:var(--a)}
+.mr-news-tape-item strong.down{color:var(--r)}
+.mr-news-tape-item strong.flat{color:var(--muted)}
+.mr-news-tape-sep{color:#55727b;font-size:9px}
+.mr-news-tape-empty{font-size:10px;color:var(--muted);white-space:nowrap}
+@keyframes mrNewsTape{from{transform:translateX(0)}to{transform:translateX(-45%)}}
+@media(prefers-reduced-motion:reduce){.mr-news-tape-track{animation:none}}
+</style>(()=>{"use strict";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clean=v=>String(v??"").replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/\s+/g," ").trim();
 const local=s=>String(s||"").toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,"");
 const state={filter:"all",query:"",items:[],loading:false,stamp:0};
 function watchSymbols(){try{const raw=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}");const w=raw.watchlist||raw.watchList||[];return Array.isArray(w)?w.map(x=>local(x.symbol||x)).filter(Boolean):[]}catch{return[]}}
+function tapeItems(){
+ const store=window.maliRadarProviderQuotes||{};
+ const seen=new Set();
+ return Object.values(store).filter(q=>{
+  const sym=local(q?.localSymbol||q?.symbol), move=Number(q?.changePct??q?.change??q?.percentChange);
+  if(!sym||seen.has(sym)||!Number.isFinite(move)||q?.price==null)return false;
+  seen.add(sym);return true;
+ }).sort((a,b)=>Math.abs(Number(b?.changePct??b?.change??b?.percentChange))-Math.abs(Number(a?.changePct??a?.change??a?.percentChange))).slice(0,12);
+}
+function refreshTape(){
+ const tape=document.getElementById("mrNewsMarketTape");
+ if(!tape)return;
+ const items=tapeItems();
+ if(!items.length){
+  tape.innerHTML='<div class="mr-news-tape-label">MARKET MOVES</div><div class="mr-news-tape-track"><span class="mr-news-tape-empty">Awaiting verified stock changes…</span></div>';
+  return;
+ }
+ const chips=items.map(q=>{
+  const sym=local(q?.localSymbol||q?.symbol);
+  const move=Number(q?.changePct??q?.change??q?.percentChange);
+  const cls=move>0?"up":move<0?"down":"flat";
+  const sign=move>0?"+":"";
+  return '<span class="mr-news-tape-item"><b>'+esc(sym)+'</b> <strong class="'+cls+'">'+sign+move.toFixed(2)+'%</strong></span>';
+ }).join('<span class="mr-news-tape-sep">•</span>');
+ tape.innerHTML='<div class="mr-news-tape-label"><span class="mr-news-tape-live"></span>STOCK MOVES</div><div class="mr-news-tape-window"><div class="mr-news-tape-track">'+chips+'</div></div>';
+}
 function mount(){
  const screen=document.getElementById("newsView");if(!screen)return null;
+ let tape=document.getElementById("mrNewsMarketTape");
+ if(!tape){
+  tape=document.createElement("div");tape.id="mrNewsMarketTape";tape.className="mr-news-market-tape";
+  screen.insertBefore(tape,screen.firstElementChild);
+ }
  let bar=document.getElementById("mrNews2Bar");
  if(!bar){bar=document.createElement("div");bar.id="mrNews2Bar";bar.className="news-card";bar.style.marginBottom="12px";screen.insertBefore(bar,screen.querySelector(".news-filters"))}
+ refreshTape();
  return bar;
 }
 function classify(x){
@@ -42,6 +89,7 @@ function dedupe(items){
 }
 function status(){
  const b=mount();if(!b)return;
+ refreshTape();
  b.innerHTML='<div class="row"><div><div class="eyebrow">NEWS + EVENT RADAR 2.0</div><h3 style="margin:4px 0">Live Market Intelligence</h3><div class="muted">Verified provider headlines, event classification and linked-asset context. No fabricated news.</div></div><span class="news-badge">'+(state.loading?"🟡 UPDATING":"🟢 READY")+'</span></div>'+
  '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><input id="mrNews2Search" class="input" placeholder="Search company, ticker or topic…" value="'+esc(state.query)+'" style="flex:1;min-width:180px"><button class="btn" id="mrNews2Go">SEARCH</button><button class="btn alt" id="mrNews2Refresh">↻ REFRESH</button></div>'+
  '<div id="mrNews2Stats" class="muted" style="margin-top:9px"></div>'+
@@ -94,6 +142,8 @@ async function load(){
 }
 function boot(){
  mount();status();
+ setInterval(refreshTape,30000);
+ window.addEventListener("maliRadar:quotesUpdated",refreshTape);
  document.querySelectorAll("#newsFilters button").forEach(b=>{b.onclick=()=>{const f=b.dataset.filter||"all";document.querySelectorAll("#newsFilters button").forEach(x=>x.classList.remove("active"));b.classList.add("active");if(["all","watchlist","nse","forex","crypto","global"].includes(f)){state.filter=f;load()}}});
  load();
 }
