@@ -155,7 +155,7 @@ body.light{--bg:#eef4f6;--card:#fff;--line:#cbdde2;--text:#102027;--muted:#58707
 .tour-card{width:min(520px,100%);background:linear-gradient(145deg,rgba(12,24,34,.98),rgba(5,12,18,.98));border:1px solid rgba(56,200,255,.38);box-shadow:0 20px 70px rgba(0,0,0,.55),0 0 28px rgba(56,200,255,.10);border-radius:22px;padding:20px;color:#eef8ff}
 .tour-top{display:flex;justify-content:space-between;align-items:center;gap:12px}.tour-kicker{font-size:11px;letter-spacing:.16em;color:#38c8ff;font-weight:800}.tour-progress{font-size:12px;color:#8fa6b8}.tour-card h2{margin:8px 0 8px;font-size:25px}.tour-card p{line-height:1.55;color:#b9c9d5}.tour-tip{margin:14px 0;padding:13px;border-radius:14px;background:rgba(56,200,255,.06);border:1px solid rgba(56,200,255,.16)}
 .tour-actions{display:flex;gap:9px;margin-top:16px}.tour-actions button{flex:1}.tour-highlight{position:relative!important;z-index:5001!important;box-shadow:0 0 0 3px rgba(56,200,255,.9),0 0 30px rgba(56,200,255,.32)!important;border-radius:16px!important;transition:box-shadow .2s}
-body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
+body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}.tour-highlight{animation:mrTourPulse 1.15s ease-in-out infinite}.tutorial-center-card{border-color:rgba(56,200,255,.28);box-shadow:0 0 24px rgba(56,200,255,.06)}@keyframes mrTourPulse{0%,100%{box-shadow:0 0 0 3px rgba(56,200,255,.88),0 0 20px rgba(56,200,255,.18)}50%{box-shadow:0 0 0 5px rgba(56,200,255,.98),0 0 38px rgba(56,200,255,.38)}}
 </style>
 <style id="v18-cloud-foundation">
 .cloud-foundation{margin:14px 0;padding:16px;border:1px solid rgba(0,255,190,.22);border-radius:16px;background:rgba(10,20,28,.72);box-shadow:0 0 24px rgba(0,255,190,.06)}
@@ -194,7 +194,7 @@ body.tour-open .tabs{z-index:5002}.tour-bubble{font-size:13px}
 <div id="mrAIWelcome"><div class="mr-orb-stage"><div class="mr-ai-kicker">MALIRADAR • AI CORE</div><div class="mr-orb"><div class="mr-orb-core"></div><div class="mr-orb-scan"></div></div><div class="mr-ai-text">WELCOME</div><div class="mr-ai-sub">MARKET INTELLIGENCE SYSTEM ONLINE</div></div></div>
 <style id="mr-cinematic-intro-css">
 :root{--g:#16ff7a;--c:#19f5c0}
-#mrCinematicIntro{display:none;position:fixed;inset:0;background:#000;overflow:hidden;z-index:99999;opacity:1;transition:opacity .8s ease}
+#mrCinematicIntro{position:fixed;inset:0;background:#000;overflow:hidden;z-index:99999;opacity:1;transition:opacity .8s ease}
 #ch{position:fixed;inset:0;width:100%;height:100%}
 #wrap{position:fixed;left:50%;top:47%;width:min(78vw,52vh,520px);aspect-ratio:1;transform:translate(-50%,-50%)}
 #wrap>*{position:absolute;inset:0;width:100%;height:100%;border-radius:50%}
@@ -251,10 +251,9 @@ function chart(T){x.clearRect(0,0,W,H);const o=cl(T,.1,.5)*(1-cl(T,3.85,4.55));i
  x.globalAlpha=o;x.fillStyle=col;x.fillRect(W-66,y-10,66,20);x.fillStyle='#001a10';x.fillText((1.0700+cur*.0420).toFixed(4),W-62,y+4);x.globalAlpha=1}
 let t0,raf;
 function frame(now){const T=(now-t0)/1000;chart(T);
- // The graph must complete before the MALIRADAR logo is allowed to appear.
- // Timeline: graph finishes -> brief hold -> logo reveal -> intro resolves.
- const a=eo(cl(T,4.45,5.15)),lg=intro$('lg'),sw=intro$('sw');
- const sc=.9+.1*a+.025*cl(T,4.75,5.45);intro$('wrap').style.transform=`translate(-50%,-50%) scale(${sc})`;
+ const a=eo(cl(T,3.45,4.35)),lg=intro$('lg'),sw=intro$('sw');
+ const sc=.9+.1*a+.025*cl(T,4.0,5.0);intro$('wrap').style.transform=`translate(-50%,-50%) scale(${sc})`;
+ // Keep the logo completely hidden while the forex graph is still drawing.
  lg.style.opacity=a;lg.style.filter=a<1?`blur(${(1-a)*14}px)`:'none';
  intro$('glow').style.opacity=.95*eo(cl(T,3.35,4.6))*(1+.08*Math.sin(T*3))/1.08;
  const p=cl(T,3.55,4.45),b=-35+eio(p)*170;
@@ -263,36 +262,35 @@ function frame(now){const T=(now-t0)/1000;chart(T);
  intro$('bar').style.opacity=cl(T,2.7,3.1)*(1-cl(T,4.7,5.2));intro$('bar').firstChild.style.width=eo(cl(T,2.7,4.05))*100+'%';
  if(T<6)raf=requestAnimationFrame(frame)}
 function play(){cancelAnimationFrame(raf);t0=performance.now();raf=requestAnimationFrame(frame)}
-intro$('rp').onclick=play;
+intro$('rp').onclick=play;play();
+
 (function(){
   var intro=document.getElementById('mrCinematicIntro');
   var welcome=document.getElementById('mrAIWelcome');
-  // Sequence is strictly: AI orb -> cinematic intro -> home.
-  // The home screen remains covered until the entire sequence is finished.
-  if(welcome){
-    welcome.style.display='flex';
-    welcome.style.opacity='1';
-    welcome.classList.add('show');
-  }
-  setTimeout(function(){
-    // Orb is fully finished before the cinematic graph begins.
+  var finished=false;
+  function finish(){
+    if(finished)return; finished=true;
+    // Do NOT reveal the home screen between the intro and the AI orb.
+    // Keep the cinematic black layer in place while the orb plays above it.
+    if(intro){intro.style.opacity='1';intro.style.pointerEvents='none';}
     if(welcome){
-      welcome.classList.remove('show');
+      welcome.style.display='flex';
       welcome.style.opacity='0';
-      setTimeout(function(){welcome.style.display='none';},600);
+      requestAnimationFrame(function(){welcome.classList.add('show')});
     }
-    if(intro){
-      intro.style.display='block';
-      intro.style.opacity='1';
-      intro.style.pointerEvents='auto';
-      play();
-    }
-    // Keep the home screen covered until the entire cinematic sequence resolves.
-    setTimeout(finish,6500);
-  },2200);
+    setTimeout(function(){
+      if(welcome){welcome.classList.remove('show');welcome.style.opacity='0';}
+      setTimeout(function(){
+        if(welcome)welcome.style.display='none';
+        if(intro){
+          intro.style.opacity='0';
+          setTimeout(function(){intro.style.display='none';},650);
+        }
+      },600);
+    },2200);
+  }
+  setTimeout(finish,6000);
 })();
-
-
 </script>
 <script id="mr-stock-directory-bridge">
 (function(){
@@ -367,7 +365,7 @@ intro$('rp').onclick=play;
 <div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL DEMO</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
 <div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
 <div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local demo</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
-<div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Guided Tour<button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></button></div>
+<div class="card tutorial-center-card"><div class="row"><b>🎓 Tutorial Center</b><span class="demo-badge">FULL APP TOUR</span></div><p class="notice">Replay the interactive MALIRADAR mission anytime. The tour walks through every major feature and guides you with live highlights and required taps.</p><button class="btn" onclick="restartMaliRadarTour()">▶ Start Full Tutorial</button></div><div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards will be completed before production launch.</p><button class="btn alt" onclick="disclaimer()">View Disclaimer</button><button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></div>
 <button class="btn red" onclick="resetDemo()">Reset local demo</button>
 </section><!-- v1.3 Leaderboards -->
 <section id="leaderboardView" class="screen" data-tour="leaderboard">
@@ -1000,4 +998,3 @@ function saveAlert(type){
   let x=stock(sym);
   state.alerts.unshift({
     id:Date.now()+Math.random(),
-    type,sym,dir,value,created:new Date().toLocaleString(),
