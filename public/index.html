@@ -931,8 +931,12 @@ function nav(id,btn){
   document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
   document.body.classList.toggle("compact-header",compact);
   const hdr=document.querySelector(".app > header"),mainEl=document.querySelector(".app > main");
-  if(hdr)hdr.style.display="";
-  if(mainEl)mainEl.style.display="";
+  if(hdr)hdr.style.display=compact?"none":"";
+  if(mainEl){
+    mainEl.style.display="";
+    mainEl.style.marginTop=compact?"0":"";
+    mainEl.style.paddingTop=compact?"0":"";
+  }
   const target=$(id);
   if(target)target.classList.add("active");
   document.querySelectorAll(".tabs button").forEach(x=>x.classList.remove("active"));
@@ -3011,4 +3015,77 @@ button{position:relative;overflow:hidden}
 body.compact-header .app{padding-bottom:78px}
 body.compact-header main{padding-bottom:100px!important}
 body.compact-header header{box-shadow:0 4px 18px rgba(0,0,0,.18)}
+body.compact-header .app{
+  padding-top:0!important;
+  margin-top:0!important;
+  min-height:0!important;
+}
+body.compact-header header{
+  display:none!important;
+  position:absolute!important;
+  top:-9999px!important;
+  height:0!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+}
+body.compact-header main{
+  display:block!important;
+  position:relative!important;
+  top:0!important;
+  margin:0!important;
+  padding:0 10px 90px!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:visible!important;
+}
+body.compact-header main > .screen{
+  display:none!important;
+  position:relative!important;
+  top:0!important;
+  transform:none!important;
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+}
+body.compact-header main > .screen.active{
+  display:block!important;
+}
+body.compact-header #newsView,
+body.compact-header #smartAssistView{
+  margin:0!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+  scroll-margin-top:0!important;
+}
+body.compact-header #newsView .section-head{
+  display:flex!important;
+  margin:0!important;
+  padding:0 0 8px!important;
+}
+body.compact-header #newsView .section-head h2{
+  margin:0 0 7px!important;
+}
+body.compact-header #newsView .section-head p{
+  margin:0!important;
+}
+body.compact-header #newsView .news-filters{
+  margin:0 0 10px!important;
+}
+body.compact-header #smartAssistView .sa-hero{
+  margin:0!important;
+}
+body.compact-header #smartAssistView #saActivation{
+  margin-top:10px!important;
+}
+body.compact-header #smartAssistView #saWorkspace{
+  margin-top:10px!important;
+}
+html,body{
+  scroll-padding-top:0!important;
+}
+
 </style>
