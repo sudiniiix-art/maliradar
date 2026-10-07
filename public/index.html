@@ -121,7 +121,24 @@ body.compact-header #smartAssistView #saWorkspace{padding-bottom:18px}
 .trust-btn.danger{border-color:rgba(255,90,100,.3);background:rgba(255,70,80,.07)}
 @media(max-width:600px){.trust-grid{grid-template-columns:1fr}}
 
-</style>
+/* MALIRADAR LEGAL FOUNDATION v1.0 */
+#legalGate{position:fixed;inset:0;z-index:30000;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(2,7,12,.94);backdrop-filter:blur(14px)}
+#legalGate.show{display:flex}
+.legal-card{width:min(480px,100%);max-height:92vh;overflow:auto;border:1px solid rgba(53,224,177,.28);border-radius:24px;background:linear-gradient(145deg,#0d1d27,#071016);box-shadow:0 30px 100px rgba(0,0,0,.55),0 0 50px rgba(53,224,177,.08);padding:22px}
+.legal-kicker{font-size:10px;letter-spacing:1.8px;color:var(--a);font-weight:900}
+.legal-card h1{font-size:27px;line-height:1.1;margin:9px 0 8px}
+.legal-card h2{font-size:15px;margin:18px 0 7px}
+.legal-card p,.legal-card li{font-size:12px;line-height:1.55;color:#b7cbd0}
+.legal-card ul{padding-left:18px;margin:7px 0}
+.legal-links{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.legal-links a{display:inline-flex;align-items:center;border:1px solid var(--line);background:#0b1921;color:var(--text);border-radius:10px;padding:9px 11px;text-decoration:none;font-size:12px;font-weight:800}
+.legal-consent{display:flex;gap:10px;align-items:flex-start;padding:13px;border:1px solid var(--line);border-radius:14px;background:#09151c;margin-top:14px}
+.legal-consent input{margin-top:3px;accent-color:#35e0b1;width:17px;height:17px;flex:0 0 auto}
+.legal-consent label{font-size:12px;line-height:1.5;color:var(--text);cursor:pointer}
+.legal-actions{display:flex;gap:8px;margin-top:14px}
+.legal-actions .btn{flex:1}
+#legalAccept:disabled{opacity:.38;cursor:not-allowed;filter:saturate(.4)}
+.legal-version{font-size:10px;color:var(--muted);margin-top:10px}</style>
 <style>
 .market-status{display:flex;align-items:center;gap:8px;margin:10px 0 12px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:#09151c}
 .market-status .pulse{width:9px;height:9px;border-radius:50%;background:var(--a);box-shadow:0 0 10px var(--a)}
@@ -871,7 +888,31 @@ body.compact-header #smartAssistView{
 </section>
 </main>
 
-<div id="tourOverlay" class="tour-overlay" role="dialog" aria-modal="true">
+<div id="legalGate" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+ <div class="legal-card">
+  <div class="legal-kicker">MALIRADAR • TRUST FOUNDATION</div>
+  <h1 id="legalTitle">Privacy & Terms</h1>
+  <p>Before you continue, please review how MaliRadar handles information and the rules for using the app. MaliRadar is a paper-trading and market-learning simulator, not a real-money trading platform or financial adviser.</p>
+  <h2>What you should know</h2>
+  <ul>
+   <li>Your paper portfolio, settings and learning progress are stored locally on your device.</li>
+   <li>If you use social competition, your chosen profile name, MaliRadar ID, region and simulated learning/trading statistics may be sent to MaliRadar servers for leaderboards, friends and challenges.</li>
+   <li>If you enable push alerts, a device/client identifier and active alert settings may be sent to the alert service.</li>
+   <li>Market and news information comes from third-party data providers and may be delayed, incomplete or unavailable.</li>
+   <li>We do not use MaliRadar to collect passwords, payment-card details or real-money trading credentials.</li>
+  </ul>
+  <div class="legal-links">
+   <a href="/privacy-policy.html" target="_blank" rel="noopener">Read Privacy Policy ↗</a>
+   <a href="/terms-of-use.html" target="_blank" rel="noopener">Read Terms of Use ↗</a>
+  </div>
+  <div class="legal-consent">
+   <input id="legalConsent" type="checkbox">
+   <label for="legalConsent">I have read and agree to the <a href="/privacy-policy.html" target="_blank" rel="noopener">Privacy Policy</a> and <a href="/terms-of-use.html" target="_blank" rel="noopener">Terms of Use</a>.</label>
+  </div>
+  <div class="legal-actions"><button id="legalAccept" class="btn" disabled>Accept & Continue</button></div>
+  <div class="legal-version">Policy version 1.0 • Your acceptance is stored on this device for this policy version.</div>
+ </div>
+</div>\n<div id="tourOverlay" class="tour-overlay" role="dialog" aria-modal="true">
  <div class="tour-card">
   <div class="tour-top"><span class="tour-kicker">MALIRADAR GUIDED TOUR</span><span id="tourProgress" class="tour-progress"></span></div>
   <h2 id="tourTitle">Welcome to MaliRadar</h2>
@@ -880,7 +921,23 @@ body.compact-header #smartAssistView{
   <div class="tour-actions"><button class="btn alt" id="tourSkip">Skip Tour</button><button class="btn" id="tourNext">Next →</button></div>
  </div>
 </div>
-<nav class="tabs"><button class="active" onclick="nav('home',this)">⌂<br>Home</button><button onclick="nav('markets',this)">📈<br>Markets</button><button onclick="nav('portfolio',this)">💼<br>Portfolio</button><button onclick="nav('learn',this)">🎓<br>Learn</button><button onclick="nav('leaderboardView',this);renderLeaderboards()">🏆<br>Rank</button><button onclick="nav('newsView',this);renderMarketIntelligence()">📰<br>News</button><button onclick="nav('smartAssistView',this)">⚡<br>Assist</button><button onclick="nav('accountScreen',this)">👤<br>Account</button></nav></div>
+<script id="mr-legal-foundation">
+(function(){
+ "use strict";
+ const VERSION="1.0",KEY="maliradar_legal_acceptance_v1";
+ function accepted(){try{const x=JSON.parse(localStorage.getItem(KEY)||"null");return !!(x&&x.accepted===true&&x.version===VERSION)}catch(e){return false}}
+ function show(){
+  const g=document.getElementById("legalGate"),c=document.getElementById("legalConsent"),b=document.getElementById("legalAccept");if(!g||!c||!b)return;
+  document.body.classList.add("legal-open");g.classList.add("show");c.checked=false;b.disabled=true;
+  c.onchange=()=>{b.disabled=!c.checked};
+  b.onclick=()=>{if(!c.checked)return;localStorage.setItem(KEY,JSON.stringify({accepted:true,version:VERSION,acceptedAt:new Date().toISOString()}));g.classList.remove("show");document.body.classList.remove("legal-open");window.dispatchEvent(new CustomEvent("maliRadar:legalAccepted",{detail:{version:VERSION}}))};
+ }
+ function ensure(next){if(accepted()){if(next)next();return true}show();window.addEventListener("maliRadar:legalAccepted",()=>{if(next)next()},{once:true});return false}
+ window.MaliRadarLegal={version:VERSION,isAccepted:accepted,show,ensure};
+ window.openMaliRadarPrivacy=()=>window.open("/privacy-policy.html","_blank","noopener");
+ window.openMaliRadarTerms=()=>window.open("/terms-of-use.html","_blank","noopener");
+})();
+</script>\n<nav class="tabs"><button class="active" onclick="nav('home',this)">⌂<br>Home</button><button onclick="nav('markets',this)">📈<br>Markets</button><button onclick="nav('portfolio',this)">💼<br>Portfolio</button><button onclick="nav('learn',this)">🎓<br>Learn</button><button onclick="nav('leaderboardView',this);renderLeaderboards()">🏆<br>Rank</button><button onclick="nav('newsView',this);renderMarketIntelligence()">📰<br>News</button><button onclick="nav('smartAssistView',this)">⚡<br>Assist</button><button onclick="nav('accountScreen',this)">👤<br>Account</button></nav></div>
 <div id="modal" class="modal"><div class="sheet"><div class="row"><b id="mt">MaliRadar</b><button class="btn alt" onclick="closeM()">Close</button></div><div id="mb"></div></div></div>
 <script>
 let STOCKS=[["SCOM","Safaricom","Telecom",35.95,-1.24],["KCB","KCB Group","Banking",92.5,-0.8],["EQTY","Equity Group","Banking",105.0,-0.94],["EABL","East African Breweries","Manufacturing",286.75,-0.52],["COOP","Co-operative Bank","Banking",37.15,0],["ABSA","Absa Bank Kenya","Banking",33.05,-0.45],["BAT","BAT Kenya","Manufacturing",null,null],["BOC","BOC Kenya","Manufacturing",null,null],["BRIT","Britam Holdings","Insurance",null,null],["CIC","CIC Insurance Group","Insurance",null,null],["CTUM","Centum Investment","Investment",null,null],["DTK","Diamond Trust Bank","Banking",null,null],["FMLY","Family Bank","Banking",null,null],["HFCK","HF Group","Banking",null,null],["HFCB","HF Development & Investment","Banking",null,null],["IMH","I&M Group","Banking",null,null],["NCBA","NCBA Group","Banking",null,null],["SBIC","Stanbic Holdings","Banking",null,null],["SCBK","Standard Chartered Bank Kenya","Banking",null,null],["NMG","Nation Media Group","Media",null,null],["SCAN","Scangroup","Media",null,null],["KQ","Kenya Airways","Transport",null,null],["KPC","Kenya Pipeline Company","Energy",null,null],["KEGN","KenGen","Energy",null,null],["KPLC","Kenya Power","Energy",null,null],["TOTL","TotalEnergies Marketing Kenya","Energy",null,null],["UMME","Umeme","Energy",null,null],["EGAD","Eaagads","Agriculture",null,null],["KAPC","Kapchorua Tea Kenya","Agriculture",null,null],["KUKZ","Kakuzi","Agriculture",null,null],["LBTY","Limuru Tea","Agriculture",null,null],["LAPR","Limuru Tea","Agriculture",null,null],["SASN","Sasini","Agriculture",null,null],["UNGA","Unga Group","Agriculture",null,null],["FTGH","Flame Tree Group","Manufacturing",null,null],["CARB","Carbacid Investments","Manufacturing",null,null],["CGEN","Car & General","Manufacturing",null,null],["NSE","Nairobi Securities Exchange","Financial Services",null,null],["OCH","Olympia Capital Holdings","Investment",null,null],["PORT","East African Portland Cement","Manufacturing",null,null],["TPSE","TPS Eastern Africa (Serena)","Hotels & Tourism",null,null],["UCHM","Uchumi Supermarkets","Retail",null,null],["XPRS","Express Kenya","Transport",null,null],["LKL","Longhorn Publishers","Publishing",null,null],["NBV","Nairobi Business Ventures","Retail",null,null],["SMER","Sameer Africa","Manufacturing",null,null],["SGL","Standard Group","Media",null,null],["HAFR","Home Afrika","Real Estate",null,null],["KNRE","Kenya Re-Insurance","Insurance",null,null],["SLAM","Sanlam Kenya","Insurance",null,null],["CRWN","Crown Paints Kenya","Manufacturing",null,null],["KURV","Kurv","Exchange Traded / Investment",null,null],["GLD","GLD","Exchange Traded / Investment",null,null],["SMWF","SME/Market Fund","Exchange Traded / Investment",null,null],["AMAC","African Agricultural Holdings","Investment",null,null],["BKG","BK Group","Banking",null,null],["HBE","Homeboyz Entertainment","Media",null,null],["EVRD","Eveready East Africa","Manufacturing",null,null],["ORCH","Orchid","Manufacturing",null,null],["ALP","Alpharama","Agriculture",null,null],["TRFC","TransCentury","Investment",null,null],["JUB","Jubilee Holdings","Insurance",null,null],["LIMT","Limuru Tea","Agriculture",null,null],["WTK","Williamson Tea Kenya","Agriculture",null,null]];
@@ -1514,9 +1571,9 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
  window.startMaliRadarTour=start;
  window.restartMaliRadarTour=function(){localStorage.removeItem('maliradar_onboarding_v161');started=false;start()};
  window.addEventListener('load',()=>{
-   // Migrate the old completion key so existing users are not forced through the tour again.
-   if(localStorage.getItem('maliradar_onboarding_v161')==='done')localStorage.setItem('maliradar_onboarding_v161','done');
-   if(!localStorage.getItem('maliradar_onboarding_v161'))setTimeout(start,700);
+   // Legal acceptance is a foundation gate. The guided tour starts only after acceptance.
+   const beginTour=()=>{if(!localStorage.getItem('maliradar_onboarding_v161'))setTimeout(start,700)};
+   if(window.MaliRadarLegal)window.MaliRadarLegal.ensure(beginTour);else beginTour();
  });
 })();
 </script>
