@@ -3,7 +3,7 @@
 "use strict";
 const KEY="maliradar_entitlements_v1";
 const VERSION=1;
-const PRICING={currency:"KES",monthly:99,yearly:999};
+const PRICING={currency:"KES",founderMonthly:99,founderYearly:999,premiumMonthly:299,premiumYearly:2999};
 const DEFAULT={version:VERSION,tier:"free",pro:false,source:"none",verifiedAt:null,expiresAt:null};
 const FEATURES={
  advancedAssist:"Advanced Smart Assist",
@@ -16,7 +16,7 @@ const FEATURES={
 function read(){try{const x=JSON.parse(localStorage.getItem(KEY)||"null");if(x&&x.version===VERSION)return {...DEFAULT,...x};}catch(e){}return {...DEFAULT};}
 function save(x){localStorage.setItem(KEY,JSON.stringify({...DEFAULT,...x,version:VERSION}));}
 function isPro(){const x=read();return x.pro===true&&x.tier==="pro"&&x.source==="google_play"&&(!x.expiresAt||Date.parse(x.expiresAt)>Date.now());}
-function plan(){return isPro()?{...read(),label:"PRO"}:{...read(),tier:"free",pro:false,label:"FREE"};}
+function plan(){const x=read();if(!isPro())return {...x,tier:"free",pro:false,label:"FREE"};return {...x,label:x.plan==="premium"?"PREMIUM":x.plan==="founder"?"FOUNDER PRO":"PRO"};}
 function toast(msg,kind){let e=document.getElementById("mrProToast");if(!e){e=document.createElement("div");e.id="mrProToast";document.body.appendChild(e)}e.textContent=msg;e.dataset.kind=kind||"info";e.style.display="block";clearTimeout(e._t);e._t=setTimeout(()=>e.style.display="none",3000);}
 function open(){const m=document.getElementById("mrProModal");if(m)m.classList.add("show");}
 function close(){document.getElementById("mrProModal")?.classList.remove("show");}
@@ -42,9 +42,7 @@ function modal(){
  const m=document.createElement("div");m.id="mrProModal";m.innerHTML=
 '<div id="mrProSheet"><div class="row"><div class="mrpro-orb">MR</div><button class="btn alt" id="mrProClose">✕</button></div>'+
 '<div class="mrpro-title">MALIRADAR PRO</div><div class="mrpro-sub">Go deeper without turning MaliRadar into a promise machine. Pro unlocks advanced tools, analysis depth and personalization — not guaranteed profits.</div>'+
-'<div class="mrpro-grid"><div class="mrpro-plan"><h4>FREE</h4><div>Core paper trading<br>Learning academy<br>Basic market intelligence<br>Basic alerts<br>Competition & profile</div></div>'+
-'<div class="mrpro-plan pro"><div class="row"><h4 style="margin:0">PRO</h4><span class="mrpro-badge">ADVANCED</span></div><div>Advanced Smart Assist<br>Advanced market scanner<br>Expanded alerts<br>Extended analysis<br>Expanded global tools</div><div style="margin-top:9px;font-size:14px;font-weight:950;color:var(--a)">KSh 99 / month</div><div style="font-size:10px;color:var(--muted)">or KSh 999 / year</div></div></div>'+
-'<div id="mrProFeatureNote" class="mrpro-note">Pro is designed around better tools and education, never guaranteed returns.</div>'+
+'<div class="mrpro-grid"><div class="mrpro-plan"><h4>FREE</h4><div>Core paper trading<br>Learning academy<br>Basic market intelligence<br>Basic alerts<br>Competition & profile</div></div><div class="mrpro-plan pro"><div class="row"><h4 style="margin:0">FOUNDER PRO</h4><span class="mrpro-badge">LAUNCH</span></div><div>Advanced Smart Assist<br>Advanced market scanner<br>Expanded alerts<br>Extended analysis<br>Expanded global tools</div><div style="margin-top:9px;font-size:14px;font-weight:950;color:var(--a)">KSh 99 / month</div><div style="font-size:10px;color:var(--muted)">Founder pricing · KSh 999 / year</div></div></div><div class="mrpro-plan pro" style="margin-top:8px"><div class="row"><h4 style="margin:0">MALIRADAR PREMIUM</h4><span class="mrpro-badge">ULTIMATE</span></div><div>Everything in Founder Pro<br>Premium Smart Assist & educational signals<br>Maximum scanner depth<br>Advanced personal intelligence<br>Expanded competition insights</div><div style="margin-top:9px;font-size:16px;font-weight:950;color:var(--a)">KSh 299 / month</div><div style="font-size:10px;color:var(--muted)">or KSh 2,999 / year</div></div><div id="mrProFeatureNote" class="mrpro-note">Pro is designed around better tools and education, never guaranteed returns.</div>'+
 '<div class="mrpro-list">'+Object.values(FEATURES).map(x=>'<div class="mrpro-feature"><span class="mrpro-check">◆</span><div><b>'+x+'</b><br><span class="muted">Available in the Pro architecture.</span></div></div>').join("")+'</div>'+
 '<div class="mrpro-note">Billing is not connected in this release. The app will never show a fake purchase success. When Google Play Billing is connected, verified entitlements will activate Pro automatically.</div>'+
 '<div class="mrpro-actions"><button class="btn" id="mrProChoose">Choose Pro</button><button class="btn alt" id="mrProRestore">Restore purchases</button></div></div>';
