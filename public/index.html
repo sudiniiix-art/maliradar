@@ -885,12 +885,28 @@ body.compact-header #smartAssistView{
 <script>
 let STOCKS=[["SCOM","Safaricom","Telecom",35.95,-1.24],["KCB","KCB Group","Banking",92.5,-0.8],["EQTY","Equity Group","Banking",105.0,-0.94],["EABL","East African Breweries","Manufacturing",286.75,-0.52],["COOP","Co-operative Bank","Banking",37.15,0],["ABSA","Absa Bank Kenya","Banking",33.05,-0.45],["BAT","BAT Kenya","Manufacturing",null,null],["BOC","BOC Kenya","Manufacturing",null,null],["BRIT","Britam Holdings","Insurance",null,null],["CIC","CIC Insurance Group","Insurance",null,null],["CTUM","Centum Investment","Investment",null,null],["DTK","Diamond Trust Bank","Banking",null,null],["FMLY","Family Bank","Banking",null,null],["HFCK","HF Group","Banking",null,null],["HFCB","HF Development & Investment","Banking",null,null],["IMH","I&M Group","Banking",null,null],["NCBA","NCBA Group","Banking",null,null],["SBIC","Stanbic Holdings","Banking",null,null],["SCBK","Standard Chartered Bank Kenya","Banking",null,null],["NMG","Nation Media Group","Media",null,null],["SCAN","Scangroup","Media",null,null],["KQ","Kenya Airways","Transport",null,null],["KPC","Kenya Pipeline Company","Energy",null,null],["KEGN","KenGen","Energy",null,null],["KPLC","Kenya Power","Energy",null,null],["TOTL","TotalEnergies Marketing Kenya","Energy",null,null],["UMME","Umeme","Energy",null,null],["EGAD","Eaagads","Agriculture",null,null],["KAPC","Kapchorua Tea Kenya","Agriculture",null,null],["KUKZ","Kakuzi","Agriculture",null,null],["LBTY","Limuru Tea","Agriculture",null,null],["LAPR","Limuru Tea","Agriculture",null,null],["SASN","Sasini","Agriculture",null,null],["UNGA","Unga Group","Agriculture",null,null],["FTGH","Flame Tree Group","Manufacturing",null,null],["CARB","Carbacid Investments","Manufacturing",null,null],["CGEN","Car & General","Manufacturing",null,null],["NSE","Nairobi Securities Exchange","Financial Services",null,null],["OCH","Olympia Capital Holdings","Investment",null,null],["PORT","East African Portland Cement","Manufacturing",null,null],["TPSE","TPS Eastern Africa (Serena)","Hotels & Tourism",null,null],["UCHM","Uchumi Supermarkets","Retail",null,null],["XPRS","Express Kenya","Transport",null,null],["LKL","Longhorn Publishers","Publishing",null,null],["NBV","Nairobi Business Ventures","Retail",null,null],["SMER","Sameer Africa","Manufacturing",null,null],["SGL","Standard Group","Media",null,null],["HAFR","Home Afrika","Real Estate",null,null],["KNRE","Kenya Re-Insurance","Insurance",null,null],["SLAM","Sanlam Kenya","Insurance",null,null],["CRWN","Crown Paints Kenya","Manufacturing",null,null],["KURV","Kurv","Exchange Traded / Investment",null,null],["GLD","GLD","Exchange Traded / Investment",null,null],["SMWF","SME/Market Fund","Exchange Traded / Investment",null,null],["AMAC","African Agricultural Holdings","Investment",null,null],["BKG","BK Group","Banking",null,null],["HBE","Homeboyz Entertainment","Media",null,null],["EVRD","Eveready East Africa","Manufacturing",null,null],["ORCH","Orchid","Manufacturing",null,null],["ALP","Alpharama","Agriculture",null,null],["TRFC","TransCentury","Investment",null,null],["JUB","Jubilee Holdings","Insurance",null,null],["LIMT","Limuru Tea","Agriculture",null,null],["WTK","Williamson Tea Kenya","Agriculture",null,null]];
 const KEY="maliradar_v07_state";
-let state=JSON.parse(localStorage.getItem(KEY)||"null")||{
-  cash:100000,hold:{},history:[],
-  alerts:[],
-  alertHistory:[],
-  watch:["SCOM","KCB","EQTY"]
-};
+const PAPER_STARTING_CASH=100000;
+let state=JSON.parse(localStorage.getItem(KEY)||"null");
+if(!state || typeof state!=="object" || !Number.isFinite(Number(state.paperAccountVersion))){
+  state={
+    paperAccountVersion:1,
+    startingCash:PAPER_STARTING_CASH,
+    cash:PAPER_STARTING_CASH,
+    hold:{},history:[],
+    alerts:[],
+    alertHistory:[],
+    watch:["SCOM","KCB","EQTY"]
+  };
+}else{
+  state.paperAccountVersion=1;
+  state.startingCash=PAPER_STARTING_CASH;
+  if(!Number.isFinite(Number(state.cash))) state.cash=PAPER_STARTING_CASH;
+  state.hold=state.hold&&typeof state.hold==="object"?state.hold:{};
+  state.history=Array.isArray(state.history)?state.history:[];
+  state.alerts=Array.isArray(state.alerts)?state.alerts:[];
+  state.alertHistory=Array.isArray(state.alertHistory)?state.alertHistory:[];
+  state.watch=Array.isArray(state.watch)?state.watch:["SCOM","KCB","EQTY"];
+}
 const $=id=>document.getElementById(id);
 const stock=s=>STOCKS.find(x=>x[0]===s);
 const money=n=>Math.round(n).toLocaleString("en-KE");
