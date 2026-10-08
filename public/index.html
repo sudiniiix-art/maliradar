@@ -358,13 +358,13 @@ body.compact-header #smartAssistView{
   <div id="list"></div>
 </div></section>
 <section id="portfolio" class="screen" data-tour="portfolio">
-<div class="card hero" data-tour-target="portfolioHero"><div class="row"><div><div class="muted">Paper Portfolio</div><div class="big">KSh <span id="pv">100,000</span></div></div><span class="badge">DEMO DATA</span></div>
+<div class="card hero" data-tour-target="portfolioHero"><div class="row"><div><div class="muted">Your Paper Portfolio</div><div class="big">KSh <span id="pv">—</span></div></div><span class="badge">YOUR PAPER ACCOUNT</span></div>
 <div class="row" style="margin-top:7px"><span id="todayMove" class="green">Today: KSh 0 (0.00%)</span><span id="totalMove" class="muted">Total P/L: KSh 0 (0.00%)</span></div>
 <div class="intel-chart" id="portfolioChart"></div><div class="periods">
 <button class="btn alt" onclick="setPortfolioPeriod('1D',this)">1D</button><button class="btn alt" onclick="setPortfolioPeriod('1W',this)">1W</button><button class="btn alt selected" onclick="setPortfolioPeriod('1M',this)">1M</button><button class="btn alt" onclick="setPortfolioPeriod('3M',this)">3M</button><button class="btn alt" onclick="setPortfolioPeriod('1Y',this)">1Y</button><button class="btn alt" onclick="setPortfolioPeriod('MAX',this)">MAX</button>
 </div>
-<div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div><div class="metric">Cash<b id="portfolioCash">KSh 100,000</b></div><div class="metric">Sectors<b id="sectorCount">0</b></div></div></div>
-<div class="card"><div class="row"><b>Portfolio Snapshot</b><span class="muted">Paper trading</span></div><div class="grid"><div class="metric">Largest Position<b id="largestPosition">—</b></div><div class="metric">Current Value<b id="currentValueMetric">KSh 100,000</b></div><div class="metric">Unrealized P/L<b id="unrealizedMetric">KSh 0</b></div><div class="metric">Avg Cost<b id="avgCostMetric">—</b></div></div></div>
+<div class="grid"><div class="metric">Invested<b id="invested">KSh 0</b></div><div class="metric">Holdings<b id="holdingCount">0</b></div><div class="metric">Cash<b id="portfolioCash">KSh —</b></div><div class="metric">Sectors<b id="sectorCount">0</b></div></div></div>
+<div class="card"><div class="row"><b>Portfolio Snapshot</b><span class="muted">Paper trading</span></div><div class="grid"><div class="metric">Largest Position<b id="largestPosition">—</b></div><div class="metric">Current Value<b id="currentValueMetric">KSh —</b></div><div class="metric">Unrealized P/L<b id="unrealizedMetric">KSh 0</b></div><div class="metric">Avg Cost<b id="avgCostMetric">—</b></div></div></div>
 <div class="card"><div class="row"><b>Risk &amp; Analytics</b><span class="muted">Based on current paper portfolio</span></div><div class="grid">
 <div class="metric">Cash Allocation<b id="riskCash">—</b></div>
 <div class="metric">Largest Weight<b id="riskConcentration">—</b></div>
@@ -1057,8 +1057,8 @@ function alerts(){
   renderAlerts();
 }
 function render(){
-  let val=state.cash;
-  Object.keys(state.hold).forEach(s=>{let x=stock(s);if(x && x[3]!=null)val+=state.hold[s]*x[3]});
+  let val=Number(state.cash)||0;
+  Object.keys(state.hold).forEach(s=>{const p=paperPrice(s);if(p!=null)val+=Number(state.hold[s]||0)*p});
   $("total").textContent=money(val);
   $("cash").textContent=money(state.cash);
   $("pv").textContent=money(val);
@@ -1104,9 +1104,11 @@ function renderMarkets(){
 let portfolioPeriod='1D',portfolioMode='beginner';
 function paperPrice(sym){
   const key=String(sym||'').toUpperCase().split('.')[0];
-  const q=window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[key];
-  if(q&&Number.isFinite(Number(q.price))) return Number(q.price);
-  return null;
+  const store=window.maliRadarProviderQuotes||{};
+  const q=store[key]||store[key+".KE"]||store[String(sym||"").toUpperCase()];
+  if(q&&Number.isFinite(Number(q.price))&&Number(q.price)>0) return Number(q.price);
+  const match=Object.values(store).find(v=>String(v?.localSymbol||v?.symbol||"").toUpperCase().split(".")[0]===key);
+  return match&&Number.isFinite(Number(match.price))&&Number(match.price)>0?Number(match.price):null;
 }
 function portfolioPositions(){
   const out=[];
@@ -1178,14 +1180,14 @@ function renderPortfolio(){
   }).join(''):'<p class="muted">No transactions yet.</p>';
   const sectors={}; pos.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
   $('sectorAllocation').innerHTML=Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>`<div class="stock"><div class="row"><b>${sec}</b><span>${value?((v/value)*100).toFixed(1):'0.0'}%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${value?Math.min(100,v/value*100):0}%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh ${money(v)}</div></div>`).join(''):'<p class="muted">Sector allocation appears after you hold paper positions.</p>';
-  $('portfolioExplain').textContent=portfolioMode==='beginner'?'P/L compares the current paper value of your holdings with their estimated average purchase cost. A positive number means the current demo value is above that cost; a negative number means it is below.':'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and the displayed demo prices.';
+  $('portfolioExplain').textContent=portfolioMode==='beginner'?'P/L compares the current provider-valued paper position with its estimated average purchase cost. A positive number means the current verified value is above that cost; a negative number means it is below.':'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and verified provider prices.';
   $('portfolioModeBtn').textContent=portfolioMode==='beginner'?'👶 Beginner':'🧠 Expert';
   renderPortfolioChart(value);
 }
 function togglePortfolioMode(){portfolioMode=portfolioMode==='beginner'?'expert':'beginner';renderPortfolio()}
 function setPortfolioPeriod(p,btn){portfolioPeriod=p;document.querySelectorAll('.periods button').forEach(b=>b.classList.remove('selected'));if(btn)btn.classList.add('selected');renderPortfolio()}
 function portfolioHistoryValues(){
-  let cash=100000,hold={}; const arr=[];
+  let cash=Number(state.startingCash)||PAPER_STARTING_CASH,hold={}; const arr=[];
   state.history.slice().reverse().forEach(h=>{
     if(h.type==='BUY'){cash-=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)+h.q}
     else{cash+=h.q*h.p;hold[h.sym]=(hold[h.sym]||0)-h.q}
@@ -1200,7 +1202,7 @@ async function renderPortfolioChart(current){
   const token=++portfolioChartToken;
   const range=portfolioPeriod||'1D';
   const holdings=Object.keys(state.hold||{}).filter(s=>Number(state.hold[s]||0)>0);
-  const base=100000;
+  const base=Number(state.startingCash)||PAPER_STARTING_CASH;
 
   // Build a truthful historical portfolio curve from provider candles.
   // Each selected period now requests a different provider range/interval.
@@ -2027,6 +2029,7 @@ function deleteTrustData(){
       renderMarkets();
       renderRadar();
       window.MaliRadarProviderQuotes=store;
+      window.dispatchEvent(new CustomEvent("portfolioProviderValuationRefresh",{detail:{timestamp:Date.now()}}));
       if(typeof renderPortfolio==='function') renderPortfolio();
     }catch(e){
       // Keep already-verified quotes visible if a later chunk fails.
