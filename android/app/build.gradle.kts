@@ -9,7 +9,7 @@ dependencies {
 }
 
 val googleServerClientId = providers.gradleProperty("GOOGLE_SERVER_CLIENT_ID").orNull ?: ""
-val googleServerClientIdEscaped = googleServerClientId.replace("\\","\\\\").replace(""","\\"")
+val googleServerClientIdEscaped = googleServerClientId.replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.maliradar.app"
