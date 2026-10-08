@@ -45,21 +45,19 @@
   }
   window.MaliRadarTradeFirewall={version:1,check,pro:paid,refresh:()=>{}};
 
+  function dailyGate(){
+    if(paid())return {ok:true,pro:true};
+    const used=tradesToday(read());
+    return used<FREE.maxTradesPerDay
+      ? {ok:true,pro:false}
+      : {ok:false,code:"DAILY_TRADES",message:"Free plan limit reached: all 5 stock trades for today have been used."};
+  }
   function patchBuySell(){
     const b=window.buy,s=window.sell;
     if(typeof b==="function"&&!b.__mrTradeFirewallWrapped){
       const wrapped=function(sym){
-        const q=prompt("How many paper shares?","10");
-        if(q===null)return;
-        const n=Math.floor(Number(q)||0);
-        const g=check("BUY",sym,n);
+        const g=dailyGate();
         if(!notify(g))return;
-        // The order-ticket implementation normally opens its own quantity UI.
-        // Re-open through the authoritative order ticket when available so the
-        // quantity is not requested twice.
-        if(window.MaliRadarOrderTicket?.open){
-          return window.MaliRadarOrderTicket.open("BUY",sym);
-        }
         return b.apply(this,arguments);
       };
       wrapped.__mrTradeFirewallWrapped=true;
@@ -68,15 +66,8 @@
     }
     if(typeof s==="function"&&!s.__mrTradeFirewallWrapped){
       const wrapped=function(sym){
-        const st=read(),owned=Number(st.hold?.[String(sym||"").toUpperCase().split(".")[0]]||0);
-        const q=prompt("How many paper shares to sell?",String(Math.min(1,owned)));
-        if(q===null)return;
-        const n=Math.floor(Number(q)||0);
-        const g=check("SELL",sym,n);
+        const g=dailyGate();
         if(!notify(g))return;
-        if(window.MaliRadarOrderTicket?.open){
-          return window.MaliRadarOrderTicket.open("SELL",sym);
-        }
         return s.apply(this,arguments);
       };
       wrapped.__mrTradeFirewallWrapped=true;
@@ -91,13 +82,7 @@
     if(typeof ot.open==="function"){
       const original=ot.open;
       ot.open=function(side,sym){
-        // Opening the ticket itself is harmless, but once the Free plan is
-        // exhausted, do not allow a path to reach the execution UI.
-        const st=read();
-        const proposedSide=String(side||"BUY").toUpperCase();
-        const held=Number(st.hold?.[String(sym||"").toUpperCase().split(".")[0]]||0);
-        const checkQty=proposedSide==="SELL"?Math.min(1,held):1;
-        const g=check(proposedSide,sym,checkQty);
+        const g=dailyGate();
         if(!g.ok){notify(g);return false}
         return original.apply(this,arguments);
       };
