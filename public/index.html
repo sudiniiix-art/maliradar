@@ -390,7 +390,7 @@ body.compact-header #smartAssistView{
 
 <div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL PROVIDER</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
 <div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
-<div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local device</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
+<div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local device</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades are stored locally on this device.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
 <div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards are part of the MaliRadar trust foundation.</p><div class="actions"><button class="btn alt" onclick="openMaliRadarPrivacy()">Privacy Policy ↗</button><button class="btn alt" onclick="window.open('/cookie-policy.html','_blank','noopener')">Cookie Policy ↗</button><button class="btn alt" onclick="openMaliRadarTerms()">Terms of Use ↗</button><button class="btn alt" onclick="disclaimer()">Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Tour</button><button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></div><div class="muted" style="margin-top:8px">Policy version 1.1</div></div>
 <button class="btn red" onclick="resetDemo()">Reset local device</button>
 </section><!-- v1.3 Leaderboards -->
@@ -421,7 +421,7 @@ body.compact-header #smartAssistView{
       <div class="metric">📉 Lowest<b id="lbWorst">—</b></div>
     </div>
     <div id="lbRows"></div>
-    <div class="lb-note">🛡️ Ranking integrity: your row uses saved local learning XP and verified provider quotes. Demo participants are clearly labeled. Paper trading only.</div>
+    <div class="lb-note">🛡️ Ranking note: learning XP is synced from this device. Trading statistics are based only on server-recorded paper transactions. Paper trading only.</div>
   </div>
 
   <div class="lb-card" style="margin-top:14px">
@@ -473,7 +473,7 @@ body.compact-header #smartAssistView{
      document.getElementById("lbBest").textContent=rows[0]?esc(rows[0].name)+" • "+val(rows[0]):"—";document.getElementById("lbWorst").textContent=rows.length?esc(rows[rows.length-1].name)+" • "+val(rows[rows.length-1]):"—";
      box.innerHTML=rows.map((x,i)=>'<div class="lb-row" style="'+(x.id===me?'border:1px solid rgba(80,220,190,.45);border-radius:12px;padding:11px;margin:5px 0':'')+'"><div class="lb-rank">#'+(i+1)+'</div><div class="lb-avatar">'+esc((x.name||"?")[0])+'</div><div class="lb-name"><b>'+esc(x.name)+(x.id===me?' • YOU':'')+'</b><div class="muted">Server profile'+(x.region==="kenya"?' • 🇰🇪':'')+'</div></div><div class="lb-stat"><b>'+val(x)+'</b><div class="muted">'+Number(x.trades||0)+' total trades</div></div></div>').join("")||'<div class="lb-note">No server profiles yet. Create a profile to enter the competition.</div>';
      const pos=rows.findIndex(x=>x.id===me);document.getElementById("myPosition").textContent=pos>=0?"#"+(pos+1):"#—";document.getElementById("myStat").textContent=pos>=0?"Your position is calculated from the server-recorded profile.":"Sync your profile to enter the server ranking.";
-   }catch(e){box.innerHTML='<div class="lb-note">Server competition is temporarily unavailable. Demo participants are not displayed.</div>'}
+   }catch(e){box.innerHTML='<div class="lb-note">Server competition is temporarily unavailable. Server participants are not displayed.</div>'}
  }
  document.querySelectorAll("#lbMetricTabs button").forEach(b=>b.addEventListener("click",()=>{metric=b.dataset.metric;document.querySelectorAll("#lbMetricTabs button").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
  document.querySelectorAll("#lbScopeTabs button[data-scope]").forEach(b=>b.addEventListener("click",()=>{scope=b.dataset.scope;document.querySelectorAll("#lbScopeTabs button[data-scope]").forEach(x=>x.classList.remove("active"));b.classList.add("active");render()}));
@@ -512,7 +512,7 @@ body.compact-header #smartAssistView{
 </section>
 
 
-<!-- News Intelligence 2.0 owns the News feed; legacy demo renderer removed. -->
+<!-- News Intelligence 2.0 owns the News feed; legacy renderer removed. -->
 
 
 
@@ -1455,7 +1455,7 @@ function details(s){
 }
 
 function account(){nav("accountScreen",document.querySelectorAll(".tabs button")[4])}
-function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this app does not execute real trades.</p><p class="notice"><b>Demo data:</b> prices and market information may be simulated or illustrative.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
+function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this app does not execute real trades.</p><p class="notice"><b>Market data:</b> prices are shown only when verified from an authorized provider and may be delayed.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
 function closeM(){$("modal").classList.remove("show")}
 function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classList.add("show")}
 function resetDemo(){if(confirm("Reset local device data?")){localStorage.removeItem(KEY);location.reload()}}
@@ -1808,7 +1808,7 @@ function deleteTrustData(){
       if(!rows.length)return;
 
       // Provider directory is authoritative when available. Do not merge stale
-      // hardcoded/demo instruments into a live provider-backed market.
+      // legacy directory instruments before the provider directory loads.
       const providerStocks=[];
       const seen=new Set();
       rows.forEach(x=>{
@@ -1938,7 +1938,7 @@ function deleteTrustData(){
   function render(message){
     const box=el('dataAdapters'); if(!box)return;
     const st=current.state||'CHECKING';
-    const label=st==='DELAYED'?'🟡 15-min delayed':st==='READY'?'🟢 Connected':st==='UNAVAILABLE'?'⚪ Unavailable':st==='DEMO'?'🟠 Demo fallback':'🟠 Checking';
+    const label=st==='DELAYED'?'🟡 15-min delayed':st==='READY'?'🟢 Connected':st==='UNAVAILABLE'?'⚪ Unavailable':st==='DEMO'?'🟠 Unavailable':'🟠 Checking';
     const extra=message||((current.configured)?'Backend connection verified. Provider data is authorized sandbox data with a 15-minute delay.':'Waiting for the MaliRadar backend to confirm provider configuration.');
     box.innerHTML='<div class="mr23-source-card"><div class="mr23-source-head"><div><div class="mr23-source-title">📡 MyStocks Africa Sandbox</div><div class="muted">Authorized development feed • provider credentials remain server-side</div></div><span class="mr23-state '+(current.configured?'ok':'warn')+'">'+(current.configured?'SANDBOX READY':'NOT CONFIGURED')+'</span></div><div class="mr23-live-row"><span class="mr23-dot '+(current.configured?'ok':'')+'"></span><span>'+label+'</span></div><div class="mr23-meta"><div><span class="muted">Environment</span><b>'+String(current.environment||'sandbox').toUpperCase()+'</b></div><div><span class="muted">African equity feed</span><b>'+Number(current.delayMinutes||15)+'-min delayed</b></div><div><span class="muted">Provider state</span><b>'+st+'</b></div></div><p class="notice" style="margin-top:10px">'+extra+'</p><div class="mr23-btnrow"><button class="btn" id="mrRefreshDataBtn">↻ Refresh data</button><button class="btn alt" id="mrCheckConnectionBtn">Check connection</button></div><p class="notice" style="margin-top:10px">Delayed data is never labeled LIVE. Public production use still depends on provider terms, attribution, exchange permissions and production access.</p></div>';
     setBadge();
