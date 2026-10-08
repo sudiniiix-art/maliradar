@@ -1,11 +1,11 @@
-<style>
-.mr-trade-limit-card{animation:mrMetalPulse 3.2s ease-in-out infinite;box-shadow:0 0 0 1px #38c8ff22,0 0 18px #38c8ff18, inset 0 0 22px #ffffff08}
-.mr-trade-limit-card:before{content:"";position:absolute;inset:-80% -35%;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.03) 43%,rgba(255,255,255,.34) 49%,rgba(255,255,255,.06) 54%,transparent 60%);transform:translateX(-65%) rotate(8deg);animation:mrMetalShine 4.6s ease-in-out infinite;pointer-events:none}
-.mr-trade-limit-card>*{position:relative;z-index:1}
-@keyframes mrMetalShine{0%,18%{transform:translateX(-75%) rotate(8deg)}55%,100%{transform:translateX(75%) rotate(8deg)}}
-@keyframes mrMetalPulse{0%,100%{box-shadow:0 0 0 1px #38c8ff22,0 0 18px #38c8ff18,inset 0 0 22px #ffffff08}50%{box-shadow:0 0 0 1px #ffffff44,0 0 28px #38c8ff38,inset 0 0 30px #ffffff12}}
-</style>/* MaliRadar Paper Trading Limits UI v2 — enforced by order ticket */
+/* MaliRadar Paper Trading Limits UI v3 — enforced by order ticket */
 (()=>{"use strict";
+const styleId="mrTradeLimitGlowStyles";
+if(!document.getElementById(styleId)){const st=document.createElement("style");st.id=styleId;st.textContent=String.raw`.mr-trade-limit-card{animation:mrMetalPulse 3.2s ease-in-out infinite!important;box-shadow:0 0 0 1px #38c8ff55,0 0 22px #38c8ff33,inset 0 0 22px #ffffff0d!important;position:relative!important;overflow:hidden!important}
+.mr-trade-limit-card:before{content:"";position:absolute;inset:-80% -35%;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.03) 43%,rgba(255,255,255,.48) 49%,rgba(255,255,255,.08) 54%,transparent 60%);transform:translateX(-75%) rotate(8deg);animation:mrMetalShine 4.2s ease-in-out infinite;pointer-events:none}
+.mr-trade-limit-card>*{position:relative;z-index:1}
+@keyframes mrMetalShine{0%,15%{transform:translateX(-75%) rotate(8deg)}55%,100%{transform:translateX(75%) rotate(8deg)}}
+@keyframes mrMetalPulse{0%,100%{box-shadow:0 0 0 1px #38c8ff55,0 0 22px #38c8ff33,inset 0 0 22px #ffffff0d}50%{box-shadow:0 0 0 1px #ffffff99,0 0 36px #38c8ff66,inset 0 0 34px #ffffff18}}`;document.head.appendChild(st)}
 const LIMITS={free:{maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100},founder:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity},premium:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity}};
 const read=()=>{try{return JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}")}catch(e){return{}}};
 const tier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
@@ -13,7 +13,7 @@ const today=()=>new Date().toISOString().slice(0,10);
 const tradesToday=()=>{const h=Array.isArray(read().history)?read().history:[];return h.filter(x=>{try{return x.executedAt?String(x.executedAt).slice(0,10)===today():x.time?new Date(x.time).toISOString().slice(0,10)===today():false}catch(e){return false}}).length};
 function status(){const t=tier(),l=LIMITS[t]||LIMITS.free,u=tradesToday();return{tier:t,pro:t!=="free",tradesUsed:u,tradesLimit:Number.isFinite(l.maxTradesPerDay)?l.maxTradesPerDay:null,tradesRemaining:Number.isFinite(l.maxTradesPerDay)?Math.max(0,l.maxTradesPerDay-u):null,maxSharesPerOrder:Number.isFinite(l.maxSharesPerOrder)?l.maxSharesPerOrder:null,maxSharesPerSymbol:Number.isFinite(l.maxSharesPerSymbol)?l.maxSharesPerSymbol:null}}
 function render(){let el=document.getElementById("mrTradeLimitStatus");const target=document.querySelector("#markets .card")||document.querySelector("#markets");if(!target)return;if(!el){el=document.createElement("div");el.id="mrTradeLimitStatus";el.className="card mr-trade-limit-card";el.style.cssText="margin-top:8px;position:relative;overflow:hidden";target.parentNode.insertBefore(el,target)}const s=status();el.innerHTML=s.pro?'<div class="row"><div><b>⚡ PRO TRADING ACCESS</b><div class="muted">Unlimited stock buys, sells, quantities and paper trades.</div></div><span class="badge">UNLIMITED</span></div>':'<div class="row"><div><b>Paper Trading Limits</b><div class="muted">'+s.tradesRemaining+' of '+s.tradesLimit+' trades remaining today • max '+s.maxSharesPerOrder+' shares/order</div></div><button class="btn alt" id="mrTradeUpgrade">GO PRO</button></div><div class="muted" style="margin-top:7px">Free: 5 stock trades/day, 25 shares/order, 100 shares held per stock. Pro removes these limits.</div>';el.querySelector("#mrTradeUpgrade")?.addEventListener("click",()=>window.MaliRadarEntitlements?.open?.("advancedAssist"))}
-window.MaliRadarTradeLimits={version:2,limits:LIMITS,status,refresh:render};
+window.MaliRadarTradeLimits={version:3,limits:LIMITS,status,refresh:render};
 function boot(){render();setInterval(render,1200);window.addEventListener("maliRadar:entitlementUpdated",render)}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
 })();
