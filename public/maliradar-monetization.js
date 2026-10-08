@@ -4,9 +4,9 @@
 const KEY="maliradar_entitlements_v2";
 const LEGACY="maliradar_entitlements_v1";
 const VERSION=2;
-const PRICING={currency:"KES",freeMonthly:0,founderMonthly:99,founderYearly:999,premiumMonthly:199,premiumYearly:1999,launchOfferEndsMonthsAfterLaunch:2,launchOfferMaxPaidSlots:100};
+const PRICING={currency:"KES",freeMonthly:0,founderMonthly:99,founderLaunchMonthly:79,founderYearly:999,premiumMonthly:199,premiumLaunchMonthly:99,premiumYearly:1999,launchOfferEndsMonthsAfterLaunch:2,launchOfferMaxPaidSlots:100};
 const TIERS={free:0,founder:1,premium:2};
-const LAUNCH_OFFER={maxAvailable:100,endsMonthsAfterLaunch:2,launchAtKey:"maliradar_launch_started_at",soldKey:"maliradar_launch_paid_slots"};
+const LAUNCH_OFFER={maxAvailable:100,endsMonthsAfterLaunch:2,launchAtKey:"maliradar_launch_started_at",soldKey:"maliradar_launch_paid_slots",founderLaunchMonthly:79,premiumLaunchMonthly:99,founderRegularMonthly:99,premiumRegularMonthly:199};
 function launchOffer(){
   const fallback=()=>{
     const now=Date.now();let launch=Number(localStorage.getItem(LAUNCH_OFFER.launchAtKey)||0);
@@ -26,9 +26,46 @@ function syncLaunchOffer(){
 }
 function launchOfferCopy(){
  const o=launchOffer();
- if(!o.active)return o.remaining===0?"Launch offer sold out":"Launch offer ended";
+ if(!o.active)return o.remaining===0?"Launch offer sold out • regular pricing now active":"Launch offer ended • regular pricing now active";
  const days=Math.max(0,Math.ceil((o.endsAt-Date.now())/86400000));
  return o.remaining+" of "+o.maxAvailable+" launch places remaining • ends in "+days+" day"+(days===1?"":"s");
+}
+function launchCountdown(ms){
+ if(ms<=0)return "OFFER ENDED";
+ const s=Math.floor(ms/1000);
+ const d=Math.floor(s/86400);
+ const h=Math.floor((s%86400)/3600);
+ const m=Math.floor((s%3600)/60);
+ const sec=s%60;
+ return d+"d "+String(h).padStart(2,"0")+"h "+String(m).padStart(2,"0")+"m "+String(sec).padStart(2,"0")+"s";
+}
+function launchPlanMarkup(id){
+ const o=launchOffer();
+ const isPaid=id==="founder"||id==="premium";
+ if(!isPaid)return {current:"KSh 0 / month",regular:"",saving:"",timer:""};
+ const launch=id==="founder"?LAUNCH_OFFER.founderLaunchMonthly:LAUNCH_OFFER.premiumLaunchMonthly;
+ const regular=id==="founder"?LAUNCH_OFFER.founderRegularMonthly:LAUNCH_OFFER.premiumRegularMonthly;
+ if(o.active){
+   return {current:"KSh "+launch+" / month",regular:"KSh "+regular+" regular",saving:"SAVE KSh "+(regular-launch)+"/month",timer:"LAUNCH OFFER ENDS IN · "+launchCountdown(o.endsAt-Date.now())};
+ }
+ return {current:"KSh "+regular+" / month",regular:"",saving:"",timer:o.remaining===0?"LAUNCH PLACES SOLD OUT · REGULAR PRICING":"LAUNCH OFFER ENDED · REGULAR PRICING"};
+}
+function refreshLaunchUI(){
+ const o=launchOffer();
+ const note=document.getElementById("mrLaunchOffer");
+ if(note)note.innerHTML="<b>LAUNCH OFFER • 100 TOTAL PAID PLACES</b><br>"+launchOfferCopy();
+ document.querySelectorAll("[data-launch-plan]").forEach(card=>{
+   const id=card.getAttribute("data-launch-plan"),p=launchPlanMarkup(id);
+   const price=card.querySelector("[data-launch-current]");
+   const regular=card.querySelector("[data-launch-regular]");
+   const saving=card.querySelector("[data-launch-saving]");
+   const timer=card.querySelector("[data-launch-timer]");
+   if(price)price.textContent=p.current;
+   if(regular){regular.textContent=p.regular;regular.style.display=p.regular?"inline":"none"}
+   if(saving){saving.textContent=p.saving;saving.style.display=p.saving?"inline-block":"none"}
+   if(timer)timer.textContent=p.timer;
+   card.classList.toggle("mr-launch-active",o.active&&(id==="founder"||id==="premium"));
+ });
 }
 const DEFAULT={version:VERSION,tier:"free",source:"none",verifiedAt:null,expiresAt:null,productId:null,plan:null};
 const FEATURES={
@@ -108,19 +145,20 @@ function modal(){
  const m=document.createElement("div");m.id="mrProModal";
  const t=plan().tier;
  const features=Object.entries(FEATURES);
- const card=(id,title,badge,price,year,body,cls)=>'<div class="mrpro-plan '+cls+(t===id?' current':'')+'"><div class="row"><h4>'+title+'</h4><span class="mrpro-badge">'+badge+'</span></div><div class="mrpro-price">'+price+'</div><div class="mrpro-year">'+year+'</div><div class="mrpro-features">'+body+'</div><button class="btn '+(id==="premium"?"mrpro-gold":"")+'" data-plan="'+id+'">'+(t===id?"Current plan":id==="free"?"Stay Free":"Choose "+title)+'</button></div>';
+ const card=(id,title,badge,year,body,cls)=>'<div class="mrpro-plan '+cls+(t===id?' current':'')+'" data-launch-plan="'+id+'"><div class="row"><h4>'+title+'</h4><span class="mrpro-badge">'+badge+'</span></div><div class="mrpro-price"><span data-launch-current></span> <span class="mrpro-regular" data-launch-regular></span></div><span class="mr-launch-saving" data-launch-saving></span><div class="mr-launch-timer" data-launch-timer></div><div class="mrpro-year">'+year+'</div><div class="mrpro-features">'+body+'</div><button class="btn '+(id==="premium"?"mrpro-gold":"")+'" data-plan="'+id+'">'+(t===id?"Current plan":id==="free"?"Stay Free":"Choose "+title)+'</button></div>';
  m.innerHTML='<div id="mrProSheet"><div class="row"><div class="mrpro-orb">MR</div><button class="btn alt" id="mrProClose">✕</button></div>'+
  '<div class="mrpro-title">MALIRADAR PLANS</div><div class="mrpro-sub">Upgrade your tools, education and intelligence — never a promise of profit.</div>'+
  '<div class="mrpro-current">CURRENT PLAN: <b id="mrProCurrentTier">'+tierName(t).toUpperCase()+'</b></div>'+
- '<div class="mrpro-note" id="mrLaunchOffer"><b>LAUNCH OFFER • LIMITED TO 100 PAID PLACES</b><br>'+launchOfferCopy()+'</div><div class="mrpro-plans">'+
- card("free","FREE","CORE","KSh 0","Always free","Paper trading · Core academy · Basic intelligence · Basic alerts · Core competition","free-card")+
- card("founder","FOUNDER PRO","LAUNCH","KSh 99 / month","KSh 999 / year","Everything Free · Advanced Smart Assist · Advanced scanner · Expanded alerts · Extended analysis · Expanded global tools · Founder identity","founder-card")+
- card("premium","MALIRADAR PREMIUM","ULTIMATE","KSh 199 / month","KSh 1,999 / year","<b>LAUNCH OFFER: 100 TOTAL PAID PLACES</b> · Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
+ '<div class="mrpro-note" id="mrLaunchOffer"><b>LAUNCH OFFER • 100 TOTAL PAID PLACES</b><br>'+launchOfferCopy()+'</div><div class="mrpro-plans">'+
+ card("free","FREE","CORE","Always free","Paper trading · Core academy · Basic intelligence · Basic alerts · Core competition","free-card")+
+ card("founder","FOUNDER PRO","LAUNCH","KSh 999 / year","Everything Free · Advanced Smart Assist · Advanced scanner · Expanded alerts · Extended analysis · Expanded global tools · Founder identity","founder-card")+
+ card("premium","MALIRADAR PREMIUM","ULTIMATE","KSh 1,999 / year","<b>LAUNCH OFFER: KSh99/month for the first 2 months</b> · Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
  '</div><div id="mrProFeatureNote" class="mrpro-note">Choose the level that matches how deeply you want to learn and simulate.</div>'+
  '<div class="mrpro-feature-list">'+features.map(([k,f])=>'<div class="mrpro-feature '+(has(k)?"":"locked")+'"><span class="dot2">'+(has(k)?"◆":"◇")+'</span><div><b>'+f.label+'</b><br><span class="muted">'+tierName(f.min)+' tier or above</span></div></div>').join("")+'</div>'+
  '<div class="mrpro-note">Billing is not connected in this release. No button here can fake a successful purchase. Once Google Play Billing is connected, verified subscription entitlements will control access. Google Play supports tier changes and billing-period changes for subscriptions.</div>'+
  '<div class="mrpro-actions"><button class="btn alt" id="mrProRestore">Restore purchases</button><button class="btn alt" id="mrProManage">Manage subscription</button></div></div>';
  document.body.appendChild(m);
+ refreshLaunchUI();
  document.getElementById("mrProClose").onclick=close;
  m.addEventListener("click",e=>{if(e.target===m)close()});
  m.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{const wanted=b.dataset.plan;if(wanted==="free"){toast("Your Free plan is already available. Paid downgrades will be handled by Google Play Billing.","info");return}billingUnavailable()});
@@ -160,7 +198,7 @@ function track(){
  setTimeout(smartAdvertise,90000);setTimeout(smartAdvertise,180000);
 }
 function init(){
- css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();syncLaunchOffer();setInterval(syncLaunchOffer,60000);
+ css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();syncLaunchOffer();refreshLaunchUI();setInterval(()=>{refreshLaunchUI()},1000);setInterval(syncLaunchOffer,60000);
  setTimeout(()=>{mountAccount();refresh();highlight()},900);
  document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open()});
  window.addEventListener("maliRadar:entitlementUpdated",()=>{refresh();if(window.MaliRadarProGates?.refresh)window.MaliRadarProGates.refresh()});
