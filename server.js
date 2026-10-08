@@ -129,6 +129,123 @@ app.get("/api/launch-offer",(req,res)=>{
   res.setHeader("Cache-Control","no-store");
   res.json({ok:true,offer:launchOfferState()});
 });
+app.post("/api/launch-offer/reserve",rateLimit("billing"),async(req,res)=>{
+  const {userId,plan}=req.body||{};
+  if(!userId||!["founder","premium"].includes(String(plan)))return res.status(400).json({ok:false,error:"Valid userId and plan are required."});
+  try{
+    const reservation=await withDbLock(()=>{
+      const db=readDB();db.launchOffer=db.launchOffer||{launchAt:new Date().toISOString(),paidSlots:0};db.launchReservations=Array.isArray(db.launchReservations)?db.launchReservations:[];
+      const now=Date.now(),existing=db.launchReservations.find(x=>x.userId===userId&&x.status==="reserved"&&Date.parse(x.expiresAt)>now);
+      if(existing)return {reservationId:existing.id,expiresAt:existing.expiresAt,alreadyReserved:true};
+      const state=launchOfferState();
+      if(!state.active)return {error:state.remaining===0?"Launch offer sold out.":"Launch offer ended.",status:409};
+      const id="lr-"+Date.now()+"-"+crypto.randomBytes(5).toString("hex"),expiresAt=new Date(now+15*60_000).toISOString();
+      db.launchReservations.push({id,userId,plan:String(plan),status:"reserved",createdAt:new Date(now).toISOString(),expiresAt});
+      writeDB(db);return {reservationId:id,expiresAt};
+    });
+    if(reservation.error)return res.status(reservation.status).json({ok:false,error:reservation.error});
+    res.setHeader("Cache-Control","no-store");res.json({ok:true,reservation,offer:launchOfferState()});
+  }catch(e){res.status(500).json({ok:false,error:"Launch reservation failed."})}
+});
+
+// Server-authoritative entitlement read. Never returns purchase tokens or deletion secrets.
+app.get("/api/entitlements/:userId",(req,res)=>{
+  const id=String(req.params.userId||""),db=readDB(),sub=(db.subscriptions||{})[id];
+  const active=!!sub&&["ACTIVE","IN_GRACE_PERIOD","CANCELED"].includes(sub.status)&&(!sub.expiresAt||Date.parse(sub.expiresAt)>Date.now());
+  res.setHeader("Cache-Control","no-store");
+  res.json({ok:true,tier:active?sub.tier:"free",pro:active,source:active?"google_play":"none",expiresAt:active?sub.expiresAt:null,productId:active?sub.productId:null,status:active?sub.status:"INACTIVE"});
+});
+
+// Google Play subscription verification. Android clients should reserve a launch slot before purchase.
+function playServiceAccount(){
+  try{
+    if(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON)return JSON.parse(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON);
+    if(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_B64)return JSON.parse(Buffer.from(process.env.GOOGLE_PLAY_SERVICE_ACCOUNT_B64,"base64").toString("utf8"));
+  }catch(e){}
+  return null;
+}
+function b64url(v){return Buffer.from(v).toString("base64").replace(/=/g,"").replace(/\+/g,"-").replace(/\//g,"_");}
+async function googleAccessToken(){
+  const sa=playServiceAccount();
+  if(!sa?.client_email||!sa?.private_key)throw Object.assign(new Error("Google Play service account is not configured."),{status:503});
+  const iat=Math.floor(Date.now()/1000);
+  const header=b64url(JSON.stringify({alg:"RS256",typ:"JWT"})),payload=b64url(JSON.stringify({iss:sa.client_email,scope:"https://www.googleapis.com/auth/androidpublisher",aud:"https://oauth2.googleapis.com/token",iat,exp:iat+3600}));
+  const signer=crypto.createSign("RSA-SHA256");signer.update(header+"."+payload);signer.end();
+  const assertion=header+"."+payload+"."+b64url(signer.sign(sa.private_key));
+  const rr=await fetch("https://oauth2.googleapis.com/token",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:new URLSearchParams({grant_type:"urn:ietf:params:oauth:grant-type:jwt-bearer",assertion})});
+  const j=await rr.json().catch(()=>({}));if(!rr.ok||!j.access_token)throw Object.assign(new Error(j.error_description||"Google OAuth token request failed."),{status:502});
+  return j.access_token;
+}
+async function verifyGoogleSubscription(purchaseToken){
+  const pkg=process.env.GOOGLE_PLAY_PACKAGE_NAME;
+  if(!pkg)throw Object.assign(new Error("GOOGLE_PLAY_PACKAGE_NAME is not configured."),{status:503});
+  const access=await googleAccessToken();
+  const url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"+encodeURIComponent(pkg)+"/purchases/subscriptionsv2/tokens/"+encodeURIComponent(purchaseToken);
+  const rr=await fetch(url,{headers:{Authorization:"Bearer "+access,Accept:"application/json"}});
+  const j=await rr.json().catch(()=>({}));if(!rr.ok)throw Object.assign(new Error(j.error?.message||"Google Play purchase verification failed."),{status:rr.status===404?400:502});
+  return j;
+}
+const PLAY_PRODUCTS={founder:process.env.GOOGLE_PLAY_FOUNDER_PRODUCT_ID||"maliradar_founder_monthly",premium:process.env.GOOGLE_PLAY_PRO_PRODUCT_ID||"maliradar_pro_monthly"};
+app.post("/api/google-play/verify-subscription",rateLimit("billing"),async(req,res)=>{
+  const {userId,purchaseToken,productId,reservationId,deletionToken}=req.body||{};
+  if(!userId||!purchaseToken||!productId)return res.status(400).json({ok:false,error:"userId, purchaseToken and productId are required."});
+  const tier=productId===PLAY_PRODUCTS.founder?"founder":productId===PLAY_PRODUCTS.premium?"premium":null;
+  if(!tier)return res.status(400).json({ok:false,error:"Unknown MaliRadar subscription product."});
+  try{
+    const g=await verifyGoogleSubscription(String(purchaseToken));
+    const state=String(g.subscriptionState||""),items=Array.isArray(g.lineItems)?g.lineItems:[],line=items.find(x=>x.productId===productId)||null;
+    if(!line)return res.status(400).json({ok:false,error:"Verified purchase does not match the selected plan."});
+    const expiry=line.expiryTime||null;
+    const accessOk=["SUBSCRIPTION_STATE_ACTIVE","SUBSCRIPTION_STATE_IN_GRACE_PERIOD","SUBSCRIPTION_STATE_CANCELED"].includes(state)&&(!expiry||Date.parse(expiry)>Date.now());
+    if(!accessOk)return res.status(402).json({ok:false,error:"Subscription is not active.",status:state,expiresAt:expiry});
+    const result=await withDbLock(()=>{
+      const db=readDB(),u=(db.users||[]).find(x=>x.id===userId);
+      if(!u)return {status:404,error:"User not found"};
+      if(!validAccountSecret(db,userId,deletionToken))return {status:403,error:"Account verification required"};
+      db.subscriptions=db.subscriptions||{};db.playPurchaseHashes=db.playPurchaseHashes||{};
+      const hash=tokenHash(purchaseToken),priorOwner=db.playPurchaseHashes[hash];
+      if(priorOwner&&priorOwner!==userId)return {status:409,error:"Purchase is already linked to another account."};
+      let launchConsumed=false;
+      db.launchReservations=Array.isArray(db.launchReservations)?db.launchReservations:[];
+      const reservation=reservationId?db.launchReservations.find(x=>x.id===reservationId&&x.userId===userId&&x.plan===tier&&x.status==="reserved"&&Date.parse(x.expiresAt)>Date.now()):null;
+      const sub={tier,productId,source:"google_play",status:state.replace("SUBSCRIPTION_STATE_",""),verifiedAt:new Date().toISOString(),expiresAt:expiry,purchaseTokenHash:hash,offerId:line.autoRenewingPlan?.offerDetails?.offerId||null};
+      db.subscriptions[userId]=sub;db.playPurchaseHashes[hash]=userId;
+      if(reservation&&!reservation.counted){
+        reservation.status="consumed";reservation.counted=true;reservation.consumedAt=new Date().toISOString();db.launchOffer=db.launchOffer||{launchAt:new Date().toISOString(),paidSlots:0};
+        db.launchOffer.paidSlots=Math.min(LAUNCH_MAX_PAID,(Number(db.launchOffer.paidSlots)||0)+1);launchConsumed=true;
+      }
+      writeDB(db);return {status:200,sub,launchConsumed};
+    });
+    if(result.error)return res.status(result.status).json({ok:false,error:result.error});
+    res.setHeader("Cache-Control","no-store");
+    res.json({ok:true,entitlement:{tier,pro:true,source:"google_play",expiresAt:expiry,productId,status:result.sub.status},launchSlotConsumed:result.launchConsumed,offer:launchOfferState()});
+  }catch(e){res.status(e.status||502).json({ok:false,error:e.message||"Google Play verification failed."})}
+});
+
+// Web/in-app account deletion endpoint.
+app.post("/api/account/delete",rateLimit("auth"),async(req,res)=>{
+  const {id,deletionToken}=req.body||{};if(!id||!deletionToken)return res.status(400).json({ok:false,error:"MaliRadar ID and deletion token are required."});
+  try{
+    const done=await withDbLock(()=>{
+      const db=readDB(),u=(db.users||[]).find(x=>x.id===id);if(!u)return {status:404,error:"Account not found"};
+      if(!validAccountSecret(db,id,deletionToken))return {status:403,error:"Deletion verification failed"};
+      db.users=db.users.filter(x=>x.id!==id);
+      for(const key of ["transactions","portfolios","watchlists","alerts"])if(Array.isArray(db[key]))db[key]=db[key].filter(x=>x.userId!==id);
+      if(db.subscriptions)delete db.subscriptions[id];
+      if(Array.isArray(db.friendRequests))db.friendRequests=db.friendRequests.filter(x=>x.from!==id&&x.to!==id);
+      if(Array.isArray(db.friends))db.friends=db.friends.filter(x=>x.a!==id&&x.b!==id);
+      if(Array.isArray(db.challenges))db.challenges=db.challenges.filter(x=>x.id!==id);
+      if(Array.isArray(db.socialChallenges))db.socialChallenges=db.socialChallenges.filter(x=>x.from!==id&&x.to!==id);
+      if(Array.isArray(db.socialActivity))db.socialActivity=db.socialActivity.filter(x=>x.actor!==id&&x.target!==id);
+      if(Array.isArray(db.seasonHistory))db.seasonHistory=db.seasonHistory.filter(x=>x.id!==id);
+      if(Array.isArray(db.pushSubscriptions))db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.clientId!==id);
+      db.deletedAccounts=Array.isArray(db.deletedAccounts)?db.deletedAccounts:[];db.deletedAccounts.push({hash:tokenHash(id),deletedAt:new Date().toISOString()});db.deletedAccounts=db.deletedAccounts.slice(-1000);
+      writeDB(db);return {status:200};
+    });
+    if(done.error)return res.status(done.status).json({ok:false,error:done.error});
+    res.json({ok:true,deleted:true});
+  }catch(e){res.status(500).json({ok:false,error:"Account deletion failed."})}
+});
 
 app.get("/api/push/config",(req,res)=>{
   res.json({enabled:!!(webPush&&pushReady()),publicKey:process.env.VAPID_PUBLIC_KEY||null});
