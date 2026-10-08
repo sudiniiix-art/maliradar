@@ -36,7 +36,7 @@
   };
   const stock=s=>typeof window.stock==="function"?window.stock(s):null;
   const tradeTier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
-  const tradeIsPro=()=>tradeTier()!=="free";
+  const tradeIsPro=()=>{const t=String(tradeTier()).toLowerCase();return ["pro","premium","founder","founder_pro","founderpro"].includes(t);};
   const tradeLimits=()=>({maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100});
   const tradesToday=st=>{const d=new Date().toISOString().slice(0,10);return (st.history||[]).filter(h=>String(h.executedAt||"").slice(0,10)===d || (h.time&&new Date(h.time).toISOString?.().slice(0,10)===d)).length};
   const checkTradeEntitlement=(st,side,sym,q)=>{
