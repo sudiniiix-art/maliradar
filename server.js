@@ -265,7 +265,7 @@ app.post("/api/account/delete",rateLimit("auth"),async(req,res)=>{
 app.get("/api/push/config",(req,res)=>{
   res.json({enabled:!!(webPush&&pushReady()),publicKey:process.env.VAPID_PUBLIC_KEY||null});
 });
-app.post("/api/push/subscribe",(req,res)=>{
+app.post("/api/push/subscribe",rateLimit("mutate"),(req,res)=>{
   if(!(webPush&&pushReady()))return res.status(503).json({ok:false,error:"Push notifications are not configured on the server yet."});
   const {clientId,subscription,alerts,enabled}=req.body||{};
   if(!clientId||typeof clientId!=="string"||clientId.length>120||!subscription?.endpoint)return res.status(400).json({ok:false,error:"Invalid push subscription."});
@@ -274,11 +274,11 @@ app.post("/api/push/subscribe",(req,res)=>{
   if(i>=0)db.pushSubscriptions[i]=item;else db.pushSubscriptions.push(item);
   writeDB(db);res.json({ok:true});
 });
-app.post("/api/push/unsubscribe",(req,res)=>{
+app.post("/api/push/unsubscribe",rateLimit("mutate"),(req,res)=>{
   const {clientId}=req.body||{}; if(!clientId)return res.status(400).json({ok:false});
   const db=pushDB();db.pushSubscriptions=db.pushSubscriptions.filter(x=>x.clientId!==clientId);writeDB(db);res.json({ok:true});
 });
-app.post("/api/push/sync",(req,res)=>{
+app.post("/api/push/sync",rateLimit("mutate"),(req,res)=>{
   const {clientId,alerts,enabled}=req.body||{};
   if(!clientId)return res.status(400).json({ok:false});
   const db=pushDB(),x=db.pushSubscriptions.find(x=>x.clientId===clientId);
@@ -530,7 +530,7 @@ app.post("/api/paper-order",rateLimit("mutate"),async(req,res)=>{
   }catch(e){res.status(500).json({ok:false,error:"Paper order could not be recorded."})}
 });
 app.get("/api/transactions/:userId",(req,res)=>{const db=readDB();res.json(db.transactions.filter(t=>t.userId===req.params.userId))});
-app.post("/api/alerts",(req,res)=>{const {userId,symbol,targetPrice}=req.body;if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)return res.status(400).json({error:"Invalid alert"});const db=readDB();const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};db.alerts.push(alert);writeDB(db);res.status(201).json(alert)});
+app.post("/api/alerts",rateLimit("mutate"),(req,res)=>{const {userId,symbol,targetPrice}=req.body;if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)return res.status(400).json({error:"Invalid alert"});const db=readDB();const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};db.alerts.push(alert);writeDB(db);res.status(201).json(alert)});
 app.get("/api/alerts/:userId",(req,res)=>{const db=readDB();res.json(db.alerts.filter(a=>a.userId===req.params.userId))});
 
 const { registerMaliRadarSocialCompetition } = require('./server/maliradar-social-competition');
