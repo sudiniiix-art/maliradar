@@ -1314,29 +1314,35 @@ document.addEventListener("click",e=>{
   if(wrap&&!wrap.contains(e.target))closeSearchResults();
 });
 function orderMoney(v){return "KSh "+Number(v||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function mrLocalTradeTier(){try{return String(window.MaliRadarEntitlements?.tier?.()||"free").toLowerCase()}catch(e){return"free"}}
+function mrLocalTradePro(){return ["pro","premium","founder","founder_pro","founderpro"].includes(mrLocalTradeTier())}
+function mrLocalTradesToday(){
+  const h=Array.isArray(state.history)?state.history:[];
+  const today=new Date().toISOString().slice(0,10);
+  return h.filter(x=>{try{return x.executedAt?String(x.executedAt).slice(0,10)===today:x.time?new Date(x.time).toISOString().slice(0,10)===today:false}catch(e){return false}}).length;
+}
+function mrLocalTradeGate(side,s,q){
+  if(mrLocalTradePro())return true;
+  if(mrLocalTradesToday()>=5){alert("FREE PLAN LIMIT REACHED\n\nYou have used all 5 stock trades for today.\nUpgrade to Pro for unlimited stock trades.");return false}
+  if(q>25){alert("FREE PLAN LIMIT REACHED\n\nMaximum 25 shares per stock order on Free.\nUpgrade to Pro for unlimited quantities.");return false}
+  if(side==="BUY"&&Number(state.hold?.[s]||0)+q>100){alert("FREE PLAN LIMIT REACHED\n\nMaximum 100 shares held per stock on Free.\nUpgrade to Pro for unlimited stock buys.");return false}
+  return true;
+}
 function buy(s){
   const x=stock(s),price=paperPrice(s);
   if(price==null)return alert("Verified provider price is not available for this stock yet. MaliRadar will not invent a paper-trade price.");
   const q=parseInt(prompt("How many paper shares?","10"));
   if(!q||q<1)return;
+  if(!mrLocalTradeGate("BUY",s,q))return;
   const total=price*q,remaining=state.cash-total;
-  if(total>state.cash)return alert("Not enough paper cash.\n\nOrder value: "+orderMoney(total)+"\nAvailable cash: "+orderMoney(state.cash));
+  if(total>state.cash)return alert("Not enough paper cash.\\n\\nOrder value: "+orderMoney(total)+"\\nAvailable cash: "+orderMoney(state.cash));
   const name=x?.[1]||s;
-  const confirmed=confirm(
-    "PAPER BUY CONFIRMATION\n\n"+
-    name+" ("+s+")\n"+
-    "Quantity: "+q+" shares\n"+
-    "Verified price: "+orderMoney(price)+"\n"+
-    "Order value: "+orderMoney(total)+"\n"+
-    "Cash after order: "+orderMoney(remaining)+"\n\n"+
-    "This uses simulated money only.\nConfirm this paper order?"
-  );
+  const confirmed=confirm("PAPER BUY CONFIRMATION\\n\\n"+name+" ("+s+")\\nQuantity: "+q+" shares\\nVerified price: "+orderMoney(price)+"\\nOrder value: "+orderMoney(total)+"\\nCash after order: "+orderMoney(remaining)+"\\n\\nThis uses simulated money only.\\nConfirm this paper order?");
   if(!confirmed)return;
-  state.cash=remaining;
-  state.hold[s]=(state.hold[s]||0)+q;
-  state.history.unshift({type:"BUY",sym:s,q,p:price,value:total,time:new Date().toLocaleString()});
+  state.cash=remaining; state.hold[s]=(state.hold[s]||0)+q;
+  state.history.unshift({type:"BUY",sym:s,q,p:price,value:total,time:new Date().toLocaleString(),executedAt:new Date().toISOString()});
   save();render();
-  alert("Paper BUY executed.\n\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\nNo real money was used.");
+  alert("Paper BUY executed.\\n\\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\\nNo real money was used.");
 }
 function sell(s){
   const x=stock(s),price=paperPrice(s),owned=state.hold[s]||0;
@@ -1344,24 +1350,16 @@ function sell(s){
   if(price==null)return alert("Verified provider price is not available for this stock yet. MaliRadar will not invent a paper-trade price.");
   const q=parseInt(prompt("How many paper shares to sell?",""+Math.min(1,owned)));
   if(!q||q<1||q>owned)return;
+  if(!mrLocalTradeGate("SELL",s,q))return;
   const total=price*q,remaining=state.cash+total;
   const name=x?.[1]||s;
-  const confirmed=confirm(
-    "PAPER SELL CONFIRMATION\n\n"+
-    name+" ("+s+")\n"+
-    "Quantity: "+q+" shares\n"+
-    "Verified price: "+orderMoney(price)+"\n"+
-    "Order value: "+orderMoney(total)+"\n"+
-    "Cash after order: "+orderMoney(remaining)+"\n\n"+
-    "This uses simulated money only.\nConfirm this paper order?"
-  );
+  const confirmed=confirm("PAPER SELL CONFIRMATION\\n\\n"+name+" ("+s+")\\nQuantity: "+q+" shares\\nVerified price: "+orderMoney(price)+"\\nOrder value: "+orderMoney(total)+"\\nCash after order: "+orderMoney(remaining)+"\\n\\nThis uses simulated money only.\\nConfirm this paper order?");
   if(!confirmed)return;
-  state.cash=remaining;
-  state.hold[s]-=q;
+  state.cash=remaining; state.hold[s]-=q;
   if(!state.hold[s])delete state.hold[s];
-  state.history.unshift({type:"SELL",sym:s,q,p:price,value:total,time:new Date().toLocaleString()});
+  state.history.unshift({type:"SELL",sym:s,q,p:price,value:total,time:new Date().toLocaleString(),executedAt:new Date().toISOString()});
   save();render();
-  alert("Paper SELL executed.\n\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\nNo real money was used.");
+  alert("Paper SELL executed.\\n\\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\\nNo real money was used.");
 }
 let detailMode=localStorage.getItem("maliradar_mode")||"beginner";
 let chartPeriod="1M";
