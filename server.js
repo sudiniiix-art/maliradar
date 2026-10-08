@@ -68,7 +68,7 @@ const staticOptions = {
 
 app.use(express.static(path.join(__dirname, "public"), staticOptions));
 
-const dataDir = path.join(__dirname, "data");
+const dataDir = process.env.MALIRADAR_DATA_DIR ? path.resolve(process.env.MALIRADAR_DATA_DIR) : path.join(__dirname, "data");
 const dbFile = path.join(dataDir, "maliradar-db.json");
 const legacyDbFile = path.join(dataDir, "demo-db.json");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, {recursive:true});
@@ -116,7 +116,7 @@ const LAUNCH_MAX_PAID=100;
 const LAUNCH_MONTHS=2;
 function launchOfferState(){
   const db=readDB();
-  if(!db.launchOffer) {
+  if(!db.launchOffer || !db.launchOffer.launchAt) {
     db.launchOffer={launchAt:new Date().toISOString(),paidSlots:0};
     writeDB(db);
   }
