@@ -1364,10 +1364,15 @@ document.addEventListener("click",e=>{
 function orderMoney(v){return "KSh "+Number(v||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2})}
 function mrLocalTradeTier(){try{return String(window.MaliRadarEntitlements?.tier?.()||"free").toLowerCase()}catch(e){return"free"}}
 function mrLocalTradePro(){return ["pro","premium","founder","founder_pro","founderpro"].includes(mrLocalTradeTier())}
+function mrTradeLocalDate(value){
+  const d=value?new Date(value):new Date();
+  if(!Number.isFinite(d.getTime()))return"";
+  return [d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+}
 function mrLocalTradesToday(){
   const h=Array.isArray(state.history)?state.history:[];
-  const today=new Date().toISOString().slice(0,10);
-  return h.filter(x=>{try{return x.executedAt?String(x.executedAt).slice(0,10)===today:x.time?new Date(x.time).toISOString().slice(0,10)===today:false}catch(e){return false}}).length;
+  const today=mrTradeLocalDate();
+  return h.filter(x=>{try{return mrTradeLocalDate(x.executedAt||x.time)===today}catch(e){return false}}).length;
 }
 function mrLocalTradeGate(side,s,q){
   if(mrLocalTradePro())return true;
