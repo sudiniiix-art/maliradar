@@ -60,8 +60,9 @@ function installStyle(){
 const LIMITS={free:{maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100},founder:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity},premium:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity}};
 const read=()=>{try{return JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}")}catch(e){return{}}};
 const tier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
-const today=()=>new Date().toISOString().slice(0,10);
-const tradesToday=()=>{const h=Array.isArray(read().history)?read().history:[];return h.filter(x=>{try{return x.executedAt?String(x.executedAt).slice(0,10)===today():x.time?new Date(x.time).toISOString().slice(0,10)===today():false}catch(e){return false}}).length};
+const localDate=v=>{const d=v?new Date(v):new Date();return Number.isFinite(d.getTime())?[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"):""};
+const today=()=>localDate();
+const tradesToday=()=>{const h=Array.isArray(read().history)?read().history:[];return h.filter(x=>{try{return localDate(x.executedAt||x.time)===today()}catch(e){return false}}).length};
 function status(){const t=tier(),l=LIMITS[t]||LIMITS.free,u=tradesToday();return{tier:t,pro:t!=="free",tradesUsed:u,tradesLimit:Number.isFinite(l.maxTradesPerDay)?l.maxTradesPerDay:null,tradesRemaining:Number.isFinite(l.maxTradesPerDay)?Math.max(0,l.maxTradesPerDay-u):null,maxSharesPerOrder:Number.isFinite(l.maxSharesPerOrder)?l.maxSharesPerOrder:null,maxSharesPerSymbol:Number.isFinite(l.maxSharesPerSymbol)?l.maxSharesPerSymbol:null}}
 function render(){
   installStyle();
