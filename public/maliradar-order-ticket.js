@@ -38,7 +38,8 @@
   const tradeTier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
   const tradeIsPro=()=>{const t=String(tradeTier()).toLowerCase();return ["pro","premium","founder","founder_pro","founderpro"].includes(t);};
   const tradeLimits=()=>({maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100});
-  const tradesToday=st=>{const d=new Date().toISOString().slice(0,10);return (st.history||[]).filter(h=>String(h.executedAt||"").slice(0,10)===d || (h.time&&new Date(h.time).toISOString?.().slice(0,10)===d)).length};
+  const localDate=v=>{const d=v?new Date(v):new Date();return Number.isFinite(d.getTime())?[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"):""};
+  const tradesToday=st=>{const d=localDate();return (st.history||[]).filter(h=>localDate(h.executedAt||h.time)===d).length};
   const checkTradeEntitlement=(st,side,sym,q)=>{
     try{
       if(window.MaliRadarTradeFirewall?.check){
