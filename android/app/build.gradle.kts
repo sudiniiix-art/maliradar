@@ -8,16 +8,16 @@ android {
 
     defaultConfig {
         applicationId = "com.maliradar.app"
-        minSdk = 24
-        targetSdk = 36
+        minSdk = 23
+        targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
     }
 
     buildTypes {
         debug {
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-debug"
+            // Keep the sideload build on the normal MaliRadar package ID.
+            // This avoids package/signature confusion with earlier builds.
         }
         release {
             isMinifyEnabled = false
