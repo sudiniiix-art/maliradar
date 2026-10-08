@@ -1,10 +1,39 @@
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
+const crypto = require("crypto");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.disable("x-powered-by");
+app.use((req,res,next)=>{
+  res.setHeader("X-Content-Type-Options","nosniff");
+  res.setHeader("Referrer-Policy","strict-origin-when-cross-origin");
+  res.setHeader("X-Frame-Options","DENY");
+  res.setHeader("Permissions-Policy","camera=(),microphone=(),geolocation=(),payment=(self)");
+  const forwarded=String(req.headers["x-forwarded-proto"]||"").split(",")[0].trim();
+  if(req.secure||forwarded==="https")res.setHeader("Strict-Transport-Security","max-age=31536000; includeSubDomains");
+  next();
+});
+app.use(express.json({limit:"1mb"}));
+
+const rateWindows=new Map();
+const RATE_LIMITS={mutate:{windowMs:60000,max:45},billing:{windowMs:60000,max:12},auth:{windowMs:60000,max:30}};
+function rateLimit(kind){
+  return (req,res,next)=>{
+    const cfg=RATE_LIMITS[kind]||RATE_LIMITS.mutate;
+    const key=kind+":"+String(req.ip||req.headers["x-forwarded-for"]||"unknown").split(",")[0].trim();
+    const now=Date.now(); let x=rateWindows.get(key);
+    if(!x||now-x.startedAt>=cfg.windowMs)x={startedAt:now,count:0};
+    x.count+=1; rateWindows.set(key,x);
+    if(x.count>cfg.max){
+      res.setHeader("Retry-After",String(Math.ceil((x.startedAt+cfg.windowMs-now)/1000)));
+      return res.status(429).json({ok:false,error:"Too many requests. Please try again shortly."});
+    }
+    next();
+  };
+}
+setInterval(()=>{const cutoff=Date.now()-120000;for(const [k,v] of rateWindows)if(v.startedAt<cutoff)rateWindows.delete(k)},120000);
 
 // Inject the latest client-side modules without requiring duplicate HTML entrypoints.
 app.use((req,res,next)=>{
@@ -40,13 +69,35 @@ const staticOptions = {
 app.use(express.static(path.join(__dirname, "public"), staticOptions));
 
 const dataDir = path.join(__dirname, "data");
-const dbFile = path.join(dataDir, "demo-db.json");
+const dbFile = path.join(dataDir, "maliradar-db.json");
+const legacyDbFile = path.join(dataDir, "demo-db.json");
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, {recursive:true});
 if (!fs.existsSync(dbFile)) {
-  fs.writeFileSync(dbFile, JSON.stringify({users:[],portfolios:[],transactions:[],watchlists:[],alerts:[]}, null, 2));
+  if(fs.existsSync(legacyDbFile)) fs.copyFileSync(legacyDbFile,dbFile);
+  else fs.writeFileSync(dbFile, JSON.stringify({users:[],portfolios:[],transactions:[],watchlists:[],alerts:[],subscriptions:{},launchOffer:{},launchReservations:[]}, null, 2));
 }
 function readDB(){ return JSON.parse(fs.readFileSync(dbFile,"utf8")); }
-function writeDB(db){ fs.writeFileSync(dbFile, JSON.stringify(db,null,2)); }
+function writeDB(db){
+  const tmp=dbFile+".tmp-"+process.pid+"-"+Date.now();
+  fs.writeFileSync(tmp,JSON.stringify(db,null,2));
+  fs.renameSync(tmp,dbFile);
+}
+let dbMutationQueue=Promise.resolve();
+function withDbLock(fn){
+  const run=dbMutationQueue.then(fn,fn);
+  dbMutationQueue=run.catch(()=>{});
+  return run;
+}
+function tokenHash(v){return crypto.createHash("sha256").update(String(v||"")).digest("hex");}
+function newSecret(){return crypto.randomBytes(24).toString("base64url");}
+function ensureUserSecret(u){if(u&&!u.deletionToken)u.deletionToken=newSecret();return u&&u.deletionToken||null;}
+function validAccountSecret(db,id,secret){
+  const u=(db.users||[]).find(x=>x.id===id);
+  if(!u)return false;
+  if(!u.deletionToken)return false;
+  const a=Buffer.from(tokenHash(secret)),b=Buffer.from(tokenHash(u.deletionToken));
+  return a.length===b.length&&crypto.timingSafeEqual(a,b);
+}
 function pushReady(){
   return !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
 }
