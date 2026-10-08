@@ -1394,7 +1394,7 @@ function buy(s){
   if(!confirmed)return;
   state.cash=remaining; state.hold[s]=(state.hold[s]||0)+q;
   state.history.unshift({type:"BUY",sym:s,q,p:price,value:total,time:new Date().toLocaleString(),executedAt:new Date().toISOString()});
-  save();render();
+  save();render();window.dispatchEvent(new CustomEvent("maliRadar:paperTrade",{detail:{symbol:s,side:"BUY",quantity:q}}));
   alert("Paper BUY executed.\\n\\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\\nNo real money was used.");
 }
 function sell(s){
@@ -1411,7 +1411,7 @@ function sell(s){
   state.cash=remaining; state.hold[s]-=q;
   if(!state.hold[s])delete state.hold[s];
   state.history.unshift({type:"SELL",sym:s,q,p:price,value:total,time:new Date().toLocaleString(),executedAt:new Date().toISOString()});
-  save();render();
+  save();render();window.dispatchEvent(new CustomEvent("maliRadar:paperTrade",{detail:{symbol:s,side:"SELL",quantity:q}}));
   alert("Paper SELL executed.\\n\\n"+q+" × "+orderMoney(price)+" = "+orderMoney(total)+"\\nNo real money was used.");
 }
 let detailMode=localStorage.getItem("maliradar_mode")||"beginner";
