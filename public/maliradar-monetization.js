@@ -8,12 +8,21 @@ const PRICING={currency:"KES",freeMonthly:0,founderMonthly:99,founderYearly:999,
 const TIERS={free:0,founder:1,premium:2};
 const LAUNCH_OFFER={maxAvailable:100,endsMonthsAfterLaunch:2,launchAtKey:"maliradar_launch_started_at",soldKey:"maliradar_launch_paid_slots"};
 function launchOffer(){
-  const now=Date.now();
-  let launch=Number(localStorage.getItem(LAUNCH_OFFER.launchAtKey)||0);
-  if(!launch){launch=now;localStorage.setItem(LAUNCH_OFFER.launchAtKey,String(launch))}
-  const end=new Date(launch);end.setMonth(end.getMonth()+LAUNCH_OFFER.endsMonthsAfterLaunch);
-  const used=Math.min(LAUNCH_OFFER.maxAvailable,Math.max(0,Number(localStorage.getItem(LAUNCH_OFFER.soldKey)||0)));
-  return {maxAvailable:LAUNCH_OFFER.maxAvailable,used,remaining:Math.max(0,LAUNCH_OFFER.maxAvailable-used),launchAt:launch,endsAt:end.getTime(),active:now<end.getTime()&&used<LAUNCH_OFFER.maxAvailable};
+  const fallback=()=>{
+    const now=Date.now();let launch=Number(localStorage.getItem(LAUNCH_OFFER.launchAtKey)||0);
+    if(!launch){launch=now;localStorage.setItem(LAUNCH_OFFER.launchAtKey,String(launch))}
+    const end=new Date(launch);end.setMonth(end.getMonth()+LAUNCH_OFFER.endsAfterMonths);
+    const used=Math.min(LAUNCH_OFFER.maxAvailable,Math.max(0,Number(localStorage.getItem(LAUNCH_OFFER.soldKey)||0)));
+    return {maxAvailable:LAUNCH_OFFER.maxAvailable,used,remaining:Math.max(0,LAUNCH_OFFER.maxAvailable-used),launchAt:launch,endsAt:end.getTime(),active:now<end.getTime()&&used<LAUNCH_OFFER.maxAvailable};
+  };
+  return window._mrLaunchOfferState||fallback();
+}
+function syncLaunchOffer(){
+  fetch("/api/launch-offer?_="+Date.now(),{cache:"no-store"}).then(r=>r.ok?r.json():null).then(j=>{
+    if(!j?.offer)return;
+    const o=j.offer;window._mrLaunchOfferState={...o,endsAt:Date.parse(o.endsAt),launchAt:Date.parse(o.launchAt)};
+    const n=document.getElementById("mrLaunchOffer");if(n)n.innerHTML="<b>LAUNCH OFFER • 100 TOTAL PAID PLACES</b><br>"+launchOfferCopy();
+  }).catch(()=>{});
 }
 function launchOfferCopy(){
  const o=launchOffer();
@@ -151,7 +160,7 @@ function track(){
  setTimeout(smartAdvertise,90000);setTimeout(smartAdvertise,180000);
 }
 function init(){
- css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();
+ css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();syncLaunchOffer();setInterval(syncLaunchOffer,60000);
  setTimeout(()=>{mountAccount();refresh();highlight()},900);
  document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open()});
  window.addEventListener("maliRadar:entitlementUpdated",()=>{refresh();if(window.MaliRadarProGates?.refresh)window.MaliRadarProGates.refresh()});
