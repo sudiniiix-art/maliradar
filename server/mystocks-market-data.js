@@ -3,7 +3,7 @@
 const BASE = String(
   process.env.MYSTOCKS_BASE_URL ||
   'https://mystocks.africa/api/sandbox/v1/partner'
-).replace(/\\/+$/,'');
+).replace(/\/+$/,'');
 const IS_PRODUCTION = !BASE.includes('/api/sandbox/partner') && !BASE.includes('/api/sandbox/v1/partner');
 
 const SUFFIX = {
