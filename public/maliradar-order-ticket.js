@@ -51,6 +51,7 @@
   const refresh=()=>{try{if(typeof window.render==="function")window.render()}catch(e){}};
   function executeLimit(o,p,st){
     st.cash=Number(st.cash||0);st.hold=st.hold||{};st.history=Array.isArray(st.history)?st.history:[];
+    const gate=checkTradeEntitlement(st,o.side,o.sym,Number(o.q)||0); if(!gate.ok)return false;
     const value=o.q*p;
     if(o.side==="BUY"){
       if(value>st.cash)return false;
