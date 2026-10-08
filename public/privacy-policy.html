@@ -8,7 +8,7 @@
 <h2>1. Information STOCKCRASH handles</h2>
 <h3>Information stored on your device</h3>
 <ul><li>Paper-trading cash, holdings, orders and simulator history.</li><li>Watchlists, alerts, market/region preferences, learning progress, tutorial status and appearance settings.</li><li>Your optional local profile information, such as a chosen username and avatar.</li><li>Policy acceptance records, including the accepted policy version and acceptance time.</li></ul>
-<p>This information is primarily stored in your device/browser storage. Clearing app data, clearing site storage, or using the app's reset/delete controls can remove local information.</p>
+<p>This information is primarily stored in your device/browser storage. Authenticated account information is also stored on STOCKCRASH servers so your identity and server-backed features can persist across sessions and devices. Clearing app data, clearing site storage, or using the app's reset/delete controls can remove local information.</p>
 
 <h3>Information sent to STOCKCRASH services</h3>
 <p>Some optional social and online features transmit information away from your device. When you use them, STOCKCRASH may process:</p>
@@ -20,8 +20,9 @@
 <h3>Market and news data</h3>
 <p>STOCKCRASH requests market quotes, historical market information and news through server-side or third-party providers. Your search terms, selected market or requested symbol may be sent as necessary to obtain the requested information. Provider systems may have their own privacy policies and retention practices.</p>
 
-<h3>Information we do not intentionally request for the current app</h3>
-<p>STOCKCRASH does not ask you to provide a password, bank-account password, payment-card number, brokerage login or real-money trading credential. Do not enter such information into free-text fields or any feature that is not explicitly designed for it.</p>
+<h3>Account authentication</h3>
+<p>STOCKCRASH supports email/password accounts and, when configured in the Android build, Sign in with Google. For email authentication, the server stores the email address and a salted password verifier; the plaintext password is not stored in the app or server database. For Google authentication, STOCKCRASH receives the Google account identifier and basic profile information needed to create or sign in to the account after the Google ID token is validated.</p>
+<p>STOCKCRASH does not ask you to provide a bank-account password, payment-card number, brokerage login or real-money trading credential. Never enter such information into STOCKCRASH.</p>
 
 <h2>2. Why information is used</h2>
 <ul><li>To operate the paper-trading simulator and save your preferences.</li><li>To provide optional leaderboards, challenges, profiles and Friends features.</li><li>To provide optional alerts and notifications.</li><li>To provide requested market and news information.</li><li>To maintain security, prevent abuse, diagnose technical problems and keep the service reliable.</li><li>To display learning and simulated-performance statistics inside STOCKCRASH.</li></ul>
