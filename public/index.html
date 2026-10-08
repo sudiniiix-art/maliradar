@@ -1057,9 +1057,13 @@ function alerts(){
   renderAlerts();
 }
 function render(){
-  let val=Number(state.cash)||0;
-  Object.keys(state.hold).forEach(s=>{const p=paperPrice(s);if(p!=null)val+=Number(state.hold[s]||0)*p});
-  $("total").textContent=money(val);
+  const held=Object.keys(state.hold||{}).filter(s=>Number(state.hold[s]||0)>0);
+  const missing=held.filter(s=>paperPrice(s)==null);
+  const val=missing.length?null:Number(state.cash)||0;
+  if(val!=null)held.forEach(s=>{const p=paperPrice(s);if(p!=null){}});
+  let totalValue=val;
+  if(totalValue!=null)held.forEach(s=>{const p=paperPrice(s);if(p!=null)totalValue+=Number(state.hold[s]||0)*p});
+  $("total").textContent=totalValue==null?"—":money(totalValue);
   $("cash").textContent=money(state.cash);
   $("pv").textContent=money(val);
   renderRadar();renderMarkets();renderPortfolio();renderAlerts();renderMarketStatus();if($(`learn`)?.classList.contains("active"))renderLearn();
