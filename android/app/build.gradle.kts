@@ -23,8 +23,8 @@ android {
         applicationId = "com.maliradar.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0"
         buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", "\"${googleServerClientIdEscaped}\"")
     }
 
