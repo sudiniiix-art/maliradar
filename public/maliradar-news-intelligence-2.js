@@ -1,19 +1,5 @@
-<style id="mr-news-market-tape-css">
-.mr-news-market-tape{display:flex;align-items:center;gap:10px;overflow:hidden;margin:0 0 10px;padding:9px 11px;border:1px solid rgba(56,200,255,.2);border-radius:12px;background:linear-gradient(90deg,rgba(56,200,255,.07),rgba(53,224,177,.045));box-shadow:0 7px 22px rgba(0,0,0,.12)}
-.mr-news-tape-label{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:1px;color:#b9d8df;white-space:nowrap}
-.mr-news-tape-live{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a)}
-.mr-news-tape-window{min-width:0;overflow:hidden;flex:1}
-.mr-news-tape-track{display:flex;align-items:center;gap:9px;min-width:max-content;animation:mrNewsTape 24s linear infinite}
-.mr-news-market-tape:hover .mr-news-tape-track{animation-play-state:paused}
-.mr-news-tape-item{font-size:10px;white-space:nowrap}
-.mr-news-tape-item strong.up{color:var(--a)}
-.mr-news-tape-item strong.down{color:var(--r)}
-.mr-news-tape-item strong.flat{color:var(--muted)}
-.mr-news-tape-sep{color:#55727b;font-size:9px}
-.mr-news-tape-empty{font-size:10px;color:var(--muted);white-space:nowrap}
-@keyframes mrNewsTape{from{transform:translateX(0)}to{transform:translateX(-45%)}}
-@media(prefers-reduced-motion:reduce){.mr-news-tape-track{animation:none}}
-</style>(()=>{"use strict";
+(()=>{const style=document.createElement("style");style.id="mr-news-market-tape-css";style.textContent="\n.mr-news-market-tape{display:flex;align-items:center;gap:10px;overflow:hidden;margin:0 0 10px;padding:9px 11px;border:1px solid rgba(56,200,255,.2);border-radius:12px;background:linear-gradient(90deg,rgba(56,200,255,.07),rgba(53,224,177,.045));box-shadow:0 7px 22px rgba(0,0,0,.12)}\n.mr-news-tape-label{display:flex;align-items:center;gap:6px;flex:0 0 auto;font-size:9px;font-weight:900;letter-spacing:1px;color:#b9d8df;white-space:nowrap}\n.mr-news-tape-live{width:6px;height:6px;border-radius:50%;background:var(--a);box-shadow:0 0 8px var(--a)}\n.mr-news-tape-window{min-width:0;overflow:hidden;flex:1}\n.mr-news-tape-track{display:flex;align-items:center;gap:9px;min-width:max-content;animation:mrNewsTape 24s linear infinite}\n.mr-news-market-tape:hover .mr-news-tape-track{animation-play-state:paused}\n.mr-news-tape-item{font-size:10px;white-space:nowrap}\n.mr-news-tape-item strong.up{color:var(--a)}\n.mr-news-tape-item strong.down{color:var(--r)}\n.mr-news-tape-item strong.flat{color:var(--muted)}\n.mr-news-tape-sep{color:#55727b;font-size:9px}\n.mr-news-tape-empty{font-size:10px;color:var(--muted);white-space:nowrap}\n@keyframes mrNewsTape{from{transform:translateX(0)}to{transform:translateX(-45%)}}\n@media(prefers-reduced-motion:reduce){.mr-news-tape-track{animation:none}}\n";document.head.appendChild(style);})();
+(()=>{"use strict";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const clean=v=>String(v??"").replace(/<[^>]*>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/\s+/g," ").trim();
 const local=s=>String(s||"").toUpperCase().replace(/\.(KE|NG|ZA|GH|EG|MA|TZ|UG|RW)$/,"");
