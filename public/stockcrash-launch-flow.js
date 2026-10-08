@@ -168,5 +168,6 @@
     setTimeout(function(){var logo=$('scIntroLogo');if(logo)logo.classList.add('show')},3100);
     setTimeout(function(){stage('scAuthStage')},4500);
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else setTimeout(boot,20);
+  // The script is injected at the end of <body>; boot immediately so the intro is the first visible app surface.
+  if(document.body)setTimeout(boot,0);else document.addEventListener('DOMContentLoaded',boot,{once:true});
 })();
