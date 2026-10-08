@@ -1,6 +1,10 @@
 package com.maliradar.app;
 
 import android.app.Activity;
+import android.content.Context;
+import android.os.CancellationSignal;
+import android.util.Base64;
+import android.webkit.JavascriptInterface;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -18,6 +22,18 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
 
+import androidx.credentials.Credential;
+import androidx.credentials.CredentialManager;
+import androidx.credentials.CustomCredential;
+import androidx.credentials.GetCredentialRequest;
+import androidx.credentials.GetCredentialResponse;
+import androidx.credentials.exceptions.GetCredentialException;
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption;
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential;
+import java.security.SecureRandom;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 public class MainActivity extends Activity {
 
     private static final String APP_URL = "https://maliradar.onrender.com/";
@@ -25,6 +41,8 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private ValueCallback<Uri[]> pendingFileCallback;
+    private CredentialManager credentialManager;
+    private final ExecutorService authExecutor = Executors.newSingleThreadExecutor();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +52,7 @@ public class MainActivity extends Activity {
         setContentView(webView);
 
         configureWebView();
+        credentialManager = CredentialManager.create(this);
         webView.loadUrl(APP_URL);
     }
 
@@ -56,6 +75,7 @@ public class MainActivity extends Activity {
         CookieManager.getInstance().setAcceptThirdPartyCookies(webView, false);
 
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
+        webView.addJavascriptInterface(new StockCrashNativeAuth(), "StockCrashNativeAuth");
         webView.setWebViewClient(new MaliRadarWebViewClient());
         webView.setWebChromeClient(new MaliRadarChromeClient());
         webView.setDownloadListener(new MaliRadarDownloadListener());
@@ -73,6 +93,74 @@ public class MainActivity extends Activity {
             startActivity(intent);
         } catch (ActivityNotFoundException ignored) {
             Toast.makeText(this, "No app can open this link.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private final class StockCrashNativeAuth {
+        @JavascriptInterface
+        public boolean isConfigured() {
+            return BuildConfig.GOOGLE_SERVER_CLIENT_ID != null && !BuildConfig.GOOGLE_SERVER_CLIENT_ID.trim().isEmpty();
+        }
+
+        @JavascriptInterface
+        public void signInWithGoogle() {
+            if (!isConfigured()) {
+                postAuthResult(false, "", "", "Google sign-in is not configured in this Android build yet.");
+                return;
+            }
+            final String nonce = createNonce();
+            final GetSignInWithGoogleOption option = new GetSignInWithGoogleOption.Builder(BuildConfig.GOOGLE_SERVER_CLIENT_ID)
+                    .setNonce(nonce)
+                    .build();
+            final GetCredentialRequest request = new GetCredentialRequest.Builder()
+                    .addCredentialOption(option)
+                    .build();
+            runOnUiThread(() -> credentialManager.getCredentialAsync(
+                    MainActivity.this,
+                    request,
+                    (CancellationSignal) null,
+                    authExecutor,
+                    new androidx.credentials.CredentialManagerCallback<GetCredentialResponse, GetCredentialException>() {
+                        @Override public void onResult(GetCredentialResponse response) {
+                            Credential credential = response.getCredential();
+                            try {
+                                if (!(credential instanceof CustomCredential)) throw new IllegalStateException("Unsupported Google credential");
+                                CustomCredential custom = (CustomCredential) credential;
+                                if (!GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL.equals(custom.getType())) {
+                                    throw new IllegalStateException("Unsupported Google credential type");
+                                }
+                                GoogleIdTokenCredential google = GoogleIdTokenCredential.createFrom(custom.getData());
+                                postAuthResult(true, google.getIdToken(), nonce, "");
+                            } catch (Exception e) {
+                                postAuthResult(false, "", "", "Google sign-in response could not be read.");
+                            }
+                        }
+                        @Override public void onError(GetCredentialException e) {
+                            postAuthResult(false, "", "", "Google sign-in was cancelled or could not be completed.");
+                        }
+                    }
+            ));
+        }
+
+        private String createNonce() {
+            byte[] bytes = new byte[32];
+            new SecureRandom().nextBytes(bytes);
+            return Base64.encodeToString(bytes, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        }
+
+        private void postAuthResult(boolean ok, String idToken, String nonce, String error) {
+            String js = "window.StockCrashGoogleAuthResult(" +
+                    "{"ok":" + ok +
+                    ","idToken":" + quote(idToken) +
+                    ","nonce":" + quote(nonce) +
+                    ","error":" + quote(error) + "});";
+            runOnUiThread(() -> webView.evaluateJavascript(js, null));
+        }
+
+        private String quote(String value) {
+            String s = value == null ? "" : value;
+            return """ + s.replace("\\", "\\\\").replace(""", "\"").replace("
+", "\\n").replace("", "\\r") + """;
         }
     }
 
@@ -183,6 +271,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        authExecutor.shutdownNow();
         if (webView != null) {
             webView.stopLoading();
             webView.setWebChromeClient(null);
