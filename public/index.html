@@ -1113,74 +1113,107 @@ function paperPrice(sym){
 function portfolioPositions(){
   const out=[];
   Object.keys(state.hold).forEach(sym=>{
-    const x=stock(sym), shares=Number(state.hold[sym]||0), price=paperPrice(sym);
-    if(!x||!shares||price==null)return;
-    let buys=state.history.filter(h=>h.sym===sym&&h.type==='BUY');
-    let buyQty=buys.reduce((a,h)=>a+h.q,0);
-    let buyCost=buys.reduce((a,h)=>a+h.q*h.p,0);
+    const x=stock(sym), shares=Number(state.hold[sym]||0);
+    if(!x||!shares)return;
+    const price=paperPrice(sym);
+    const buys=state.history.filter(h=>String(h.sym||'').toUpperCase()===String(sym||'').toUpperCase()&&h.type==='BUY');
+    const buyQty=buys.reduce((a,h)=>a+(Number(h.q)||0),0);
+    const buyCost=buys.reduce((a,h)=>a+(Number(h.q)||0)*(Number(h.p)||0),0);
     const avg=buyCost/Math.max(1,buyQty);
-    const cost=shares*avg, value=shares*price, pl=value-cost;
-    out.push({sym,x,shares,avg,cost,value,pl,pct:cost?pl/cost*100:0,currentPrice:price});
+    const cost=shares*avg;
+    const value=price==null?null:shares*price;
+    const pl=value==null?null:value-cost;
+    const pct=cost&&pl!=null?pl/cost*100:null;
+    out.push({sym,x,shares,avg,cost,value,pl,pct,currentPrice:price,priceAvailable:price!=null});
   }); return out;
 }
 function renderPortfolio(){
-  const pos=portfolioPositions(), keys=Object.keys(state.hold);
-  const value=state.cash+pos.reduce((a,p)=>a+p.value,0);
+  const pos=portfolioPositions(), keys=Object.keys(state.hold).filter(s=>Number(state.hold[s]||0)>0);
+  const unpriced=pos.filter(p=>!p.priceAvailable);
+  const fullyValued=unpriced.length===0;
+  const priced=pos.filter(p=>p.priceAvailable);
+  const value=fullyValued?Number(state.cash)+priced.reduce((a,p)=>a+p.value,0):null;
   const invested=pos.reduce((a,p)=>a+p.cost,0);
-  const pl=pos.reduce((a,p)=>a+p.pl,0), plPct=invested?pl/invested*100:0;
-  const today=pos.reduce((a,p)=>a+p.shares*p.currentPrice*(Number(p.x[4]||0)/100),0), todayPct=value?today/value*100:0;
-  $('pv').textContent=money(value); $('portfolioCash').textContent='KSh '+money(state.cash);
-  $('holdingCount').textContent=keys.length; $('sectorCount').textContent=new Set(pos.map(p=>p.x[2])).size;
-  $('invested').textContent='KSh '+money(invested); $('currentValueMetric').textContent='KSh '+money(value);
-  $('unrealizedMetric').textContent='KSh '+money(pl);
-  $('totalMove').textContent=`Total P/L: KSh ${money(pl)} (${plPct.toFixed(2)}%)`;
-  $('totalMove').className=pl>=0?'green':'red';
-  $('todayMove').textContent=`Today: KSh ${money(today)} (${todayPct.toFixed(2)}%)`; $('todayMove').className=today>=0?'green':'red';
-  let largest=pos.slice().sort((a,b)=>b.value-a.value)[0];
-  $('largestPosition').textContent=largest?`${largest.sym} • KSh ${money(largest.value)}`:'—';
+  const pl=fullyValued?priced.reduce((a,p)=>a+(p.pl||0),0):null;
+  const plPct=pl!=null&&invested?pl/invested*100:null;
+  const today=fullyValued?priced.reduce((a,p)=>a+p.shares*p.currentPrice*(Number(p.x[4]||0)/100),0):null;
+  const todayPct=today!=null&&value?today/value*100:null;
+
+  $('pv').textContent=value==null?'—':money(value);
+  $('portfolioCash').textContent='KSh '+money(Number(state.cash)||0);
+  $('holdingCount').textContent=keys.length;
+  $('sectorCount').textContent=new Set(pos.map(p=>p.x[2])).size;
+  $('invested').textContent='KSh '+money(invested);
+  $('currentValueMetric').textContent=value==null?'—':'KSh '+money(value);
+  $('unrealizedMetric').textContent=pl==null?'—':'KSh '+money(pl);
+
+  if(unpriced.length){
+    $('totalMove').textContent='Total P/L: — • '+unpriced.length+' holding'+(unpriced.length===1?'':'s')+' awaiting verified price';
+    $('totalMove').className='muted';
+    $('todayMove').textContent='Today: — • provider valuation incomplete';
+    $('todayMove').className='muted';
+  }else{
+    $('totalMove').textContent='Total P/L: KSh '+money(pl||0)+' ('+(plPct||0).toFixed(2)+'%)';
+    $('totalMove').className=(pl||0)>=0?'green':'red';
+    $('todayMove').textContent='Today: KSh '+money(today||0)+' ('+(todayPct||0).toFixed(2)+'%)';
+    $('todayMove').className=(today||0)>=0?'green':'red';
+  }
+
+  const largest=fullyValued?pos.slice().sort((a,b)=>(b.value||0)-(a.value||0))[0]:null;
+  $('largestPosition').textContent=largest?largest.sym+' • KSh '+money(largest.value):'—';
   $('avgCostMetric').textContent=largest?'KSh '+largest.avg.toFixed(2):'—';
-  // Beginner mode keeps the dashboard focused; Expert mode exposes deeper analytics.
-  document.querySelectorAll('#riskCash,#riskConcentration,#riskBest,#riskWorst').forEach(el=>{const card=el.closest('.metric');if(card)card.style.display=portfolioMode==='expert'?'':'none';});
+
+  document.querySelectorAll('#riskCash,#riskConcentration,#riskBest,#riskWorst').forEach(el=>{
+    const card=el.closest('.metric');if(card)card.style.display=portfolioMode==='expert'?'':'none';
+  });
   const riskCard=document.getElementById('riskSummary')?.closest('.card'); if(riskCard)riskCard.style.display=portfolioMode==='expert'?'':'none';
   const sectorCard=document.getElementById('sectorAllocation')?.closest('.card'); if(sectorCard)sectorCard.style.display=portfolioMode==='expert'?'':'none';
-  // Risk analytics use only verified current position values and the paper cash balance.
+
   const totalValue=Number(value)||0;
-  const cashPct=totalValue>0?(state.cash/totalValue*100):0;
-  const largestWeight=totalValue>0&&largest?(largest.value/totalValue*100):0;
-  const ranked=pos.slice().sort((a,b)=>b.pct-a.pct);
+  const cashPct=fullyValued&&totalValue>0?(state.cash/totalValue*100):null;
+  const largestWeight=fullyValued&&totalValue>0&&largest?(largest.value/totalValue*100):null;
+  const ranked=fullyValued?pos.slice().sort((a,b)=>(b.pct??-Infinity)-(a.pct??-Infinity)):[];
   const best=ranked[0], worst=ranked[ranked.length-1];
-  if($('riskCash'))$('riskCash').textContent=cashPct.toFixed(1)+'%';
-  if($('riskConcentration'))$('riskConcentration').textContent=largest?largest.sym+' • '+largestWeight.toFixed(1)+'%':'—';
+
+  if($('riskCash'))$('riskCash').textContent=cashPct==null?'—':cashPct.toFixed(1)+'%';
+  if($('riskConcentration'))$('riskConcentration').textContent=largest&&largestWeight!=null?largest.sym+' • '+largestWeight.toFixed(1)+'%':'—';
   if($('riskBest'))$('riskBest').textContent=best?best.sym+' • '+(best.pct>=0?'+':'')+best.pct.toFixed(2)+'%':'—';
   if($('riskWorst'))$('riskWorst').textContent=worst?worst.sym+' • '+(worst.pct>=0?'+':'')+worst.pct.toFixed(2)+'%':'—';
   if($('riskSummary')){
-    let level='LOW';
-    if(largestWeight>60)level='HIGH';
-    else if(largestWeight>35)level='MEDIUM';
-    const note=largest?('Largest position is '+largest.sym+' at '+largestWeight.toFixed(1)+'% of portfolio. Cash is '+cashPct.toFixed(1)+'%.'):('No verified holdings yet.');
-    $('riskSummary').textContent='Concentration risk: '+level+'. '+note+' This is an educational portfolio metric, not financial advice.';
+    if(unpriced.length){
+      $('riskSummary').textContent='Risk analytics paused until provider pricing is available for every held position. MaliRadar will not estimate missing market values.';
+    }else{
+      let level='LOW'; if((largestWeight||0)>60)level='HIGH'; else if((largestWeight||0)>35)level='MEDIUM';
+      const note=largest?('Largest position is '+largest.sym+' at '+(largestWeight||0).toFixed(1)+'% of portfolio. Cash is '+(cashPct||0).toFixed(1)+'%.'):('No verified holdings yet.');
+      $('riskSummary').textContent='Concentration risk: '+level+'. '+note+' This is an educational portfolio metric, not financial advice.';
+    }
   }
-  if(portfolioMode==='beginner'){
-    $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock" role="button" tabindex="0" onclick="details('${p.sym}')" style="cursor:pointer"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))}</div></div></div><div class="intel-note" style="margin-top:8px">${p.pl>=0?'You are currently above your estimated buying cost.':'You are currently below your estimated buying cost.'}</div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a verified provider-priced stock to build your portfolio.</p>';
-  }else{
-    $('holdings').innerHTML=pos.length?pos.map(p=>`<div class="stock" role="button" tabindex="0" onclick="details('${p.sym}')" style="cursor:pointer"><div class="row"><div><b>${p.sym} — ${p.x[1]}</b><div class="muted">${p.x[2]} • ${p.shares} shares</div></div><div style="text-align:right"><b>KSh ${money(p.value)}</b><div class="${p.pl>=0?'green':'red'}">${p.pl>=0?'▲':'▼'} KSh ${money(Math.abs(p.pl))} (${p.pct.toFixed(2)}%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh ${p.avg.toFixed(2)}</b></div><div class="metric">Current<b>KSh ${p.currentPrice.toFixed(2)}</b></div><div class="metric">Position Weight<b>${value?((p.value/value)*100).toFixed(1):'0.0'}%</b></div><div class="metric">Cost Basis<b>KSh ${money(p.cost)}</b></div></div></div>`).join(''):'<p class="muted">No paper holdings yet. Buy a verified provider-priced stock to build your portfolio.</p>';
-  }
+
+  const holdingRow=p=>{
+    if(!p.priceAvailable){
+      return '<div class="stock" role="button" tabindex="0" onclick="details(\''+p.sym+'\')" style="cursor:pointer"><div class="row"><div><b>'+p.sym+' — '+p.x[1]+'</b><div class="muted">'+p.shares+' shares</div></div><div style="text-align:right"><b>Price unavailable</b><div class="muted">Awaiting verified provider quote</div></div></div><div class="intel-note" style="margin-top:8px">Your paper shares are saved. Portfolio value and P/L will update automatically when a verified price is available.</div></div>';
+    }
+    if(portfolioMode==='beginner'){
+      return '<div class="stock" role="button" tabindex="0" onclick="details(\''+p.sym+'\')" style="cursor:pointer"><div class="row"><div><b>'+p.sym+' — '+p.x[1]+'</b><div class="muted">'+p.shares+' shares</div></div><div style="text-align:right"><b>KSh '+money(p.value)+'</b><div class="'+(p.pl>=0?'green':'red')+'">'+(p.pl>=0?'▲':'▼')+' KSh '+money(Math.abs(p.pl))+'</div></div></div><div class="intel-note" style="margin-top:8px">'+(p.pl>=0?'You are currently above your estimated buying cost.':'You are currently below your estimated buying cost.')+'</div></div>';
+    }
+    return '<div class="stock" role="button" tabindex="0" onclick="details(\''+p.sym+'\')" style="cursor:pointer"><div class="row"><div><b>'+p.sym+' — '+p.x[1]+'</b><div class="muted">'+p.x[2]+' • '+p.shares+' shares</div></div><div style="text-align:right"><b>KSh '+money(p.value)+'</b><div class="'+(p.pl>=0?'green':'red')+'">'+(p.pl>=0?'▲':'▼')+' KSh '+money(Math.abs(p.pl))+' ('+p.pct.toFixed(2)+'%)</div></div></div><div class="grid"><div class="metric">Avg Buy<b>KSh '+p.avg.toFixed(2)+'</b></div><div class="metric">Current<b>KSh '+p.currentPrice.toFixed(2)+'</b></div><div class="metric">Position Weight<b>'+(value?((p.value/value)*100).toFixed(1):'0.0')+'%</b></div><div class="metric">Cost Basis<b>KSh '+money(p.cost)+'</b></div></div></div>';
+  };
+  $('holdings').innerHTML=pos.length?pos.map(holdingRow).join(''):'<p class="muted">No paper holdings yet. Buy a verified provider-priced stock to build your portfolio.</p>';
+
   $('history').innerHTML=state.history.length?state.history.slice().reverse().map(h=>{
-    const qty=Number(h.q)||0, px=Number(h.p)||0, val=Number(h.value??(qty*px))||0;
-    const cls=h.type==='BUY'?'green':'red', sign=h.type==='BUY'?'−':'+';
-    const when=h.time||'Unknown time';
-    return `<div class="stock" style="margin-bottom:10px">
-      <div class="row"><b class="${cls}">${h.type} • ${h.sym}</b><b>${qty} shares</b></div>
-      <div class="grid" style="margin-top:8px">
-        <div class="metric">Execution price<b>KSh ${px.toFixed(2)}</b></div>
-        <div class="metric">Order value<b>${sign}KSh ${val.toFixed(2)}</b></div>
-      </div>
-      <div class="muted" style="margin-top:7px">${when} • VERIFIED PROVIDER PRICE • PAPER TRADE</div>
-    </div>`;
+    const qty=Number(h.q)||0,px=Number(h.p)||0,val=Number(h.value??(qty*px))||0,cls=h.type==='BUY'?'green':'red',sign=h.type==='BUY'?'−':'+',when=h.time||'Unknown time';
+    return '<div class="stock" style="margin-bottom:10px"><div class="row"><b class="'+cls+'">'+h.type+' • '+h.sym+'</b><b>'+qty+' shares</b></div><div class="grid" style="margin-top:8px"><div class="metric">Execution price<b>KSh '+px.toFixed(2)+'</b></div><div class="metric">Order value<b>'+sign+'KSh '+val.toFixed(2)+'</b></div></div><div class="muted" style="margin-top:7px">'+when+' • VERIFIED PROVIDER PRICE • PAPER TRADE</div></div>';
   }).join(''):'<p class="muted">No transactions yet.</p>';
-  const sectors={}; pos.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
-  $('sectorAllocation').innerHTML=Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>`<div class="stock"><div class="row"><b>${sec}</b><span>${value?((v/value)*100).toFixed(1):'0.0'}%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${value?Math.min(100,v/value*100):0}%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh ${money(v)}</div></div>`).join(''):'<p class="muted">Sector allocation appears after you hold paper positions.</p>';
-  $('portfolioExplain').textContent=portfolioMode==='beginner'?'P/L compares the current provider-valued paper position with its estimated average purchase cost. A positive number means the current verified value is above that cost; a negative number means it is below.':'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and verified provider prices.';
+
+  const sectors={}; priced.forEach(p=>sectors[p.x[2]]=(sectors[p.x[2]]||0)+p.value);
+  $('sectorAllocation').innerHTML=fullyValued&&Object.keys(sectors).length?Object.entries(sectors).sort((a,b)=>b[1]-a[1]).map(([sec,v])=>'<div class="stock"><div class="row"><b>'+sec+'</b><span>'+((v/value)*100).toFixed(1)+'%</span></div><div style="height:7px;background:#09151c;border-radius:9px;overflow:hidden;margin-top:7px"><div style="height:100%;width:'+Math.min(100,v/value*100)+'%;background:linear-gradient(90deg,#35e0b1,#38c8ff)"></div></div><div class="muted" style="margin-top:5px">KSh '+money(v)+'</div></div>').join(''):'<p class="muted">'+(unpriced.length?'Sector allocation is paused until all held positions have verified provider prices.':'Sector allocation appears after you hold paper positions.')+'</p>';
+
+  $('portfolioExplain').textContent=unpriced.length
+    ? 'Your paper holdings are stored locally. A portfolio market value is shown only when MaliRadar has a verified provider price for every held position.'
+    : (portfolioMode==='beginner'
+      ? 'P/L compares your provider-valued paper position with its estimated average purchase cost. No real money is involved.'
+      : 'Expert view: position value, weighted average cost, unrealized P/L and sector exposure are calculated from your paper transactions and verified provider prices.');
+
   $('portfolioModeBtn').textContent=portfolioMode==='beginner'?'👶 Beginner':'🧠 Expert';
   renderPortfolioChart(value);
 }
