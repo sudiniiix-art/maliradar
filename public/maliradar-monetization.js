@@ -123,7 +123,42 @@ function open(feature){
 }
 function close(){document.getElementById("mrProModal")?.classList.remove("show")}
 function tierName(t){return t==="premium"?"Pro":t==="founder"?"Founder Pro":"Free"}
-function billingUnavailable(){toast("Google Play Billing is not connected yet. No purchase was made.","warn")}
+function currentAccountId(){try{return String(JSON.parse(localStorage.getItem("maliradar_account_v1")||"null")?.id||"")}catch(e){return ""}}
+async function syncServerEntitlement(){
+ const id=currentAccountId();if(!id)return;
+ try{
+   const r=await fetch("/api/entitlements/"+encodeURIComponent(id)+"?_="+Date.now(),{cache:"no-store",headers:{Accept:"application/json"}});
+   if(!r.ok)return;
+   const j=await r.json();if(!j||!j.tier)return;
+   const x=j.tier==="premium"||j.tier==="founder"?{tier:j.tier,source:"google_play",expiresAt:j.expiresAt||null,productId:j.productId||null,plan:j.tier}:{tier:"free",source:"none",expiresAt:null,productId:null,plan:null};
+   save(x);refresh();window.dispatchEvent(new CustomEvent("maliRadar:entitlementUpdated",{detail:x}));
+ }catch(e){}
+}
+async function reserveLaunchSlot(plan){
+ try{
+   const r=await fetch("/api/launch-offer/reserve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId:currentAccountId(),plan}),cache:"no-store"});
+   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||"Launch offer unavailable");
+   return j.reservation?.reservationId||null;
+ }catch(e){toast(e.message||"Launch offer unavailable","warn");return null}
+}
+async function purchasePlan(plan){
+ if(window.MaliRadarBillingBridge?.purchase){
+   const reservationId=launchOffer().active?await reserveLaunchSlot(plan):null;
+   if(launchOffer().active&&!reservationId)return;
+   try{await window.MaliRadarBillingBridge.purchase({plan,reservationId})}catch(e){toast(e.message||"Purchase could not be started","warn")}
+   return;
+ }
+ toast("Google Play purchase flow is connected to the Android release. No purchase was made in this web preview.","warn");
+}
+async function restorePurchases(){
+ if(window.MaliRadarBillingBridge?.restore){try{await window.MaliRadarBillingBridge.restore()}catch(e){toast(e.message||"Restore failed","warn")}}
+ else toast("Purchase restore is available in the Android release. No purchase was made in this web preview.","warn");
+}
+async function manageSubscription(){
+ if(window.MaliRadarBillingBridge?.manage){try{await window.MaliRadarBillingBridge.manage()}catch(e){toast(e.message||"Subscription management could not open","warn")}}
+ else toast("Subscription management is available through Google Play on Android.","warn");
+}
+function billingUnavailable(){toast("Google Play Billing is not connected to this web preview. No purchase was made.","warn")}
 function gate(feature,action){
  if(has(feature))return true;
  open(feature);
@@ -155,15 +190,15 @@ function modal(){
  card("premium","MALIRADAR PRO","ULTIMATE","KSh 1,999 / year","<b>LAUNCH OFFER: KSh99/month for the first 2 months</b> · Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
  '</div><div id="mrProFeatureNote" class="mrpro-note">Choose the level that matches how deeply you want to learn and simulate.</div>'+
  '<div class="mrpro-feature-list">'+features.map(([k,f])=>'<div class="mrpro-feature '+(has(k)?"":"locked")+'"><span class="dot2">'+(has(k)?"◆":"◇")+'</span><div><b>'+f.label+'</b><br><span class="muted">'+tierName(f.min)+' tier or above</span></div></div>').join("")+'</div>'+
- '<div class="mrpro-note">Billing is not connected in this release. No button here can fake a successful purchase. Once Google Play Billing is connected, verified subscription entitlements will control access. Google Play supports tier changes and billing-period changes for subscriptions.</div>'+
+ '<div class="mrpro-note">Paid access is controlled by server-verified Google Play entitlements. This web preview cannot complete a Google Play purchase; the Android release will launch the Play billing flow, verify the purchase server-side, and then unlock the plan.</div>'+
  '<div class="mrpro-actions"><button class="btn alt" id="mrProRestore">Restore purchases</button><button class="btn alt" id="mrProManage">Manage subscription</button></div></div>';
  document.body.appendChild(m);
  refreshLaunchUI();
  document.getElementById("mrProClose").onclick=close;
  m.addEventListener("click",e=>{if(e.target===m)close()});
- m.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{const wanted=b.dataset.plan;if(wanted==="free"){toast("Your Free plan is already available. Paid downgrades will be handled by Google Play Billing.","info");return}billingUnavailable()});
- document.getElementById("mrProRestore").onclick=billingUnavailable;
- document.getElementById("mrProManage").onclick=billingUnavailable;
+ m.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{const wanted=b.dataset.plan;if(wanted==="free"){toast("Your Free plan is already available. Paid downgrades will be handled by Google Play Billing.","info");return}purchasePlan(wanted)});
+ document.getElementById("mrProRestore").onclick=restorePurchases;
+ document.getElementById("mrProManage").onclick=manageSubscription;
 }
 function refresh(){
  const p=plan(),b=document.getElementById("mrProPlanBadge"),c=document.getElementById("mrProAccountCopy"),btn=document.getElementById("mrProOpen");
@@ -198,7 +233,7 @@ function track(){
  setTimeout(smartAdvertise,90000);setTimeout(smartAdvertise,180000);
 }
 function init(){
- css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();syncLaunchOffer();refreshLaunchUI();setInterval(()=>{refreshLaunchUI()},1000);setInterval(syncLaunchOffer,60000);
+ css();modal();themeStyles();mountAccount();refresh();highlight();track();smartAdvertise();syncLaunchOffer();syncServerEntitlement();refreshLaunchUI();setInterval(()=>{refreshLaunchUI()},1000);setInterval(syncLaunchOffer,60000);setInterval(syncServerEntitlement,30000);document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")syncServerEntitlement()});
  setTimeout(()=>{mountAccount();refresh();highlight()},900);
  document.addEventListener("click",e=>{if(e.target.closest("[data-mr-pro]"))open()});
  window.addEventListener("maliRadar:entitlementUpdated",()=>{refresh();if(window.MaliRadarProGates?.refresh)window.MaliRadarProGates.refresh()});
