@@ -128,6 +128,7 @@ async function load(){
  }catch(e){state.items=[]}
  finally{state.loading=false;status();render()}
 }
+window.renderMarketIntelligence=load;
 function boot(){
  mount();status();
  setInterval(refreshTape,30000);
