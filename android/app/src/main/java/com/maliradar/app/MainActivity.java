@@ -1,7 +1,6 @@
 package com.maliradar.app;
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.CancellationSignal;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
