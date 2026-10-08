@@ -8,6 +8,8 @@ CI build is enabled for the Android shell.
 
 The first Android build is intentionally a thin native shell so the existing web experience remains the source of truth. It supports JavaScript, local web storage, the web app's file picker, Android back navigation, and external links/downloads.
 
+CI uses the runner's installed Android SDK.
+
 ## Build
 
 Use JDK 17, Android SDK 37, and Gradle 9.6.0.
