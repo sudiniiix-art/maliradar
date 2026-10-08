@@ -6,13 +6,36 @@
   const write=s=>localStorage.setItem(KEY,JSON.stringify(s));
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   const fmt=n=>Number(n||0).toLocaleString("en-KE",{minimumFractionDigits:2,maximumFractionDigits:2});
+  const local=s=>String(s||"").toUpperCase().split(".")[0];
+  const quoteFor=s=>{
+    const key=local(s),store=window.maliRadarProviderQuotes||{};
+    const direct=store[key]||store[String(s||"").toUpperCase()]||store[key+".KE"];
+    if(direct&&Number.isFinite(Number(direct.price))&&Number(direct.price)>0)return direct;
+    return Object.values(store).find(q=>{
+      const qkey=local(q?.localSymbol||q?.symbol);
+      return qkey===key&&Number.isFinite(Number(q?.price))&&Number(q.price)>0;
+    })||null;
+  };
   const price=s=>{
     try{if(typeof window.paperPrice==="function"){const p=window.paperPrice(s);if(Number.isFinite(p)&&p>0)return p}}catch(e){}
-    const q=window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[s];
-    return q&&Number.isFinite(Number(q.price))?Number(q.price):null;
+    const q=quoteFor(s);
+    return q?Number(q.price):null;
+  };
+  const resolvePrice=async s=>{
+    let p=price(s);
+    if(p!=null)return p;
+    try{
+      if(typeof window.maliRadarRefreshProviderQuotes==="function"){
+        await window.maliRadarRefreshProviderQuotes();
+      }else if(typeof window.maliRadarProviderRefreshMarkets==="function"){
+        await window.maliRadarProviderRefreshMarkets(true);
+      }
+    }catch(e){}
+    p=price(s);
+    return p;
   };
   const stock=s=>typeof window.stock==="function"?window.stock(s):null;
-  const delayed=s=>Number(window.maliRadarProviderQuotes&&window.maliRadarProviderQuotes[s]&&window.maliRadarProviderQuotes[s].delayMinutes)||15;
+  const delayed=s=>{const q=quoteFor(s);return Number(q?.delayMinutes)||15};
   const refresh=()=>{try{if(typeof window.render==="function")window.render()}catch(e){}};
   function executeLimit(o,p,st){
     st.cash=Number(st.cash||0);st.hold=st.hold||{};st.history=Array.isArray(st.history)?st.history:[];
@@ -45,9 +68,9 @@
     });
     if(changed){st.pendingOrders=keep;write(st);refresh()}
   }
-  function ticket(side,s){
-    const st=read(),x=stock(s),p=price(s);
-    if(!p)return alert("Verified provider price is not available for this stock yet. MaliRadar will not invent a paper-trade price.");
+  async function ticket(side,s){
+    const st=read(),x=stock(s),p=await resolvePrice(s);
+    if(!p)return alert("Verified provider price is currently unavailable for "+s+". Refresh Markets and try again.");
     const owned=Number(st.hold&&st.hold[s]||0),cash=Number(st.cash||0),max=side==="BUY"?Math.floor(cash/p):owned;
     const name=x&&x[1]?x[1]:s, d=delayed(s);
     const root=document.createElement("div");root.id="mr49OrderOverlay";
