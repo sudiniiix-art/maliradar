@@ -501,6 +501,7 @@ app.post("/api/paper-order",rateLimit("mutate"),async(req,res)=>{
       db.subscriptions=db.subscriptions||{};
       const sub=db.subscriptions[userId],paid=!!sub&&["ACTIVE","IN_GRACE_PERIOD"].includes(sub.status)&&(!sub.expiresAt||Date.parse(sub.expiresAt)>Date.now());
       const txs=db.transactions.filter(t=>t.userId===userId),now=new Date();
+      let serverCash=100000;for(const t of txs){const v=(Number(t.quantity)||0)*(Number(t.price)||0);serverCash+=String(t.side).toUpperCase()==="BUY"?-v:v;}
       const today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
       const todayCount=txs.filter(t=>String(t.createdAt||"").slice(0,10)===today).length;
       const held=txs.filter(t=>String(t.symbol||"").toUpperCase()===sym).reduce((n,t)=>n+(String(t.side).toUpperCase()==="BUY"?1:-1)*(Number(t.quantity)||0),0);
@@ -508,6 +509,7 @@ app.post("/api/paper-order",rateLimit("mutate"),async(req,res)=>{
       if(!paid&&q>25)return {status:429,error:"Free plan limit: maximum 25 shares per order.",code:"QUANTITY_LIMIT"};
       if(!paid&&s==="BUY"&&held+q>100)return {status:429,error:"Free plan limit: maximum 100 shares held per stock.",code:"HOLDING_LIMIT"};
       if(s==="SELL"&&q>held)return {status:409,error:"Not enough server-recorded paper shares to sell.",code:"INSUFFICIENT_HOLDING"};
+      if(s==="BUY"&&q*price>serverCash)return {status:409,error:"Not enough server-recorded paper cash.",code:"INSUFFICIENT_CASH"};
       const tx={id:"tx-"+Date.now()+"-"+crypto.randomBytes(4).toString("hex"),userId,symbol:sym,side:s,quantity:q,price,tier:paid?sub.tier:"free",createdAt:now.toISOString(),verifiedProviderPrice:true};
       db.transactions.push(tx);writeDB(db);return {status:201,tx};
     });
