@@ -60,6 +60,25 @@ function pushDB(){
   if(!Array.isArray(db.pushSubscriptions))db.pushSubscriptions=[];
   return db;
 }
+// Launch offer — one shared pool for Founder Pro + Premium.
+const LAUNCH_MAX_PAID=100;
+const LAUNCH_MONTHS=2;
+function launchOfferState(){
+  const db=readDB();
+  if(!db.launchOffer) {
+    db.launchOffer={launchAt:new Date().toISOString(),paidSlots:0};
+    writeDB(db);
+  }
+  const launchAt=Date.parse(db.launchOffer.launchAt);
+  const end=new Date(launchAt); end.setMonth(end.getMonth()+LAUNCH_MONTHS);
+  const used=Math.max(0,Math.min(LAUNCH_MAX_PAID,Number(db.launchOffer.paidSlots)||0));
+  return {maxAvailable:LAUNCH_MAX_PAID,used,remaining:Math.max(0,LAUNCH_MAX_PAID-used),launchAt:new Date(launchAt).toISOString(),endsAt:end.toISOString(),active:Date.now()<end.getTime()&&used<LAUNCH_MAX_PAID};
+}
+app.get("/api/launch-offer",(req,res)=>{
+  res.setHeader("Cache-Control","no-store");
+  res.json({ok:true,offer:launchOfferState()});
+});
+
 app.get("/api/push/config",(req,res)=>{
   res.json({enabled:!!(webPush&&pushReady()),publicKey:process.env.VAPID_PUBLIC_KEY||null});
 });
