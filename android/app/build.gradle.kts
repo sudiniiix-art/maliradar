@@ -2,6 +2,9 @@ plugins {
     id("com.android.application")
 }
 
+val googleServerClientId = providers.gradleProperty("GOOGLE_SERVER_CLIENT_ID").orNull ?: ""
+val googleServerClientIdEscaped = googleServerClientId.replace("\\","\\\\").replace(""","\\"")
+
 android {
     namespace = "com.maliradar.app"
     compileSdk = 36
@@ -11,7 +14,8 @@ android {
         minSdk = 23
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "0.2.0"
+        buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", ""${googleServerClientIdEscaped}"" )
     }
 
     buildTypes {
