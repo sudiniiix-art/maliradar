@@ -37,34 +37,6 @@ function renderBadge(){
  el.innerHTML=s.pro?'<div class="row"><div><b>⚡ PRO TRADING ACCESS</b><div class="muted">Unlimited stock buys, sells, quantities and paper trades.</div></div><span class="badge">UNLIMITED</span></div>':'<div class="row"><div><b>Paper Trading Limits</b><div class="muted">'+s.tradesRemaining+' of '+s.tradesLimit+' trades remaining today • max '+s.maxSharesPerOrder+' shares/order</div></div><button class="btn alt" id="mrTradeUpgrade">GO PRO</button></div><div class="muted" style="margin-top:7px">Free users can practice with limited paper trades. Pro removes the trade and quantity limits.</div>';
  el.querySelector("#mrTradeUpgrade")?.addEventListener("click",()=>openUpgrade("Unlimited trading requires Pro."));
 }
-function intercept(){
- const original=window.buy;
- if(typeof original==="function"&&!original.__mrLimited){
-   const wrapped=function(sym){
-     const q=prompt("How many shares?","10"); if(q===null)return;
-     const check=canTrade(sym,q);
-     if(!check.ok){toast(check.message); if(tier()==="free"&&(check.message.includes("Upgrade")))openUpgrade(check.message); return}
-     window.__mrTradePending={sym,qty:Number(q),recorded:false};
-     const oldPrompt=window.prompt;window.prompt=()=>String(q);
-     try{original(sym)}finally{window.prompt=oldPrompt}
-     setTimeout(()=>{if(window.__mrTradePending&&!window.__mrTradePending.recorded){const s=localState();if(Number(s.hold?.[sym]||0)>=localHold(sym))record();window.__mrTradePending=null;renderBadge()}},150);
-   };
-   wrapped.__mrLimited=true;window.buy=wrapped;
- }
-}
-const oldFetch=window.fetch;
-window.fetch=async function(input,init){
- const url=typeof input==="string"?input:(input?.url||"");
- if(url.includes("/api/paper-order")&&init?.body){
-   try{
-    const b=JSON.parse(init.body),check=canTrade(b.symbol,b.quantity);
-    if(!check.ok){toast(check.message);return new Response(JSON.stringify({ok:false,error:check.message,code:"TRADE_LIMIT"}),{status:429,headers:{"Content-Type":"application/json"}})}
-   }catch(e){}
- }
- const r=await oldFetch.apply(this,arguments);
- if(url.includes("/api/paper-order")&&r.ok){try{const b=init?.body?JSON.parse(init.body):{};if(tier()==="free")record()}catch(e){}}
- return r;
-};
 function boot(){renderBadge();intercept();setTimeout(()=>{intercept();renderBadge()},700);setInterval(()=>{intercept();renderBadge()},1500)}
 window.MaliRadarTradeLimits={version:1,limits:LIMITS,status,canTrade,record,refresh:renderBadge};
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
