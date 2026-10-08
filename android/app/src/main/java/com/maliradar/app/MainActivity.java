@@ -148,11 +148,12 @@ public class MainActivity extends Activity {
         }
 
         private void postAuthResult(boolean ok, String idToken, String nonce, String error) {
-            String js = "window.StockCrashGoogleAuthResult(" +
-                    "{"ok":" + ok +
-                    ","idToken":" + quote(idToken) +
-                    ","nonce":" + quote(nonce) +
-                    ","error":" + quote(error) + "});";
+            String js = "window.StockCrashGoogleAuthResult({"
+                    + "\"ok\":" + ok
+                    + ",\"idToken\":" + quote(idToken)
+                    + ",\"nonce\":" + quote(nonce)
+                    + ",\"error\":" + quote(error)
+                    + "});";
             runOnUiThread(() -> webView.evaluateJavascript(js, null));
         }
 
