@@ -94,7 +94,7 @@ function modal(){
  card("premium","MALIRADAR PREMIUM","ULTIMATE","KSh 199 / month","KSh 1,999 / year","Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
  '</div><div id="mrProFeatureNote" class="mrpro-note">Choose the level that matches how deeply you want to learn and simulate.</div>'+
  '<div class="mrpro-feature-list">'+features.map(([k,f])=>'<div class="mrpro-feature '+(has(k)?"":"locked")+'"><span class="dot2">'+(has(k)?"◆":"◇")+'</span><div><b>'+f.label+'</b><br><span class="muted">'+tierName(f.min)+' tier or above</span></div></div>').join("")+'</div>'+
- '<div class="mrpro-note">Billing is not connected in this release. No button here can fake a successful purchase. Once Google Play Billing is connected, verified subscription entitlements will control access. Google Play supports tier changes and billing-period changes for subscriptions. citeturn0search0</div>'+
+ '<div class="mrpro-note">Billing is not connected in this release. No button here can fake a successful purchase. Once Google Play Billing is connected, verified subscription entitlements will control access. Google Play supports tier changes and billing-period changes for subscriptions.</div>'+
  '<div class="mrpro-actions"><button class="btn alt" id="mrProRestore">Restore purchases</button><button class="btn alt" id="mrProManage">Manage subscription</button></div></div>';
  document.body.appendChild(m);
  document.getElementById("mrProClose").onclick=close;
