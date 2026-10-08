@@ -40,8 +40,9 @@ app.use((req,res,next)=>{
   if(req.method==="GET" && req.path==="/"){
     const file=path.join(__dirname,"public","index.html");
     let html=fs.readFileSync(file,"utf8");
-    const tag='<script src="/maliradar-runtime-hardening.js?v=8.5.0"></script><script src="/maliradar-order-ticket.js?v=10.3.0"></script><script src="/maliradar-news-intelligence-2.js?v=8.5.0"></script><script src="/maliradar-news-intelligence-3.js?v=8.5.0"></script><script src="/maliradar-guided-academy.js?v=8.5.0"></script><script src="/maliradar-learning-profile.js?v=8.5.0"></script><script src="/maliradar-account-center.js?v=8.5.0"></script><script src="/maliradar-progression.js?v=8.5.0"></script><script src="/maliradar-friends-hub.js?v=8.5.0"></script><script src="/maliradar-social-competition.js?v=8.5.0"></script><script src="/maliradar-seasons.js?v=8.5.0"></script><script src="/maliradar-competitive-profile.js?v=8.5.0"></script><script src="/maliradar-tournaments.js?v=8.5.0"></script><script src="/maliradar-competition-6.js?v=8.5.0"></script><script src="/maliradar-smart-assist-2.js?v=8.5.0"></script><script src="/maliradar-command-center.js?v=8.5.0"></script><script src="/maliradar-global-market-expansion-1.js?v=8.5.0"></script><script src="/maliradar-intelligence-fusion-1.js?v=8.5.0"></script><script src="/maliradar-personal-intelligence-8-2.js?v=8.5.0"></script><script src="/maliradar-adaptive-radar-8-3.js?v=8.5.0"></script><script src="/maliradar-alert-command-center-2.js?v=8.5.0"></script><script src="/maliradar-push-alerts.js?v=8.5.0"></script><script src="/maliradar-alert-intelligence-4.js?v=8.5.0"></script><script src="/maliradar-market-intelligence-9.js?v=8.5.0"></script><script src="/maliradar-opportunity-radar-2.js?v=8.5.0"></script><script src="/maliradar-stock-intelligence-3.js?v=8.5.0"></script><script src="/maliradar-evidence-command-board-9.js?v=8.5.0"></script><script src="/maliradar-watchlist-3.js?v=8.5.0"></script><script src="/maliradar-watchlist-add-fix.js?v=8.5.0"></script><script src="/maliradar-monetization.js?v=12.0.0"></script><script src="/maliradar-pro-gates.js?v=10.0.0"></script><script src="/maliradar-trade-limits.js?v=4.1.0"></script><script src="/maliradar-trade-firewall.js?v=1.2.0"></script>';
-    if(!html.includes(tag)) html=html.replace("</body>",tag+"</body>");
+    const tag='<script src="/maliradar-runtime-hardening.js?v=8.5.0"></script><script src="/maliradar-order-ticket.js?v=10.3.0"></script><script src="/maliradar-news-intelligence-2.js?v=8.5.0"></script><script src="/maliradar-news-intelligence-3.js?v=8.5.0"></script><script src="/maliradar-learning-profile.js?v=8.5.0"></script><script src="/maliradar-account-center.js?v=8.5.0"></script><script src="/maliradar-progression.js?v=8.5.0"></script><script src="/maliradar-friends-hub.js?v=8.5.0"></script><script src="/maliradar-social-competition.js?v=8.5.0"></script><script src="/maliradar-seasons.js?v=8.5.0"></script><script src="/maliradar-competitive-profile.js?v=8.5.0"></script><script src="/maliradar-tournaments.js?v=8.5.0"></script><script src="/maliradar-competition-6.js?v=8.5.0"></script><script src="/maliradar-smart-assist-2.js?v=8.5.0"></script><script src="/maliradar-command-center.js?v=8.5.0"></script><script src="/maliradar-global-market-expansion-1.js?v=8.5.0"></script><script src="/maliradar-intelligence-fusion-1.js?v=8.5.0"></script><script src="/maliradar-personal-intelligence-8-2.js?v=8.5.0"></script><script src="/maliradar-adaptive-radar-8-3.js?v=8.5.0"></script><script src="/maliradar-alert-command-center-2.js?v=8.5.0"></script><script src="/maliradar-push-alerts.js?v=8.5.0"></script><script src="/maliradar-alert-intelligence-4.js?v=8.5.0"></script><script src="/maliradar-market-intelligence-9.js?v=8.5.0"></script><script src="/maliradar-opportunity-radar-2.js?v=8.5.0"></script><script src="/maliradar-stock-intelligence-3.js?v=8.5.0"></script><script src="/maliradar-evidence-command-board-9.js?v=8.5.0"></script><script src="/maliradar-watchlist-3.js?v=8.5.0"></script><script src="/maliradar-watchlist-add-fix.js?v=8.5.0"></script><script src="/maliradar-monetization.js?v=12.0.0"></script><script src="/maliradar-pro-gates.js?v=10.0.0"></script><script src="/maliradar-trade-limits.js?v=4.1.0"></script><script src="/maliradar-trade-firewall.js?v=1.2.0"></script><script src="/stockcrash-launch-flow.js?v=1.0.0"></script>';
+    if(!html.includes(tag)) html=html.replace("</head>","+preload+"</head>");
+    html=html.replace("</body>",tag+"</body>");
     res.setHeader("Cache-Control","no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma","no-cache");
     res.setHeader("Expires","0");
@@ -154,6 +155,88 @@ app.get("/api/entitlements/:userId",(req,res)=>{
   const active=!!sub&&["ACTIVE","IN_GRACE_PERIOD","CANCELED"].includes(sub.status)&&(!sub.expiresAt||Date.parse(sub.expiresAt)>Date.now());
   res.setHeader("Cache-Control","no-store");
   res.json({ok:true,tier:active?sub.tier:"free",pro:active,source:active?"google_play":"none",expiresAt:active?sub.expiresAt:null,productId:active?sub.productId:null,status:active?sub.status:"INACTIVE"});
+});
+
+
+/* STOCKCRASH account authentication. Passwords are salted/hashed server-side; the client never stores them. */
+function normalizeEmail(v){return String(v||"").trim().toLowerCase();}
+function validEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)&&v.length<=254;}
+function hashPassword(password,salt){return crypto.scryptSync(String(password),Buffer.from(salt,"base64"),64).toString("base64");}
+function makePasswordVerifier(password){const salt=crypto.randomBytes(16).toString("base64");return {salt,hash:hashPassword(password,salt)};}
+function passwordMatches(password,u){
+  if(!u?.passwordHash||!u?.passwordSalt)return false;
+  try{const actual=Buffer.from(hashPassword(password,u.passwordSalt),"base64"),expected=Buffer.from(u.passwordHash,"base64");return actual.length===expected.length&&crypto.timingSafeEqual(actual,expected)}catch(e){return false}
+}
+function newAuthUserId(){return "usr_"+Date.now().toString(36)+"_"+crypto.randomBytes(5).toString("hex");}
+
+app.post("/api/auth/email",rateLimit("auth"),async(req,res)=>{
+  const body=req.body||{},mode=String(body.mode||"").toLowerCase(),email=normalizeEmail(body.email),password=String(body.password||"");
+  if(!["signin","signup"].includes(mode))return res.status(400).json({ok:false,error:"Invalid authentication mode."});
+  if(!validEmail(email))return res.status(400).json({ok:false,error:"Enter a valid email address."});
+  if(password.length<8||password.length>128)return res.status(400).json({ok:false,error:"Password must be 8–128 characters."});
+  try{
+    const result=await withDbLock(()=>{
+      const db=readDB();if(!Array.isArray(db.users))db.users=[];
+      let u=db.users.find(x=>String(x.email||"").toLowerCase()===email);
+      if(mode==="signin"){
+        if(!u||!passwordMatches(password,u))return {status:401,error:"Email or password is incorrect."};
+        const secret=ensureUserSecret(u);u.lastAuthAt=new Date().toISOString();u.updatedAt=u.lastAuthAt;u.authProvider=u.authProvider||"email";u.emailVerified=false;writeDB(db);
+        return {status:200,account:{id:u.id,name:u.name||"STOCKCRASH User",email,provider:"email",emailVerified:false,deletionToken:secret}};
+      }
+      if(u)return {status:409,error:"An account already exists for this email. Use Sign In instead."};
+      const localId=String(body.existingAccountId||"").trim(),localToken=String(body.deletionToken||"");
+      if(localId){
+        const local=db.users.find(x=>x.id===localId);
+        if(!local)return {status:404,error:"Local account could not be linked."};
+        if(local.deletionToken&&!validAccountSecret(db,localId,localToken))return {status:403,error:"Account verification is required before linking this email."};
+        u=local;
+      }else{u={id:newAuthUserId(),createdAt:new Date().toISOString()};db.users.push(u);}
+      if(u.passwordHash||u.googleSub)return {status:409,error:"This account already has an authentication method. Sign in with that method first."};
+      const pv=makePasswordVerifier(password);u.email=email;u.authProvider="email";u.passwordSalt=pv.salt;u.passwordHash=pv.hash;u.emailVerified=false;u.name=String(body.name||u.name||"STOCKCRASH User").trim().slice(0,24)||"STOCKCRASH User";u.lastAuthAt=new Date().toISOString();u.updatedAt=u.lastAuthAt;
+      const secret=ensureUserSecret(u);writeDB(db);
+      return {status:201,account:{id:u.id,name:u.name,email,provider:"email",emailVerified:false,deletionToken:secret}};
+    });
+    if(result.error)return res.status(result.status).json({ok:false,error:result.error});
+    res.status(result.status).json({ok:true,account:result.account});
+  }catch(e){res.status(500).json({ok:false,error:"Email authentication could not be completed."})}
+});
+
+function decodeJwtPayload(token){
+  try{const parts=String(token||"").split(".");if(parts.length!==3)throw new Error("token");return JSON.parse(Buffer.from(parts[1].replace(/-/g,"+").replace(/_/g,"/"),"base64").toString("utf8"))}catch(e){return null}
+}
+app.post("/api/auth/google/token",rateLimit("auth"),async(req,res)=>{
+  const {idToken,nonce}=req.body||{},expectedAudience=String(process.env.GOOGLE_SERVER_CLIENT_ID||process.env.GOOGLE_WEB_CLIENT_ID||"").trim();
+  if(!idToken)return res.status(400).json({ok:false,error:"Google ID token is required."});
+  if(!expectedAudience)return res.status(503).json({ok:false,error:"Google sign-in is not configured on the server yet."});
+  try{
+    const rr=await fetch("https://oauth2.googleapis.com/tokeninfo?id_token="+encodeURIComponent(String(idToken))),info=await rr.json().catch(()=>({}));
+    if(!rr.ok)return res.status(401).json({ok:false,error:"Google credential validation failed."});
+    const aud=String(info.aud||""),iss=String(info.iss||""),exp=Number(info.exp||0),sub=String(info.sub||"");
+    if(aud!==expectedAudience||!["accounts.google.com","https://accounts.google.com"].includes(iss)||!sub||!Number.isFinite(exp)||exp<=Math.floor(Date.now()/1000))return res.status(401).json({ok:false,error:"Google credential could not be trusted."});
+    const claims=decodeJwtPayload(idToken);if(nonce&&claims&&claims.nonce&&String(claims.nonce)!==String(nonce))return res.status(401).json({ok:false,error:"Google security nonce mismatch."});
+    if(String(info.email_verified||"").toLowerCase()!=="true")return res.status(401).json({ok:false,error:"Your Google email must be verified."});
+    const email=normalizeEmail(info.email);if(!validEmail(email))return res.status(401).json({ok:false,error:"Google did not provide a valid email address."});
+    const localId=String(req.body?.existingAccountId||"").trim(),localToken=String(req.body?.deletionToken||"");
+    const result=await withDbLock(()=>{
+      const db=readDB();if(!Array.isArray(db.users))db.users=[];
+      let u=db.users.find(x=>String(x.googleSub||"")===sub);
+      if(!u&&localId){
+        u=db.users.find(x=>x.id===localId);if(!u)return {status:404,error:"Local account could not be linked."};
+        if(u.deletionToken&&!validAccountSecret(db,localId,localToken))return {status:403,error:"Account verification is required before linking Google."};
+        if(u.googleSub&&u.googleSub!==sub)return {status:409,error:"This local account is already linked to another Google account."};
+      }
+      if(!u){
+        const sameEmail=db.users.find(x=>String(x.email||"").toLowerCase()===email);
+        if(sameEmail&&sameEmail.googleSub&&sameEmail.googleSub!==sub)return {status:409,error:"That email is linked to a different Google account."};
+        u=sameEmail||{id:newAuthUserId(),createdAt:new Date().toISOString()};if(!sameEmail)db.users.push(u);
+      }
+      u.googleSub=sub;u.email=email;u.emailVerified=true;u.authProvider=u.passwordHash?"google+email":"google";u.name=String(info.name||u.name||"STOCKCRASH User").slice(0,24)||"STOCKCRASH User";u.profilePhoto=String(info.picture||u.profilePhoto||"").slice(0,250000);u.lastAuthAt=new Date().toISOString();u.updatedAt=u.lastAuthAt;
+      const secret=ensureUserSecret(u);writeDB(db);
+      return {status:200,account:{id:u.id,name:u.name,email,provider:"google",emailVerified:true,deletionToken:secret,profilePhoto:u.profilePhoto||""}};
+    });
+    if(result.error)return res.status(result.status).json({ok:false,error:result.error});
+    res.status(result.status).json({ok:true,account:result.account});
+  }catch(e){res.status(502).json({ok:false,error:"Google authentication service is temporarily unavailable."})}
 });
 
 // Google Play subscription verification. Android clients should reserve a launch slot before purchase.
