@@ -2,6 +2,12 @@ plugins {
     id("com.android.application")
 }
 
+dependencies {
+    implementation("androidx.credentials:credentials:1.7.0-alpha03")
+    implementation("androidx.credentials:credentials-play-services-auth:1.7.0-alpha03")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.2.1")
+}
+
 val googleServerClientId = providers.gradleProperty("GOOGLE_SERVER_CLIENT_ID").orNull ?: ""
 val googleServerClientIdEscaped = googleServerClientId.replace("\\","\\\\").replace(""","\\"")
 
@@ -15,7 +21,7 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.2.0"
-        buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", ""${googleServerClientIdEscaped}"" )
+        buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", "\"${googleServerClientIdEscaped}\"")
     }
 
     buildTypes {
