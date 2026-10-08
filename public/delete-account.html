@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Delete your MaliRadar account</title>
+<style>
+body{margin:0;padding:24px;background:#061016;color:#eaf7f6;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:520px;margin:30px auto;padding:22px;border:1px solid #22414d;border-radius:20px;background:#0a1820;box-shadow:0 18px 70px #0008}
+h1{font-size:24px;margin:0 0 8px}.muted{color:#8fa9af;font-size:13px;line-height:1.5}.notice{margin:14px 0;padding:12px;border-radius:12px;background:#0d222b;border:1px solid #21424e;font-size:12px;line-height:1.55}
+label{display:block;margin:12px 0 6px;font-weight:800;font-size:12px}input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #274c58;background:#07131a;color:inherit;font-size:16px}
+button{width:100%;margin-top:14px;padding:13px;border:0;border-radius:11px;background:#d95353;color:#fff;font-weight:900;font-size:14px}
+a{color:#6be8c5}
+#result{display:none;margin-top:14px}
+</style>
+</head>
+<body>
+<main>
+<h1>Delete your MaliRadar account</h1>
+<div class="muted">This page deletes the server-stored MaliRadar profile and associated paper-trading, alert, social and competition records connected to that profile.</div>
+<div class="notice"><b>Before continuing:</b> account deletion is permanent. Your local device data is separate and can be cleared from the MaliRadar app.</div>
+<label for="id">MaliRadar ID</label>
+<input id="id" autocomplete="off" placeholder="MR-XXXX-XXXX">
+<label for="token">Deletion token</label>
+<input id="token" autocomplete="off" placeholder="Paste your deletion token">
+<button id="delete">Delete account permanently</button>
+<div id="result" class="notice"></div>
+<p class="muted" style="margin-top:16px"><a href="/privacy-policy.html">Privacy Policy</a> · <a href="/terms-of-use.html">Terms of Use</a></p>
+<script>
+(function(){
+  function loadLocal(){
+    try{
+      const a=JSON.parse(localStorage.getItem("maliradar_account_v1")||"null");
+      if(a?.id)document.getElementById("id").value=a.id;
+      if(a?.deletionToken)document.getElementById("token").value=a.deletionToken;
+    }catch(e){}
+  }
+  loadLocal();
+  document.getElementById("delete").onclick=async function(){
+    const id=document.getElementById("id").value.trim(),deletionToken=document.getElementById("token").value.trim(),box=document.getElementById("result");
+    if(!id||!deletionToken){box.style.display="block";box.textContent="Enter your MaliRadar ID and deletion token.";return}
+    if(!confirm("Permanently delete this MaliRadar account and its server-stored data?"))return;
+    this.disabled=true;
+    try{
+      const r=await fetch("/api/account/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,deletionToken}),cache:"no-store"});
+      const j=await r.json().catch(()=>({}));
+      box.style.display="block";
+      box.textContent=r.ok?"Your MaliRadar account and associated server-stored data have been deleted.":"Deletion failed: "+(j.error||"Please try again.");
+      if(r.ok){localStorage.clear();document.getElementById("delete").remove()}
+    }catch(e){box.style.display="block";box.textContent="Unable to reach MaliRadar. Check your connection and try again.";this.disabled=false}
+  };
+})();
+</script>
+</main>
+</body>
+</html>
