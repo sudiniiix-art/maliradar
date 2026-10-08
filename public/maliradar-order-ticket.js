@@ -40,6 +40,12 @@
   const tradeLimits=()=>({maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100});
   const tradesToday=st=>{const d=new Date().toISOString().slice(0,10);return (st.history||[]).filter(h=>String(h.executedAt||"").slice(0,10)===d || (h.time&&new Date(h.time).toISOString?.().slice(0,10)===d)).length};
   const checkTradeEntitlement=(st,side,sym,q)=>{
+    try{
+      if(window.MaliRadarTradeFirewall?.check){
+        const g=window.MaliRadarTradeFirewall.check(side,sym,q);
+        if(g&&typeof g.ok==="boolean")return g;
+      }
+    }catch(e){}
     if(tradeIsPro())return {ok:true};
     const l=tradeLimits();
     if(tradesToday(st)>=l.maxTradesPerDay)return {ok:false,message:"Free plan limit reached: 5 stock trades per day. Upgrade to Pro for unlimited trades."};
