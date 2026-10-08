@@ -35,6 +35,18 @@
     return p;
   };
   const stock=s=>typeof window.stock==="function"?window.stock(s):null;
+  const tradeTier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
+  const tradeIsPro=()=>tradeTier()!=="free";
+  const tradeLimits=()=>({maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100});
+  const tradesToday=st=>{const d=new Date().toISOString().slice(0,10);return (st.history||[]).filter(h=>String(h.executedAt||"").slice(0,10)===d || (h.time&&new Date(h.time).toISOString?.().slice(0,10)===d)).length};
+  const checkTradeEntitlement=(st,side,sym,q)=>{
+    if(tradeIsPro())return {ok:true};
+    const l=tradeLimits();
+    if(tradesToday(st)>=l.maxTradesPerDay)return {ok:false,message:"Free plan limit reached: 5 stock trades per day. Upgrade to Pro for unlimited trades."};
+    if(q>l.maxSharesPerOrder)return {ok:false,message:"Free plan limit: maximum 25 shares per stock order. Upgrade to Pro for unlimited share quantities."};
+    if(side==="BUY"&&Number(st.hold?.[sym]||0)+q>l.maxSharesPerSymbol)return {ok:false,message:"Free plan limit: maximum 100 shares held per stock. Upgrade to Pro for unlimited stock buys."};
+    return {ok:true};
+  };
   const delayed=s=>{const q=quoteFor(s);return Number(q?.delayMinutes)||15};
   const refresh=()=>{try{if(typeof window.render==="function")window.render()}catch(e){}};
   function executeLimit(o,p,st){
@@ -72,7 +84,7 @@
     const st=read(),x=stock(s),p=await resolvePrice(s);
     if(!p)return alert("Verified provider price is currently unavailable for "+s+". Refresh Markets and try again.");
     const owned=Number(st.hold&&st.hold[s]||0),cash=Number(st.cash||0),max=side==="BUY"?Math.floor(cash/p):owned;
-    const name=x&&x[1]?x[1]:s, d=delayed(s);
+    const name=x&&x[1]?x[1]:s, d=delayed(s), freeMax=tradeIsPro()?Infinity:tradeLimits().maxSharesPerOrder;
     const root=document.createElement("div");root.id="mr49OrderOverlay";
     root.innerHTML='<div style="position:fixed;inset:0;background:#000b;z-index:9000;display:flex;align-items:flex-end;justify-content:center"><div style="width:100%;max-width:480px;background:#0c1820;border:1px solid var(--line);border-radius:20px 20px 0 0;padding:18px;max-height:90vh;overflow:auto">'+
       '<div class="row"><div><div class="muted">PAPER ORDER</div><h2 style="margin:4px 0">Paper '+(side==="BUY"?"Buy":"Sell")+'</h2><div class="muted">'+esc(name)+' • '+esc(s)+'</div></div><button class="btn alt" id="mr50Close">✕</button></div>'+
@@ -86,12 +98,12 @@
       '<button class="btn" id="mr50Submit" style="width:100%;margin-top:8px;color:#041015;background:'+(side==="BUY"?"var(--a)":"var(--r)")+'">'+(side==="BUY"?"BUY":"SELL")+' PAPER ORDER</button></div></div>';
     document.body.appendChild(root);
     const type=root.querySelector("#mr50Type"),lr=root.querySelector("#mr50LimitRow"),lim=root.querySelector("#mr50Limit"),qty=root.querySelector("#mr50Qty"),tot=root.querySelector("#mr50Total"),submit=root.querySelector("#mr50Submit");
-    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p,protect=type.value==="STOP_LOSS"||type.value==="TAKE_PROFIT";lr.style.display=(type.value==="LIMIT"||protect)?"flex":"none";lr.querySelector("label").textContent=protect?(type.value==="STOP_LOSS"?"Stop price":"Target price"):"Limit price";tot.textContent="KSh "+fmt(q*p);submit.disabled=q<1||q>max||((type.value==="LIMIT"||protect)&&lp<=0);submit.style.opacity=submit.disabled?".45":"1"};
+    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p,protect=type.value==="STOP_LOSS"||type.value==="TAKE_PROFIT";lr.style.display=(type.value==="LIMIT"||protect)?"flex":"none";lr.querySelector("label").textContent=protect?(type.value==="STOP_LOSS"?"Stop price":"Target price"):"Limit price";tot.textContent="KSh "+fmt(q*p);const blocked=q>freeMax;submit.disabled=q<1||q>max||blocked||((type.value==="LIMIT"||protect)&&lp<=0);submit.style.opacity=submit.disabled?".45":"1";submit.title=blocked?"Free plan: max 25 shares/order. Upgrade to Pro for unlimited quantities.":""};
     type.onchange=update;lim.oninput=update;qty.oninput=update;update();
     root.querySelector("#mr50Close").onclick=()=>root.remove();root.firstElementChild.onclick=e=>{if(e.target===root.firstElementChild)root.remove()};
     submit.onclick=()=>{
       const q=Math.floor(Number(qty.value)||0),kind=type.value,lp=Number(lim.value)||0;
-      if(q<1||q>max||(kind==="LIMIT"&&lp<=0))return;
+      if(q<1||q>max||(kind==="LIMIT"&&lp<=0))return; const entitlement=checkTradeEntitlement(read(),side,s,q); if(!entitlement.ok){showOrderStatus(entitlement.message,"limit");try{window.MaliRadarEntitlements?.open?.("advancedAssist")}catch(e){} return;}
       const fresh=read();fresh.cash=Number(fresh.cash||0);fresh.hold=fresh.hold||{};fresh.history=Array.isArray(fresh.history)?fresh.history:[];
       if(kind==="LIMIT"||kind==="STOP_LOSS"||kind==="TAKE_PROFIT"){
         fresh.pendingOrders=Array.isArray(fresh.pendingOrders)?fresh.pendingOrders:[];
