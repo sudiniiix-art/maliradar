@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1000" role="img" aria-labelledby="title desc">
+<title id="title">STOCKCRASH</title><desc id="desc">Green rising market arc and red falling market arrow above the STOCKCRASH wordmark. Learn, Simulate, Grow.</desc>
+<defs>
+ <linearGradient id="green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b5ffd0"/><stop offset=".25" stop-color="#00ff62"/><stop offset=".72" stop-color="#00a83c"/><stop offset="1" stop-color="#064d2c"/></linearGradient>
+ <linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffb15d"/><stop offset=".25" stop-color="#ff2727"/><stop offset=".72" stop-color="#e60012"/><stop offset="1" stop-color="#68000b"/></linearGradient>
+ <linearGradient id="white" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#8b9aaa"/></linearGradient>
+ <filter id="glow"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="1200" height="1000" rx="36" fill="#030407"/>
+<g transform="translate(150 60)" filter="url(#glow)">
+ <path d="M590 70H390C260 70 170 158 150 260c-15 76 19 137 72 173l112 78 181-151 49 52-200 165-178-124C111 405 82 330 99 249 123 132 227 45 366 45h276z" fill="url(#green)" stroke="#6aff9c" stroke-width="5"/>
+ <path d="M160 610h340c53 0 91-18 124-53l74-78 67 68-91 95c-41 42-92 62-164 62H83z" fill="url(#red)" stroke="#ff4b43" stroke-width="5"/>
+ <path d="M442 327 566 210 836 478l-20-91 75 170-171-50 74-9-229-226-88 84z" fill="url(#red)" stroke="#ffaaa0" stroke-width="4"/>
+ <g fill="#00e85a"><path d="M278 310h30v96h-30z"/><path d="M287 289h12v24h-12z"/><path d="M343 264h34v120h-34z"/><path d="M354 240h12v26h-12z"/><path d="M410 222h34v115h-34z"/><path d="M421 197h12v27h-12z"/></g>
+ <g fill="#ff101d"><path d="M414 400h34v118h-34z"/><path d="M425 378h12v25h-12z"/><path d="M477 372h34v145h-34z"/><path d="M488 349h12v26h-12z"/><path d="M541 426h34v117h-34z"/><path d="M552 405h12v24h-12z"/><path d="M605 475h34v103h-34z"/><path d="M616 454h12v24h-12z"/></g>
+</g>
+<text x="600" y="800" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="112" font-style="italic" font-weight="900" letter-spacing="-5"><tspan fill="url(#white)">STOCK</tspan><tspan fill="#ff1825">CRASH</tspan></text>
+<text x="600" y="860" text-anchor="middle" fill="#f4f6fa" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="700" letter-spacing="13">LEARN  •  SIMULATE  •  GROW</text>
+</svg>
