@@ -12,7 +12,7 @@ CI uses the runner's installed Android SDK.
 
 ## Build
 
-Use JDK 17, Android SDK 37, and Gradle 9.6.0.
+Use JDK 17, Android SDK 36, and Gradle 9.5.1.
 
 Debug APK:
 ./gradlew assembleDebug
