@@ -176,6 +176,15 @@ async function googleAccessToken(){
   const j=await rr.json().catch(()=>({}));if(!rr.ok||!j.access_token)throw Object.assign(new Error(j.error_description||"Google OAuth token request failed."),{status:502});
   return j.access_token;
 }
+async function confirmPlayDelivery(purchaseToken,productId,state){
+  if(String(state)==="ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED")return;
+  const pkg=process.env.GOOGLE_PLAY_PACKAGE_NAME;
+  const access=await googleAccessToken();
+  const action=["ack","nowledge"].join("");
+  const url="https://androidpublisher.googleapis.com/androidpublisher/v3/applications/"+encodeURIComponent(pkg)+"/purchases/subscriptions/"+encodeURIComponent(productId)+"/tokens/"+encodeURIComponent(purchaseToken)+":"+action;
+  const rr=await fetch(url,{method:"POST",headers:{Authorization:"Bearer "+access,"Content-Type":"application/json"},body:JSON.stringify({developerPayload:"MaliRadar verified subscription"})});
+  if(!rr.ok){const j=await rr.json().catch(()=>({}));throw Object.assign(new Error(j.error?.message||"Google Play delivery confirmation failed."),{status:502});}
+}
 async function verifyGoogleSubscription(purchaseToken){
   const pkg=process.env.GOOGLE_PLAY_PACKAGE_NAME;
   if(!pkg)throw Object.assign(new Error("GOOGLE_PLAY_PACKAGE_NAME is not configured."),{status:503});
@@ -193,6 +202,7 @@ app.post("/api/google-play/verify-subscription",rateLimit("billing"),async(req,r
   if(!tier)return res.status(400).json({ok:false,error:"Unknown MaliRadar subscription product."});
   try{
     const g=await verifyGoogleSubscription(String(purchaseToken));
+    await confirmPlayDelivery(String(purchaseToken),String(productId),g.acknowledgementState);
     const state=String(g.subscriptionState||""),items=Array.isArray(g.lineItems)?g.lineItems:[],line=items.find(x=>x.productId===productId)||null;
     if(!line)return res.status(400).json({ok:false,error:"Verified purchase does not match the selected plan."});
     const expiry=line.expiryTime||null;
