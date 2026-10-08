@@ -60,10 +60,11 @@ function installStyle(){
 const LIMITS={free:{maxTradesPerDay:5,maxSharesPerOrder:25,maxSharesPerSymbol:100},founder:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity},premium:{maxTradesPerDay:Infinity,maxSharesPerOrder:Infinity,maxSharesPerSymbol:Infinity}};
 const read=()=>{try{return JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}")}catch(e){return{}}};
 const tier=()=>window.MaliRadarEntitlements?.tier?.()||"free";
+const isPro=()=>{try{return typeof window.MaliRadarEntitlements?.isPro==="function"?!!window.MaliRadarEntitlements.isPro():tier()!=="free"}catch(e){return false}};
 const localDate=v=>{const d=v?new Date(v):new Date();return Number.isFinite(d.getTime())?[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-"):""};
 const today=()=>localDate();
 const tradesToday=()=>{const h=Array.isArray(read().history)?read().history:[];return h.filter(x=>{try{return localDate(x.executedAt||x.time)===today()}catch(e){return false}}).length};
-function status(){const t=tier(),l=LIMITS[t]||LIMITS.free,u=tradesToday();return{tier:t,pro:t!=="free",tradesUsed:u,tradesLimit:Number.isFinite(l.maxTradesPerDay)?l.maxTradesPerDay:null,tradesRemaining:Number.isFinite(l.maxTradesPerDay)?Math.max(0,l.maxTradesPerDay-u):null,maxSharesPerOrder:Number.isFinite(l.maxSharesPerOrder)?l.maxSharesPerOrder:null,maxSharesPerSymbol:Number.isFinite(l.maxSharesPerSymbol)?l.maxSharesPerSymbol:null}}
+function status(){const t=tier(),l=LIMITS[t]||LIMITS.free,u=tradesToday(),pro=isPro();return{tier:t,pro,tradesUsed:u,tradesLimit:Number.isFinite(l.maxTradesPerDay)?l.maxTradesPerDay:null,tradesRemaining:Number.isFinite(l.maxTradesPerDay)?Math.max(0,l.maxTradesPerDay-u):null,maxSharesPerOrder:Number.isFinite(l.maxSharesPerOrder)?l.maxSharesPerOrder:null,maxSharesPerSymbol:Number.isFinite(l.maxSharesPerSymbol)?l.maxSharesPerSymbol:null}}
 function render(){
   installStyle();
   let el=document.getElementById("mrTradeLimitStatus");
