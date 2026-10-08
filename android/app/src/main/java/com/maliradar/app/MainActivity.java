@@ -158,8 +158,7 @@ public class MainActivity extends Activity {
 
         private String quote(String value) {
             String s = value == null ? "" : value;
-            return """ + s.replace("\\", "\\\\").replace(""", "\"").replace("
-", "\\n").replace("", "\\r") + """;
+            return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r") + "\"";
         }
     }
 
