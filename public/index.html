@@ -384,15 +384,15 @@ body.compact-header #smartAssistView{
   <div id="mrAlertIntelMount"></div>
   <div id="mrAlertCenterMount"></div>
 </section><section id="accountScreen" class="screen" data-tour-target="accountHero">
-<div class="card"><div class="account-hero"><div class="avatar" id="profileAvatar">👤</div><div><div class="profile-name" id="profileName">MaliRadar User</div><span class="pill" id="profileRank">Market Rookie • 0 XP</span><div style="margin-top:7px"><span class="demo-badge">LOCAL DEMO ACCOUNT</span></div></div></div></div>
+<div class="card"><div class="account-hero"><div class="avatar" id="profileAvatar">👤</div><div><div class="profile-name" id="profileName">MaliRadar User</div><span class="pill" id="profileRank">Market Rookie • 0 XP</span><div style="margin-top:7px"><span class="demo-badge">LOCAL DEVICE ACCOUNT</span></div></div></div></div>
 <div class="card"><div class="row"><b>👤 Profile</b><span class="muted">v1.7</span></div><div class="profile-form"><label>Username</label><input id="profileUsername" maxlength="20" placeholder="Choose a username"><button class="btn" onclick="saveProfile()">Save Profile</button></div></div>
 <div class="card"><div class="row"><b>🎨 Appearance</b><span class="muted">Choose your view</span></div><div class="theme-buttons"><button id="themeDark" onclick="setTheme('dark')">🌙 Dark</button><button id="themeLight" onclick="setTheme('light')">☀️ Light</button><button id="themeSystem" onclick="setTheme('system')">📱 System</button></div></div>
 
 <div class="card region-market-card"><div class="row"><b>🌍 Region & Markets</b><span class="demo-badge">LOCAL PROVIDER</span></div><p class="notice">Choose your primary country and market. Your selection controls which market MaliRadar shows first.</p><label>Primary region</label><select id="regionSelect" class="region-select" onchange="setMaliRegion(this.value)"></select><div id="marketChoices" class="market-choice-grid"></div><div class="notice" style="margin-top:10px">You can add more markets later. Market data and trading access will only be enabled when MaliRadar has a legitimate source/integration for that market.</div></div>
 <div class="card"><div class="row"><b>🎓 Progress</b><span class="muted">Saved on this device</span></div><div class="setting-row"><div class="setting-copy"><b>Learning XP</b><span>Earned from lessons and missions</span></div><strong id="accountXP">0 XP</strong></div><div class="setting-row"><div class="setting-copy"><b>Achievements</b><span>Your learning milestones</span></div><strong id="accountAchievements">0</strong></div></div>
-<div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local demo</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
+<div class="card"><div class="row"><b>🛡 Privacy & Data</b><span class="muted">Local device</span></div><div class="setting-row"><div class="setting-copy"><b>Private data</b><span>Portfolio, cash and paper trades stay local in this demo.</span></div><span>🔒</span></div><div class="account-actions"><button class="btn alt" onclick="exportDemoData()">Export Data</button><button class="btn alt" onclick="deleteLocalProfile()">Delete Profile</button></div></div>
 <div class="card"><b>🛡 Trust Center</b><p class="notice">Privacy, Terms, Security, Data Sources and Smart Assist safeguards are part of the MaliRadar trust foundation.</p><div class="actions"><button class="btn alt" onclick="openMaliRadarPrivacy()">Privacy Policy ↗</button><button class="btn alt" onclick="window.open('/cookie-policy.html','_blank','noopener')">Cookie Policy ↗</button><button class="btn alt" onclick="openMaliRadarTerms()">Terms of Use ↗</button><button class="btn alt" onclick="disclaimer()">Disclaimer</button><button class="btn alt" onclick="restartMaliRadarTour()">🎓 Replay Tour</button><button class="trust-btn" onclick="nav('trustView',this)">🛡️ Trust Center</button></div><div class="muted" style="margin-top:8px">Policy version 1.1</div></div>
-<button class="btn red" onclick="resetDemo()">Reset local demo</button>
+<button class="btn red" onclick="resetDemo()">Reset local device</button>
 </section><!-- v1.3 Leaderboards -->
 <section id="leaderboardView" class="screen" data-tour="leaderboard">
   <div class="section-head" data-tour-target="leaderboardHead"><div>
@@ -860,7 +860,7 @@ body.compact-header #smartAssistView{
       <h2>Your Data & Security</h2><div class="actions"><button class="btn alt" onclick="nav('dataArchView',this);if(window.MaliRadarMarketData)MaliRadarMarketData.refreshStatus()">📡 Data Engine</button></div>
       <p class="muted">Transparency controls for your MaliRadar account.</p>
     </div>
-    <span class="trust-status">🟡 DEMO / LOCAL</span>
+    <span class="trust-status">🟡 LOCAL / DEVICE</span>
   </div>
 
   <div class="trust-card" style="margin-bottom:12px">
@@ -872,22 +872,22 @@ body.compact-header #smartAssistView{
     <div class="trust-card">
       <h3>🔐 Account Security</h3>
       <p>Production login, password hashing, secure sessions, recovery and device management are planned for the cloud phase.</p>
-      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Account Security','Production authentication is not connected in this prototype. The current account is local/demo only.')">View details</button></div>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Account Security','MaliRadar currently uses a local device identity. No password or real-money brokerage account is stored in the app.')">View details</button></div>
     </div>
     <div class="trust-card">
       <h3>🛡️ Your Privacy</h3>
-      <p>Your public profile can be separated from private portfolio, cash, alerts and simulation information.</p>
-      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy','Public profile fields and private financial/simulation data are designed to remain separate. Production privacy controls will be enforced server-side.')">View details</button></div>
+      <p>Your public profile fields are kept separate from private local portfolio, cash, alerts and simulation data.</p>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy','Public profile fields and private financial/simulation data are designed to remain separate. Server endpoints apply validation and account-deletion controls to server-stored profile data.')">View details</button></div>
     </div>
     <div class="trust-card">
       <h3>📜 Privacy Policy</h3>
       <p>Explains what data MaliRadar is designed to collect, use and retain. A production legal policy will be published before public launch.</p>
-      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy Policy','This prototype does not replace the final legal Privacy Policy. A jurisdiction-appropriate policy will be required before production launch.')">Read status</button></div>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Privacy Policy','See the current MaliRadar Privacy Policy published with this app.')">Read status</button></div>
     </div>
     <div class="trust-card">
       <h3>📋 Terms of Use</h3>
       <p>Defines acceptable use, paper-trading limitations, data limitations and future service boundaries.</p>
-      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Terms of Use','The production Terms of Use must be reviewed and published before public launch. Paper trading is simulated and is not a real-money brokerage service.')">Read status</button></div>
+      <div class="trust-actions"><button class="trust-btn" onclick="openTrustInfo('Terms of Use','The These Terms describe MaliRadar's current paper-trading and learning service. Paper trading is simulated and is not a real-money brokerage service.')">Read status</button></div>
     </div>
     <div class="trust-card">
       <h3>💱 Trading Safety</h3>
@@ -904,8 +904,8 @@ body.compact-header #smartAssistView{
   <div class="trust-card" style="margin-top:12px">
     <h3>📊 Data Source Status</h3>
     <div class="trust-list">
-      <div class="trust-row"><strong>Market prices</strong><span>🟡 Demo / illustrative in prototype</span></div>
-      <div class="trust-row"><strong>News</strong><span>🟡 Demo / prototype content where shown</span></div>
+      <div class="trust-row"><strong>Market prices</strong><span>🟡 Provider-backed / unavailable until verified</span></div>
+      <div class="trust-row"><strong>News</strong><span>🟡 Provider-sourced / unavailable when no verified feed exists</span></div>
       <div class="trust-row"><strong>Cloud account</strong><span>🟡 Foundation only</span></div>
       <div class="trust-row"><strong>Real-money trading</strong><span>⚪ Not available</span></div>
     </div>
@@ -916,7 +916,7 @@ body.compact-header #smartAssistView{
     <p>These controls operate on the current local prototype. Production export/deletion will require server-side implementation.</p>
     <div class="trust-actions">
       <button class="trust-btn" onclick="exportTrustData()">📤 Export local data</button>
-      <button class="trust-btn danger" onclick="deleteTrustData()">🗑️ Delete local demo data</button>
+      <button class="trust-btn danger" onclick="deleteTrustData()">🗑️ Delete local device data</button>
     </div>
   </div>
 </section>
@@ -1342,7 +1342,7 @@ function universalSearch(){
     <div class="search-result" onclick="openSearchStock('${x[0]}')">
       <div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div>
       <div style="text-align:right"><b>${x[3]==null?"Price unavailable":("KSh "+x[3].toFixed(2))}</b><div class="${x[4]>=0?"green":"red"}">${x[4]==null?"—":(x[4]>=0?"▲":"▼")+" "+Math.abs(x[4])+"%"}</div></div>
-    </div>`).join(""):`<div class="search-empty">No matching demo asset found.</div>`;
+    </div>`).join(""):`<div class="search-empty">No matching security found.</div>`;
   box.classList.add("show");
 }
 function openSearchStock(sym){
@@ -1438,15 +1438,16 @@ function chartSVG(x){
 }
 function renderDetail(s){
   const x=stock(s);if(!x)return;window.currentDetail=s;
-  const price=x[3]==null?'Price unavailable':'KSh '+x[3].toFixed(2);
+  const price=x[3]==null?'Price unavailable':(window.maliRadarFormatPrice?window.maliRadarFormatPrice(x[3]):'KSh '+x[3].toFixed(2));
   const move=x[4]==null?'—':(x[4]>=0?'▲ ':'▼ ')+Math.abs(x[4])+'%';
   const cls=x[4]==null?'muted':(x[4]>=0?'green':'red');
   const beginner=detailMode==='beginner';
   const modeText=beginner
-    ? `<div class="intel-note"><b>What's happening?</b><br>${x[3]==null?'This security is in the directory, but a demo price has not been supplied yet.':'The displayed price and movement are simulated demo information. A rising or falling number describes recent movement; it is not a prediction of what happens next.'}</div>`
-    : `<div class="grid"><div class="metric">Open<b>${price}</b></div><div class="metric">Previous Close<b>${price}</b></div><div class="metric">High<b>${price}</b></div><div class="metric">Low<b>${price}</b></div></div><p class="notice">Expert view exposes additional market fields as legitimate data becomes available. No live feed is connected in this prototype.</p>`;
+    ? `<div class="intel-note"><b>What's happening?</b><br>${x[3]==null?'This security is listed, but a verified provider price is not currently available.':'A rising or falling number reflects the provider\'s latest reported movement; it is not a prediction.'}</div>`
+    : `<div class="grid"><div class="metric">Latest price<b>${price}</b></div><div class="metric">Reported move<b>${move}</b></div><div class="metric">Market<b>${x[2]}</b></div><div class="metric">Data state<b>${x[3]==null?'Unavailable':'Provider verified'}</b></div></div><p class="notice">Additional historical fields appear only when authorized provider data is available.</p>`;
   const periods=['1D','1W','1M','3M','1Y','MAX'].map(p=>`<button class="btn alt ${chartPeriod===p?'selected':''}" onclick="setChartPeriod('${p}')">${p}</button>`).join('');
-  openM(x[1],`<div class="row"><div><b>${x[0]} • ${x[2]}</b><div class="muted">${marketIsOpen()?'MARKET OPEN':'MARKET CLOSED'}</div></div><span class="badge">DEMO DATA</span></div><div class="big">${price}</div><div class="${cls}">${move}</div><div class="intel-chart">${chartSVG(x)}</div><div class="periods">${periods}</div><div class="modebar"><button class="btn alt ${beginner?'selected':''}" onclick="setMode('beginner')">👶 Beginner</button><button class="btn alt ${!beginner?'selected':''}" onclick="setMode('expert')">🧠 Expert</button></div>${modeText}<div class="card"><b>About ${x[1]}</b><p class="notice">${x[1]} is listed in the MaliRadar demo directory under ${x[2]}. Company descriptions, announcements and financial data will be added from legitimate sources in later releases.</p></div><div class="actions"><button class="btn" onclick="buy('${s}');closeM()">Paper Buy</button><button class="btn red" onclick="sell('${s}');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert('${s}')">🔔 Create Alert</button></div><p class="notice">This page is educational. Demo prices and the illustrative chart are not a live market feed and are not financial advice.</p>`);
+  const chart='<div class="intel-chart" style="min-height:110px;display:grid;place-items:center;padding:18px"><div class="notice" style="width:100%;text-align:center"><b>Historical chart</b><br>Provider historical candles will appear here when available. MaliRadar does not generate synthetic market history.</div></div>';
+  openM(x[1],`<div class="row"><div><b>${x[0]} • ${x[2]}</b><div class="muted">${marketIsOpen()?'MARKET OPEN':'MARKET CLOSED'}</div></div><span class="badge">DATA STATUS</span></div><div class="big">${price}</div><div class="${cls}">${move}</div>${chart}<div class="periods">${periods}</div><div class="modebar"><button class="btn alt ${beginner?'selected':''}" onclick="setMode('beginner')">👶 Beginner</button><button class="btn alt ${!beginner?'selected':''}" onclick="setMode('expert')">🧠 Expert</button></div>${modeText}<div class="card"><b>About ${x[1]}</b><p class="notice">${x[1]} is listed on ${x[2]}. Company descriptions and financial details are shown only from authorized sources.</p></div><div class="actions"><button class="btn" onclick="buy('${s}');closeM()">Paper Buy</button><button class="btn red" onclick="sell('${s}');closeM()">Paper Sell</button><button class="btn alt" onclick="quickAlert('${s}')">🔔 Create Alert</button></div><p class="notice">Paper trading is simulated. Provider market data may be delayed. No content here is financial advice.</p>`);
 }
 function details(s){
   let x=stock(s);if(!x)return;
@@ -1454,10 +1455,10 @@ function details(s){
 }
 
 function account(){nav("accountScreen",document.querySelectorAll(".tabs button")[4])}
-function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this prototype does not execute real trades.</p><p class="notice"><b>Demo data:</b> prices and market information may be simulated or illustrative.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
+function disclaimer(){openM("⚠️ MaliRadar Disclaimer",`<p class="notice"><b>Paper trading only:</b> this app does not execute real trades.</p><p class="notice"><b>Demo data:</b> prices and market information may be simulated or illustrative.</p><p class="notice"><b>No financial advice:</b> MaliRadar is an educational tool.</p><p class="notice"><b>Future real-money services</b> would require appropriate regulated partners, safeguards and legal compliance.</p><button class="btn" onclick="closeM()">GOT IT</button>`)}
 function closeM(){$("modal").classList.remove("show")}
 function openM(t,b){$("mt").textContent=t;$("mb").innerHTML=b;$("modal").classList.add("show")}
-function resetDemo(){if(confirm("Reset local demo data?")){localStorage.removeItem(KEY);location.reload()}}
+function resetDemo(){if(confirm("Reset local device data?")){localStorage.removeItem(KEY);location.reload()}}
 
 /* ---------- ALERT COMMAND CENTER ---------- */
 function alertStockOptions(selected){
@@ -1476,7 +1477,7 @@ function alertForm(type, sym){
     body=`<div class="formline"><select id="aSym">${alertStockOptions(sym)}</select></div>
     <div class="formline"><input id="aValue" type="number" step="0.01" placeholder="Crossing price"><select id="aDir"><option value="above">Crosses above</option><option value="below">Crosses below</option></select></div>`
   }
-  openM("🔔 "+title,`<p class="notice">This creates a paper/demo alert. The current prototype checks conditions against its demo price data; it does not connect to a live market feed.</p>${body}<div class="actions"><button class="btn" onclick="saveAlert('${type}')">Create Alert</button><button class="btn alt" onclick="closeM()">Cancel</button></div>`)
+  openM("🔔 "+title,`<p class="notice">This creates a paper alert. MaliRadar checks the condition against verified provider quotes when available.</p>${body}<div class="actions"><button class="btn" onclick="saveAlert('${type}')">Create Alert</button><button class="btn alt" onclick="closeM()">Cancel</button></div>`)
 }
 function toggleWatch(sym){
   state.watch=Array.isArray(state.watch)?state.watch:[];
@@ -1502,7 +1503,7 @@ function saveAlert(type){
     active:true,lastPrice:x[3],triggered:false
   });
   save();closeM();renderAlerts();updateAlertCount();
-  alert("Alert created. MaliRadar will monitor this condition in demo mode.")
+  alert("Alert created. MaliRadar will monitor this condition against verified provider quotes when available.")
 }
 function conditionMet(a,x){
   if(a.type==="price"){
@@ -1578,7 +1579,7 @@ function migrateV06(){
     save();
   }
 }
-async function ping(){try{let r=await fetch("/api/health");if(r.ok){$("dot").classList.add("on");$("status").textContent="MaliRadar system online • DEMO DATA"}else throw new Error("offline")}catch(e){$("status").textContent="MaliRadar system ready • DEMO DATA"}}
+async function ping(){try{let r=await fetch("/api/health");if(r.ok){$("dot").classList.add("on");$("status").textContent="MaliRadar system online"}else throw new Error("offline")}catch(e){$("status").textContent="MaliRadar system ready"}}
 migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000);
 </script>
 
@@ -1591,8 +1592,8 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
  window.setTheme=function(t){window.profileState.theme=t;save();applyTheme();renderAccount();};
  window.applyTheme=function(){const t=window.profileState.theme||'dark';document.body.classList.toggle('light',t==='light');if(t==='system')document.body.classList.toggle('light',matchMedia('(prefers-color-scheme: light)').matches);['Dark','Light','System'].forEach(x=>{const b=document.getElementById('theme'+x);if(b)b.classList.toggle('active',t===x.toLowerCase())});};
  window.renderAccount=function(){const p=window.profileState||{};const name=document.getElementById('profileName');const av=document.getElementById('profileAvatar');const inp=document.getElementById('profileUsername');const ai=document.getElementById('profileAvatarInput');const accountPhoto=(function(){try{const a=JSON.parse(localStorage.getItem('maliradar_account_v1')||'{}');return a.profilePhoto||localStorage.getItem('maliradar_profile_photo_v1')||''}catch(e){return ''}})();if(name)name.textContent=p.username||'MaliRadar User';if(av){av.textContent='';if(accountPhoto){const img=document.createElement('img');img.src=accountPhoto;img.alt='Profile photo';img.style.width='100%';img.style.height='100%';img.style.objectFit='cover';img.style.borderRadius='50%';av.appendChild(img)}else av.textContent=p.avatar||'👤'}if(inp)inp.value=p.username||'';if(ai)ai.value=p.avatar||'👤';let xp=Number(localStorage.getItem('maliradar_xp')||0);let ach=JSON.parse(localStorage.getItem('maliradar_achievements')||'[]');if(document.getElementById('accountXP'))document.getElementById('accountXP').textContent=xp+' XP';if(document.getElementById('accountAchievements'))document.getElementById('accountAchievements').textContent=ach.length;let rank=xp>=500?'Market Master':xp>=300?'Market Strategist':xp>=180?'Market Scholar':xp>=100?'Market Explorer':xp>=50?'Market Student':'Market Rookie';if(document.getElementById('profileRank'))document.getElementById('profileRank').textContent=rank+' • '+xp+' XP';applyTheme();};
- window.exportDemoData=function(){const data={profile:window.profileState,portfolio:state,learningXP:localStorage.getItem('maliradar_xp')||'0'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='maliradar-demo-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
- window.deleteLocalProfile=function(){if(!confirm('Delete this local demo profile?'))return;localStorage.removeItem(KEY);window.profileState={username:'MaliRadar User',avatar:'👤',theme:'dark'};save();renderAccount();};
+ window.exportDemoData=function(){const data={profile:window.profileState,portfolio:state,learningXP:localStorage.getItem('maliradar_xp')||'0'};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='maliradar-data.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+ window.deleteLocalProfile=function(){if(!confirm('Delete this local device profile?'))return;localStorage.removeItem(KEY);window.profileState={username:'MaliRadar User',avatar:'👤',theme:'dark'};save();renderAccount();};
  applyTheme();
  window.addEventListener('load',()=>setTimeout(renderAccount,50));
 })();
@@ -1606,7 +1607,7 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
   {id:'learn',title:'Learn',prompt:'Tap Learn below.',guide:'Learn market basics, complete lessons and earn XP.'},
   {id:'leaderboard',title:'Rank',prompt:'Tap Rank below.',guide:'Rank shows learning and paper-trading statistics.'},
   {id:'news',title:'News',prompt:'Tap News below.',guide:'News and Event Radar keep market information together.'},
-  {id:'assist',title:'Smart Assist',prompt:'Tap Assist below.',guide:'Smart Assist explains market conditions and demo signals.'}
+  {id:'assist',title:'Smart Assist',prompt:'Tap Assist below.',guide:'Smart Assist explains market conditions and market signals.'}
  ];
  let i=0,phase='tap',started=false,highlight=null,clickTarget=null;
  const $t=id=>document.getElementById(id);
@@ -1707,11 +1708,11 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
 (function(){
  const UNIVERSES={
   ke:[
-   ['SCOM','Safaricom','Telecom',35.95,-1.24],['KCB','KCB Group','Banking',92.5,-0.8],['EQTY','Equity Group','Banking',105,-0.94],['EABL','East African Breweries','Consumer Goods',286.75,-0.52],['COOP','Co-operative Bank','Banking',37.15,0],['ABSA','Absa Bank Kenya','Banking',33.05,-0.45],
+   ['SCOM','Safaricom','Telecom',null,null],['KCB','KCB Group','Banking',null,null],['EQTY','Equity Group','Banking',null,null],['EABL','East African Breweries','Consumer Goods',null,null],['COOP','Co-operative Bank','Banking',null,null],['ABSA','Absa Bank Kenya','Banking',null,null],
    ['BAT','BAT Kenya','Consumer Goods',null,null],['BRIT','Britam Holdings','Insurance',null,null],['CIC','CIC Insurance Group','Insurance',null,null],['CTUM','Centum Investment','Investment',null,null],['DTK','Diamond Trust Bank','Banking',null,null],['HFCK','HF Group','Banking',null,null],['IMH','I&M Group','Banking',null,null],['NCBA','NCBA Group','Banking',null,null],['SBIC','Stanbic Holdings','Banking',null,null],['SCBK','Standard Chartered Bank Kenya','Banking',null,null],['NMG','Nation Media Group','Media',null,null],['KQ','Kenya Airways','Transport',null,null],['KEGN','KenGen','Energy',null,null],['KPLC','Kenya Power','Energy',null,null],['TOTL','TotalEnergies Marketing Kenya','Energy',null,null],['KUKZ','Kakuzi','Agriculture',null,null],['SASN','Sasini','Agriculture',null,null],['UNGA','Unga Group','Agriculture',null,null],['CARB','Carbacid Investments','Manufacturing',null,null],['CGEN','Car & General','Manufacturing',null,null],['NSE','Nairobi Securities Exchange','Financial Services',null,null],['JUB','Jubilee Holdings','Insurance',null,null],['KNRE','Kenya Re-Insurance','Insurance',null,null],['SLAM','Sanlam Kenya','Insurance',null,null],['CRWN','Crown Paints Kenya','Manufacturing',null,null],['LBTY','Limuru Tea','Agriculture',null,null],['LAPR','Limuru Tea','Agriculture',null,null],['WTK','Williamson Tea Kenya','Agriculture',null,null],['TPSE','TPS Eastern Africa','Hotels & Tourism',null,null],['LKL','Longhorn Publishers','Publishing',null,null]
   ],
   ng:[
-   ['DANGCEM','Dangote Cement','Industrial Goods',1066.7,0],['AIRTELAFRI','Airtel Africa','ICT',6300,0],['MTNN','MTN Nigeria','ICT',null,null],['GTCO','Guaranty Trust Holding','Banking',null,null],['ZENITHBANK','Zenith Bank','Banking',null,null],['UBA','United Bank for Africa','Banking',null,null],['ACCESSCORP','Access Holdings','Banking',null,null],['FBNH','FBN Holdings','Banking',null,null],['STANBIC','Stanbic IBTC Holdings','Banking',null,null],['FIDELITYBK','Fidelity Bank','Banking',null,null],['SEPLAT','Seplat Energy','Energy',null,null],['BUAFOODS','BUA Foods','Consumer Goods',null,null],['BUACEMENT','BUA Cement','Industrial Goods',null,null],['NESTLE','Nestle Nigeria','Consumer Goods',null,null],['NB','Nigerian Breweries','Consumer Goods',null,null],['PRESCO','Presco','Agriculture',null,null],['OANDO','Oando','Energy',null,null],['TRANSCORP','Transnational Corporation','Conglomerates',null,null],['DANGSUGAR','Dangote Sugar Refinery','Consumer Goods',null,null],['FLOURMILL','Flour Mills of Nigeria','Consumer Goods',null,null],['GEREGU','Geregu Power','Utilities',null,null],['MAYBAKER','May & Baker Nigeria','Healthcare',null,null],['JAPAULGOLD','Japaul Gold & Ventures','Mining',null,null],['CUSTODIAN','Custodian Investment','Insurance',null,null],['CORNERST','Cornerstone Insurance','Insurance',null,null],['FCMB','FCMB Group','Banking',null,null],['STERLINGNG','Sterling Financial Holdings','Banking',null,null],['ETI','Ecobank Transnational','Banking',null,null],['VITAFOAM','Vitafoam Nigeria','Manufacturing',null,null],['CUTIX','Cutix','Industrial Goods',null,null]
+   ['DANGCEM','Dangote Cement','Industrial Goods',null,null],['AIRTELAFRI','Airtel Africa','ICT',null,null],['MTNN','MTN Nigeria','ICT',null,null],['GTCO','Guaranty Trust Holding','Banking',null,null],['ZENITHBANK','Zenith Bank','Banking',null,null],['UBA','United Bank for Africa','Banking',null,null],['ACCESSCORP','Access Holdings','Banking',null,null],['FBNH','FBN Holdings','Banking',null,null],['STANBIC','Stanbic IBTC Holdings','Banking',null,null],['FIDELITYBK','Fidelity Bank','Banking',null,null],['SEPLAT','Seplat Energy','Energy',null,null],['BUAFOODS','BUA Foods','Consumer Goods',null,null],['BUACEMENT','BUA Cement','Industrial Goods',null,null],['NESTLE','Nestle Nigeria','Consumer Goods',null,null],['NB','Nigerian Breweries','Consumer Goods',null,null],['PRESCO','Presco','Agriculture',null,null],['OANDO','Oando','Energy',null,null],['TRANSCORP','Transnational Corporation','Conglomerates',null,null],['DANGSUGAR','Dangote Sugar Refinery','Consumer Goods',null,null],['FLOURMILL','Flour Mills of Nigeria','Consumer Goods',null,null],['GEREGU','Geregu Power','Utilities',null,null],['MAYBAKER','May & Baker Nigeria','Healthcare',null,null],['JAPAULGOLD','Japaul Gold & Ventures','Mining',null,null],['CUSTODIAN','Custodian Investment','Insurance',null,null],['CORNERST','Cornerstone Insurance','Insurance',null,null],['FCMB','FCMB Group','Banking',null,null],['STERLINGNG','Sterling Financial Holdings','Banking',null,null],['ETI','Ecobank Transnational','Banking',null,null],['VITAFOAM','Vitafoam Nigeria','Manufacturing',null,null],['CUTIX','Cutix','Industrial Goods',null,null]
   ],
   za:[
    ['NPN','Naspers','Technology',null,null],['MTN','MTN Group','Telecommunications',null,null],['SBK','Standard Bank','Banking',null,null],['SHP','Shoprite','Retail',null,null],['SOL','Sasol','Energy',null,null],['AGL','Anglo American','Mining',null,null],['ABG','Absa Group','Banking',null,null],['FSR','FirstRand','Banking',null,null],['CPI','Capitec Bank','Banking',null,null],['BID','Bid Corporation','Consumer Services',null,null],['NED','Nedbank','Banking',null,null],['DSY','Discovery','Financial Services',null,null],['PRX','Prosus','Technology',null,null],['GLN','Glencore','Mining',null,null],['ANG','AngloGold Ashanti','Mining',null,null],['GFI','Gold Fields','Mining',null,null],['CFR','Compagnie Financiere Richemont','Luxury Goods',null,null],['BTI','British American Tobacco','Consumer Goods',null,null],['VOD','Vodacom','Telecommunications',null,null],['AMS','Anglo American Platinum','Mining',null,null],['IMP','Impala Platinum','Mining',null,null],['REM','Remgro','Investment',null,null],['OUT','OUTsurance','Insurance',null,null],['S32','South32','Mining',null,null],['BVT','The Bidvest Group','Services',null,null],['KIO','Kumba Iron Ore','Mining',null,null],['INP','Investec','Financial Services',null,null],['NHM','Ninety One','Financial Services',null,null],['HAR','Harmony Gold Mining','Mining',null,null],['VAL','Valterra Platinum','Mining',null,null],['4SI','4Sight Holdings','Technology',null,null]
@@ -1743,7 +1744,7 @@ migrateV06();render();ping();checkAlerts();setInterval(renderMarketStatus,30000)
  // Replace market rendering with region-aware currency and universe.
  window.renderMarkets=function(){
   const rows=(STOCKS||[]).filter(x=>marketFilter==='all'||x[2]===marketFilter);
-  if(document.getElementById('universeCount'))document.getElementById('universeCount').textContent=`${rows.length} demo entries`;
+  if(document.getElementById('universeCount'))document.getElementById('universeCount').textContent=`${rows.length} securities loaded`;
   const list=document.getElementById('list'); if(!list)return;
   list.innerHTML=rows.map(x=>{const price=maliRadarFormatPrice(x[3]);const move=x[4]==null?'—':((x[4]>=0?'▲':'▼')+' '+Math.abs(x[4])+'%');const cls=x[4]==null?'muted':(x[4]>=0?'green':'red');const trade=x[3]==null?'':`<button class="btn" onclick="buy('${x[0]}')">Paper Buy</button><button class="btn red" onclick="sell('${x[0]}')">Paper Sell</button>`;return `<div class="stock"><div class="row"><div><b>${x[1]}</b><div class="muted">${x[0]} • ${x[2]}</div></div><div><b>${price}</b><div class="${cls}">${move}</div></div></div><div class="actions">${trade}<button class="btn alt" onclick="toggleWatch('${x[0]}')">${state.watch.includes(x[0])?'★ Watching':'☆ Watch'}</button><button class="btn alt" onclick="quickAlert('${x[0]}')">🔔 Alert</button></div></div>`}).join('')||"<p class='muted'>No securities in this filter.</p>";
  };
@@ -1778,7 +1779,7 @@ function exportTrustData(){
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 function deleteTrustData(){
-  if(!confirm('Delete MaliRadar local demo data from this browser?'))return;
+  if(!confirm('Delete MaliRadar local device data from this browser?'))return;
   localStorage.clear();
   location.reload();
 }
@@ -1841,7 +1842,7 @@ function deleteTrustData(){
       // Tell the quote engine that the authoritative universe is now ready,
       // so it refreshes quotes for exactly these instruments.
       window.dispatchEvent(new CustomEvent('maliRadarDirectoryReady',{detail:{market:m,count:providerStocks.length}}));
-    }catch(e){/* Keep the local demo directory if the provider is unavailable. */}
+    }catch(e){/* Keep the local device directory if the provider is unavailable. */}
   }
   const oldSet=window.setMaliRegion;
   if(oldSet)window.setMaliRegion=function(id){oldSet(id);setTimeout(loadProvider,150)};
@@ -1932,7 +1933,7 @@ function deleteTrustData(){
   function setBadge(){
     const b=document.querySelector('#dataArchView .data-badge'); if(!b)return;
     const st=current.state||'CHECKING';
-    b.textContent=st==='DELAYED'?'🟡 15-MIN DELAYED • MYSTOCKS':st==='UNAVAILABLE'?'⚪ DATA UNAVAILABLE':st==='DEMO'?'🟠 DEMO FALLBACK':'🟠 CHECKING FEED';
+    b.textContent=st==='DELAYED'?'🟡 15-MIN DELAYED • MYSTOCKS':st==='UNAVAILABLE'?'⚪ DATA UNAVAILABLE':st==='DEMO'?'🟠 DATA UNAVAILABLE':'🟠 CHECKING FEED';
   }
   function render(message){
     const box=el('dataAdapters'); if(!box)return;
