@@ -1,4 +1,4 @@
-MaliRadar v0.5 — backend-ready starter
+STOCKCRASH v0.5 — backend-ready starter
 ==========================================
 
 WHAT THIS VERSION DOES
