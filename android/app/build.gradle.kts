@@ -12,6 +12,10 @@ val googleServerClientId = providers.gradleProperty("GOOGLE_SERVER_CLIENT_ID").o
 val googleServerClientIdEscaped = googleServerClientId.replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
+    buildFeatures {
+        buildConfig = true
+    }
+
     namespace = "com.maliradar.app"
     compileSdk = 36
 
@@ -19,7 +23,7 @@ android {
         applicationId = "com.maliradar.app"
         minSdk = 23
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "0.2.0"
         buildConfigField("String", "GOOGLE_SERVER_CLIENT_ID", "\"${googleServerClientIdEscaped}\"")
     }
