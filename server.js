@@ -195,6 +195,7 @@ async function verifyGoogleSubscription(purchaseToken){
   return j;
 }
 const PLAY_PRODUCTS={founder:process.env.GOOGLE_PLAY_FOUNDER_PRODUCT_ID||"maliradar_founder_monthly",premium:process.env.GOOGLE_PLAY_PRO_PRODUCT_ID||"maliradar_pro_monthly"};
+const PLAY_LAUNCH_OFFER_ID=process.env.GOOGLE_PLAY_LAUNCH_OFFER_ID||"launch_2_months";
 app.post("/api/google-play/verify-subscription",rateLimit("billing"),async(req,res)=>{
   const {userId,purchaseToken,productId,reservationId,deletionToken}=req.body||{};
   if(!userId||!purchaseToken||!productId)return res.status(400).json({ok:false,error:"userId, purchaseToken and productId are required."});
@@ -206,8 +207,11 @@ app.post("/api/google-play/verify-subscription",rateLimit("billing"),async(req,r
     const state=String(g.subscriptionState||""),items=Array.isArray(g.lineItems)?g.lineItems:[],line=items.find(x=>x.productId===productId)||null;
     if(!line)return res.status(400).json({ok:false,error:"Verified purchase does not match the selected plan."});
     const expiry=line.expiryTime||null;
+    const offerId=line.autoRenewingPlan?.offerDetails?.offerId||null;
+    const isLaunchOffer=String(offerId||"")===PLAY_LAUNCH_OFFER_ID;
     const accessOk=["SUBSCRIPTION_STATE_ACTIVE","SUBSCRIPTION_STATE_IN_GRACE_PERIOD","SUBSCRIPTION_STATE_CANCELED"].includes(state)&&(!expiry||Date.parse(expiry)>Date.now());
     if(!accessOk)return res.status(402).json({ok:false,error:"Subscription is not active.",status:state,expiresAt:expiry});
+    if(isLaunchOffer&&!reservationId)return res.status(409).json({ok:false,error:"A launch-place reservation is required for the launch offer."});
     const result=await withDbLock(()=>{
       const db=readDB(),u=(db.users||[]).find(x=>x.id===userId);
       if(!u)return {status:404,error:"User not found"};
@@ -217,8 +221,9 @@ app.post("/api/google-play/verify-subscription",rateLimit("billing"),async(req,r
       if(priorOwner&&priorOwner!==userId)return {status:409,error:"Purchase is already linked to another account."};
       let launchConsumed=false;
       db.launchReservations=Array.isArray(db.launchReservations)?db.launchReservations:[];
-      const reservation=reservationId?db.launchReservations.find(x=>x.id===reservationId&&x.userId===userId&&x.plan===tier&&x.status==="reserved"&&Date.parse(x.expiresAt)>Date.now()):null;
-      const sub={tier,productId,source:"google_play",status:state.replace("SUBSCRIPTION_STATE_",""),verifiedAt:new Date().toISOString(),expiresAt:expiry,purchaseTokenHash:hash,offerId:line.autoRenewingPlan?.offerDetails?.offerId||null};
+      const reservation=isLaunchOffer&&reservationId?db.launchReservations.find(x=>x.id===reservationId&&x.userId===userId&&x.plan===tier&&x.status==="reserved"&&Date.parse(x.expiresAt)>Date.now()):null;
+      if(isLaunchOffer&&!reservation)return {status:409,error:"Launch-place reservation is missing or expired."};
+      const sub={tier,productId,source:"google_play",status:state.replace("SUBSCRIPTION_STATE_",""),verifiedAt:new Date().toISOString(),expiresAt:expiry,purchaseTokenHash:hash,offerId};
       db.subscriptions[userId]=sub;db.playPurchaseHashes[hash]=userId;
       if(reservation&&!reservation.counted){
         reservation.status="consumed";reservation.counted=true;reservation.consumedAt=new Date().toISOString();db.launchOffer=db.launchOffer||{launchAt:new Date().toISOString(),paidSlots:0};
