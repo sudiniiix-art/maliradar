@@ -6,12 +6,15 @@ Use Google Play Billing Library 9.1.0 in the Android client. The Android purchas
 2. When the launch offer is active, call `POST /api/launch-offer/reserve` before starting the purchase and keep the returned reservation ID.
 3. After purchase, send the purchase token, product ID, reservation ID, MaliRadar ID and deletion token to `POST /api/google-play/verify-subscription`.
 4. Only unlock paid features after the server returns a verified entitlement.
-5. Restore purchases through the same server verification path.
-6. Let Google Play remain the source of truth for recurring billing, renewals, grace periods and expiration.
+5. The server confirms delivery of an initial verified subscription; renewals do not need a second acknowledgement.
+6. Restore purchases through the same server verification path.
+7. Let Google Play remain the source of truth for recurring billing, renewals, grace periods and expiration.
 
 Default product IDs:
 - Founder Pro: `maliradar_founder_monthly`
 - Pro: `maliradar_pro_monthly`
+
+Launch offer ID: `launch_2_months` by default; set `GOOGLE_PLAY_LAUNCH_OFFER_ID` to the exact Play Console offer ID you create.
 
 Create the two products/base plans and configure the first-two-month launch prices in Play Console. The app UI prices are marketing labels; Google Play product details are the final purchase price.
 
@@ -21,6 +24,7 @@ GOOGLE_PLAY_PACKAGE_NAME=<Android application id>
 GOOGLE_PLAY_SERVICE_ACCOUNT_JSON=<Google Play publisher service-account JSON>
 GOOGLE_PLAY_FOUNDER_PRODUCT_ID=maliradar_founder_monthly
 GOOGLE_PLAY_PRO_PRODUCT_ID=maliradar_pro_monthly
+GOOGLE_PLAY_LAUNCH_OFFER_ID=launch_2_months
 MYSTOCKS_BASE_URL=https://mystocks.africa/api/v1/partner
 MYSTOCKS_API_KEY=<production MyStocks Africa key>
 MALIRADAR_DATA_DIR=<durable storage path>
