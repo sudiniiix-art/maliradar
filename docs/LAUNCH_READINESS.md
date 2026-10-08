@@ -50,4 +50,4 @@ The server never trusts a client-supplied paid tier for the protected paper-orde
 The market-data bridge reports production or sandbox state dynamically from `MYSTOCKS_BASE_URL`. When no provider key is configured, the state is `UNAVAILABLE`; the app does not present seeded prices as verified market data.
 
 ## Final release sequence
-Deploy `main` to Render, verify the backend health endpoint, configure production provider/billing credentials, then run the fresh Android install test: intro → tutorial → Home → every tab → Free/Founder/Pro access → paper trading → reload/reconnect → account data management.
+Deploy `main` to Render, verify the backend health endpoint, configure the Google server client ID for the Android build and Render, configure production provider/billing credentials, then run the fresh Android install test: intro → sign-in → orb → Home → one navigation guide → every tab → Free/Founder/Pro access → paper trading → reload/reconnect → account data management.
