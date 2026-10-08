@@ -51,6 +51,15 @@ jobs:
           gradle -p android assembleDebug --stacktrace
           test -f android/app/build/outputs/apk/debug/app-debug.apk
 
+
+      - name: Verify APK with Android apksigner
+        shell: bash
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose android/app/build/outputs/apk/debug/app-debug.apk
+          "$APKSIGNER" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk
+
       - name: Upload MALIRADAR APK
         uses: actions/upload-artifact@v4
         with:
