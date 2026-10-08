@@ -4,8 +4,23 @@
 const KEY="maliradar_entitlements_v2";
 const LEGACY="maliradar_entitlements_v1";
 const VERSION=2;
-const PRICING={currency:"KES",freeMonthly:0,founderMonthly:99,founderYearly:999,premiumMonthly:199,premiumYearly:1999};
+const PRICING={currency:"KES",freeMonthly:0,founderMonthly:99,founderYearly:999,premiumMonthly:199,premiumYearly:1999,launchOfferEndsMonthsAfterLaunch:2,launchOfferMaxPaidSlots:100};
 const TIERS={free:0,founder:1,premium:2};
+const LAUNCH_OFFER={maxAvailable:100,endsMonthsAfterLaunch:2,launchAtKey:"maliradar_launch_started_at",soldKey:"maliradar_launch_paid_slots"};
+function launchOffer(){
+  const now=Date.now();
+  let launch=Number(localStorage.getItem(LAUNCH_OFFER.launchAtKey)||0);
+  if(!launch){launch=now;localStorage.setItem(LAUNCH_OFFER.launchAtKey,String(launch))}
+  const end=new Date(launch);end.setMonth(end.getMonth()+LAUNCH_OFFER.endsMonthsAfterLaunch);
+  const used=Math.min(LAUNCH_OFFER.maxAvailable,Math.max(0,Number(localStorage.getItem(LAUNCH_OFFER.soldKey)||0)));
+  return {maxAvailable:LAUNCH_OFFER.maxAvailable,used,remaining:Math.max(0,LAUNCH_OFFER.maxAvailable-used),launchAt:launch,endsAt:end.getTime(),active:now<end.getTime()&&used<LAUNCH_OFFER.maxAvailable};
+}
+function launchOfferCopy(){
+ const o=launchOffer();
+ if(!o.active)return o.remaining===0?"Launch offer sold out":"Launch offer ended";
+ const days=Math.max(0,Math.ceil((o.endsAt-Date.now())/86400000));
+ return o.remaining+" of "+o.maxAvailable+" launch places remaining • ends in "+days+" day"+(days===1?"":"s");
+}
 const DEFAULT={version:VERSION,tier:"free",source:"none",verifiedAt:null,expiresAt:null,productId:null,plan:null};
 const FEATURES={
  advancedAssist:{label:"Advanced Smart Assist",min:"founder"},
@@ -88,10 +103,10 @@ function modal(){
  m.innerHTML='<div id="mrProSheet"><div class="row"><div class="mrpro-orb">MR</div><button class="btn alt" id="mrProClose">✕</button></div>'+
  '<div class="mrpro-title">MALIRADAR PLANS</div><div class="mrpro-sub">Upgrade your tools, education and intelligence — never a promise of profit.</div>'+
  '<div class="mrpro-current">CURRENT PLAN: <b id="mrProCurrentTier">'+tierName(t).toUpperCase()+'</b></div>'+
- '<div class="mrpro-plans">'+
+ '<div class="mrpro-note" id="mrLaunchOffer"><b>LAUNCH OFFER • LIMITED TO 100 PAID PLACES</b><br>'+launchOfferCopy()+'</div><div class="mrpro-plans">'+
  card("free","FREE","CORE","KSh 0","Always free","Paper trading · Core academy · Basic intelligence · Basic alerts · Core competition","free-card")+
  card("founder","FOUNDER PRO","LAUNCH","KSh 99 / month","KSh 999 / year","Everything Free · Advanced Smart Assist · Advanced scanner · Expanded alerts · Extended analysis · Expanded global tools · Founder identity","founder-card")+
- card("premium","MALIRADAR PREMIUM","ULTIMATE","KSh 199 / month","KSh 1,999 / year","Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
+ card("premium","MALIRADAR PREMIUM","ULTIMATE","KSh 199 / month","KSh 1,999 / year","<b>LAUNCH OFFER: 100 TOTAL PAID PLACES</b> · Everything Founder Pro · Premium Smart Assist & educational signals · Maximum scanner depth · Advanced personal intelligence · Advanced competition · <b>Forex learning sessions</b> · <b>Crypto learning sessions</b> · Premium profile identity","premium-card")+
  '</div><div id="mrProFeatureNote" class="mrpro-note">Choose the level that matches how deeply you want to learn and simulate.</div>'+
  '<div class="mrpro-feature-list">'+features.map(([k,f])=>'<div class="mrpro-feature '+(has(k)?"":"locked")+'"><span class="dot2">'+(has(k)?"◆":"◇")+'</span><div><b>'+f.label+'</b><br><span class="muted">'+tierName(f.min)+' tier or above</span></div></div>').join("")+'</div>'+
  '<div class="mrpro-note">Billing is not connected in this release. No button here can fake a successful purchase. Once Google Play Billing is connected, verified subscription entitlements will control access. Google Play supports tier changes and billing-period changes for subscriptions.</div>'+
@@ -142,6 +157,6 @@ function init(){
  window.addEventListener("maliRadar:entitlementUpdated",()=>{refresh();if(window.MaliRadarProGates?.refresh)window.MaliRadarProGates.refresh()});
 }
 function themeStyles(){if(document.getElementById("mrPlanThemes"))return;const s=document.createElement("style");s.id="mrPlanThemes";s.textContent=".mrpro-badge.premium{color:#ffe080!important;border-color:rgba(255,205,70,.55)!important}.mr-plan-free{border-color:rgba(72,255,150,.48);box-shadow:0 0 24px rgba(72,255,150,.18)}.mr-plan-founder{border-color:rgba(185,95,255,.58);box-shadow:0 0 30px rgba(185,95,255,.25)}.mr-plan-premium{border-color:rgba(255,202,72,.62);box-shadow:0 0 34px rgba(255,202,72,.27)}";document.head.appendChild(s)}
-window.MaliRadarEntitlements={version:VERSION,get:read,save,plan,tier,isPro,isFounder,isPremium,has,require:gate,requirePro:gate,open,close,features:FEATURES,pricing:PRICING,refresh,showPlans:open};
+window.MaliRadarEntitlements={version:VERSION,get:read,save,plan,tier,isPro,isFounder,isPremium,has,require:gate,requirePro:gate,open,close,features:FEATURES,pricing:PRICING,launchOffer,launchOfferCopy,refresh,showPlans:open};
 init();
 })();
