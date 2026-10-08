@@ -226,23 +226,45 @@ app.get("/api/news",async(req,res)=>{
   }
 });
 
-// Competitive profile + leaderboard beta. Uses the existing demo DB; no real-money data.
-app.post("/api/competitive/profile",(req,res)=>{
-  const {id,name,profilePhoto,region,xp,profit,ret,trades,achievements}=req.body||{};
-  if(!id||typeof id!=="string"||id.length>80) return res.status(400).json({error:"Invalid MaliRadar ID"});
-  const db=readDB(); if(!Array.isArray(db.users)) db.users=[];
-  let u=db.users.find(x=>x.id===id);
-  if(!u){u={id,createdAt:new Date().toISOString()};db.users.push(u);}
-  u.name=String(name||"MaliRadar User").slice(0,24);
-  if(typeof profilePhoto==="string") u.profilePhoto=profilePhoto.slice(0,700000);
-  u.region=String(region||"global").slice(0,32);
-  u.xp=Number.isFinite(Number(xp))?Number(xp):0;
-  u.profit=Number.isFinite(Number(profit))?Number(profit):0;
-  u.ret=Number.isFinite(Number(ret))?Number(ret):0;
-  u.trades=Number.isFinite(Number(trades))?Number(trades):0;
-  u.achievements=Number.isFinite(Number(achievements))?Number(achievements):0;
-  u.updatedAt=new Date().toISOString();
-  writeDB(db); res.json({ok:true,profile:u});
+// Competitive profile + leaderboard. Trading metrics are derived from server transactions.
+app.post("/api/competitive/profile",rateLimit("mutate"),async(req,res)=>{
+  const {id,name,profilePhoto,region,xp,achievements,deletionToken}=req.body||{};
+  if(!id||typeof id!=="string"||id.length>80)return res.status(400).json({error:"Invalid MaliRadar ID"});
+  try{
+    const profile=await withDbLock(()=>{
+      const db=readDB();if(!Array.isArray(db.users))db.users=[];
+      let u=db.users.find(x=>x.id===id);const created=!u;
+      if(!u){u={id,createdAt:new Date().toISOString()};db.users.push(u);}
+      if(u.deletionToken&&deletionToken&&!validAccountSecret(db,id,deletionToken))throw Object.assign(new Error("Account secret mismatch"),{status:403});
+      const secret=ensureUserSecret(u);
+      u.name=String(name||u.name||"MaliRadar User").slice(0,24);
+      if(typeof profilePhoto==="string")u.profilePhoto=profilePhoto.slice(0,250000);
+      const regions=new Set(["global","kenya","nigeria","south_africa","ghana","egypt","morocco","tanzania","uganda","rwanda","united_states"]);
+      const rr=String(region||u.region||"global").toLowerCase();u.region=regions.has(rr)?rr:"global";
+      const txs=(db.transactions||[]).filter(t=>t.userId===id);
+      let trades=0,realizedProfit=0,open={};
+      for(const t of txs){
+        const sym=String(t.symbol||"").toUpperCase(),q=Math.max(0,Number(t.quantity)||0),p=Math.max(0,Number(t.price)||0);
+        if(!q||!p)continue;
+        trades++;
+        const pos=open[sym]||{qty:0,cost:0};
+        if(String(t.side).toUpperCase()==="BUY"){pos.qty+=q;pos.cost+=q*p;}
+        else if(String(t.side).toUpperCase()==="SELL"&&pos.qty>0){
+          const take=Math.min(q,pos.qty),avg=pos.cost/pos.qty;
+          realizedProfit+=(p-avg)*take;pos.qty-=take;pos.cost=Math.max(0,pos.cost-take*avg);
+        }
+        open[sym]=pos;
+      }
+      u.profit=realizedProfit;u.ret=realizedProfit/100000*100;u.trades=trades;
+      u.xp=Math.max(Number(u.xp)||0,Math.min(100000,Math.max(0,Number(xp)||0)));
+      u.achievements=Math.max(Number(u.achievements)||0,Math.min(10000,Math.max(0,Number(achievements)||0)));
+      u.updatedAt=new Date().toISOString();writeDB(db);
+      const out={id:u.id,name:u.name,profilePhoto:u.profilePhoto||"",region:u.region,xp:u.xp,profit:u.profit,ret:u.ret,trades:u.trades,achievements:u.achievements};
+      if(created||deletionToken===secret)out.deletionToken=secret;
+      return out;
+    });
+    res.json({ok:true,profile});
+  }catch(e){res.status(e.status||500).json({ok:false,error:e.message||"Profile update failed."})}
 });
 app.get("/api/competitive/profile/search",(req,res)=>{
   const q=String(req.query.q||"").trim().toLowerCase();
@@ -339,7 +361,43 @@ app.get("/api/health",(req,res)=>res.json({ok:true,service:"MaliRadar API",versi
 app.get("/api/stocks",(req,res)=>res.json({source:"demo",warning:"Illustrative data only",stocks:[{symbol:"SCOM",name:"Safaricom",price:35.95},{symbol:"KCB",name:"KCB Group",price:92.50},{symbol:"EQTY",name:"Equity Group",price:105.00},{symbol:"EABL",name:"EABL",price:286.75}]}));
 app.post("/api/demo-user",(req,res)=>{const db=readDB(),id="demo-"+Date.now(),user={id,name:req.body.name||"Demo User",createdAt:new Date().toISOString()};db.users.push(user);writeDB(db);res.status(201).json(user)});
 app.get("/api/demo-user/:id",(req,res)=>{const db=readDB(),user=db.users.find(u=>u.id===req.params.id);if(!user)return res.status(404).json({error:"User not found"});res.json(user)});
-app.post("/api/paper-order",(req,res)=>{const {userId,symbol,side,quantity,price,tier}=req.body;if(!userId||!symbol||!["BUY","SELL"].includes(side)||!Number.isFinite(quantity)||quantity<=0||!Number.isFinite(price)||price<=0)return res.status(400).json({error:"Invalid paper order"});const db=readDB();if(!db.users.some(u=>u.id===userId))return res.status(404).json({error:"User not found"});const isPro=tier==="founder"||tier==="premium";const today=new Date().toISOString().slice(0,10);const txs=db.transactions.filter(t=>t.userId===userId&&String(t.createdAt||"").slice(0,10)===today);if(!isPro&&txs.length>=5)return res.status(429).json({ok:false,error:"Free plan limit reached: 5 paper stock trades per day. Upgrade to Pro for unlimited trades.",code:"TRADE_LIMIT"});if(!isPro&&quantity>25)return res.status(429).json({ok:false,error:"Free plan limit: maximum 25 shares per order. Upgrade to Pro for unlimited share quantities.",code:"QUANTITY_LIMIT"});if(!isPro){const held=Object.values(db.transactions.filter(t=>t.userId===userId&&String(t.symbol).toUpperCase()===String(symbol).toUpperCase()).reduce((m,t)=>{const q=Number(t.quantity)||0;m[t.symbol]=(m[t.symbol]||0)+(t.side==="BUY"?q:-q);return m},{}))[0]||0;if(side==="BUY"&&held+quantity>100)return res.status(429).json({ok:false,error:"Free plan limit: maximum 100 shares held per stock. Upgrade to Pro for unlimited stock buys.",code:"HOLDING_LIMIT"})}const tx={id:"tx-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),userId,symbol,side,quantity,price,tier:isPro?tier:"free",createdAt:new Date().toISOString()};db.transactions.push(tx);writeDB(db);res.status(201).json(tx)});
+async function verifiedPaperPrice(symbol){
+  const exchange="NSE";
+  try{
+    const rr=await fetch("http://127.0.0.1:"+PORT+"/api/market-data/quotes?market="+exchange+"&symbols="+encodeURIComponent(String(symbol).split(".")[0])+"&_server_trade="+Date.now());
+    if(!rr.ok)return null;
+    const j=await rr.json();const q=(j.quotes||[])[0];const p=Number(q?.price);
+    return Number.isFinite(p)&&p>0?p:null;
+  }catch(e){return null}
+}
+app.post("/api/paper-order",rateLimit("mutate"),async(req,res)=>{
+  const {userId,symbol,side,quantity,deletionToken}=req.body||{};
+  const q=Math.floor(Number(quantity)||0),sym=String(symbol||"").toUpperCase().trim(),s=String(side||"").toUpperCase();
+  if(!userId||!sym||!["BUY","SELL"].includes(s)||q<=0)return res.status(400).json({ok:false,error:"Invalid paper order"});
+  const price=await verifiedPaperPrice(sym);
+  if(price==null)return res.status(503).json({ok:false,error:"Verified provider price is unavailable. Paper order not recorded.",code:"PRICE_UNAVAILABLE"});
+  try{
+    const result=await withDbLock(()=>{
+      const db=readDB();const u=(db.users||[]).find(x=>x.id===userId);if(!u)return {status:404,error:"User not found"};
+      if(!validAccountSecret(db,userId,deletionToken))return {status:403,error:"Account verification required"};
+      db.transactions=Array.isArray(db.transactions)?db.transactions:[];
+      db.subscriptions=db.subscriptions||{};
+      const sub=db.subscriptions[userId],paid=!!sub&&["ACTIVE","IN_GRACE_PERIOD"].includes(sub.status)&&(!sub.expiresAt||Date.parse(sub.expiresAt)>Date.now());
+      const txs=db.transactions.filter(t=>t.userId===userId),now=new Date();
+      const today=now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");
+      const todayCount=txs.filter(t=>String(t.createdAt||"").slice(0,10)===today).length;
+      const held=txs.filter(t=>String(t.symbol||"").toUpperCase()===sym).reduce((n,t)=>n+(String(t.side).toUpperCase()==="BUY"?1:-1)*(Number(t.quantity)||0),0);
+      if(!paid&&todayCount>=5)return {status:429,error:"Free plan limit reached: 5 paper stock trades per day.",code:"TRADE_LIMIT"};
+      if(!paid&&q>25)return {status:429,error:"Free plan limit: maximum 25 shares per order.",code:"QUANTITY_LIMIT"};
+      if(!paid&&s==="BUY"&&held+q>100)return {status:429,error:"Free plan limit: maximum 100 shares held per stock.",code:"HOLDING_LIMIT"};
+      if(s==="SELL"&&q>held)return {status:409,error:"Not enough server-recorded paper shares to sell.",code:"INSUFFICIENT_HOLDING"};
+      const tx={id:"tx-"+Date.now()+"-"+crypto.randomBytes(4).toString("hex"),userId,symbol:sym,side:s,quantity:q,price,tier:paid?sub.tier:"free",createdAt:now.toISOString(),verifiedProviderPrice:true};
+      db.transactions.push(tx);writeDB(db);return {status:201,tx};
+    });
+    if(result.error)return res.status(result.status).json({ok:false,error:result.error,code:result.code});
+    res.status(201).json({ok:true,transaction:result.tx});
+  }catch(e){res.status(500).json({ok:false,error:"Paper order could not be recorded."})}
+});
 app.get("/api/transactions/:userId",(req,res)=>{const db=readDB();res.json(db.transactions.filter(t=>t.userId===req.params.userId))});
 app.post("/api/alerts",(req,res)=>{const {userId,symbol,targetPrice}=req.body;if(!userId||!symbol||!Number.isFinite(targetPrice)||targetPrice<=0)return res.status(400).json({error:"Invalid alert"});const db=readDB();const alert={id:"alert-"+Date.now(),userId,symbol,targetPrice,active:true,createdAt:new Date().toISOString()};db.alerts.push(alert);writeDB(db);res.status(201).json(alert)});
 app.get("/api/alerts/:userId",(req,res)=>{const db=readDB();res.json(db.alerts.filter(a=>a.userId===req.params.userId))});
