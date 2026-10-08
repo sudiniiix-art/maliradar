@@ -1,7 +1,10 @@
 // MaliRadar v2.7 — MyStocks Africa Sandbox market-data bridge
 
-const BASE =
-  'https://mystocks.africa/api/sandbox/v1/partner';
+const BASE = String(
+  process.env.MYSTOCKS_BASE_URL ||
+  'https://mystocks.africa/api/sandbox/v1/partner'
+).replace(/\\/+$/,'');
+const IS_PRODUCTION = !BASE.includes('/api/sandbox/partner') && !BASE.includes('/api/sandbox/v1/partner');
 
 const SUFFIX = {
   NSE: '.KE',
@@ -441,15 +444,15 @@ function registerMaliRadarMarketDataRoutes(app) {
           ),
 
         environment:
-          'sandbox',
+          IS_PRODUCTION ? 'production' : 'sandbox',
 
         state:
           process.env.MYSTOCKS_API_KEY
             ? 'READY'
-            : 'DEMO',
+            : 'UNAVAILABLE',
 
         source:
-          'MyStocks Africa Sandbox',
+          IS_PRODUCTION ? 'MyStocks Africa Partner API' : 'MyStocks Africa Sandbox',
 
         delayMinutes:
           15
@@ -523,7 +526,7 @@ function registerMaliRadarMarketDataRoutes(app) {
               : 'UNAVAILABLE',
 
           source:
-            'MyStocks Africa Sandbox',
+            IS_PRODUCTION ? 'MyStocks Africa Partner API' : 'MyStocks Africa Sandbox',
 
           delayMinutes:
             15,
