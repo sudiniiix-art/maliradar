@@ -89,6 +89,10 @@
     if(changed){st.pendingOrders=keep;write(st);refresh()}
   }
   async function ticket(side,s){
+    if(String(side).toUpperCase()==="BUY"){
+      let watch=[];try{const saved=JSON.parse(localStorage.getItem("maliradar_provider_watchlist_v2")||"[]");watch=Array.isArray(saved)?saved:[]}catch(e){}
+      if(!watch.length){showOrderStatus("Tap Watch first to begin first buy.","watchlist");return;}
+    }
     const st=read(),x=stock(s),p=await resolvePrice(s);
     if(!p)return alert("Verified provider price is currently unavailable for "+s+". Refresh Markets and try again.");
     const owned=Number(st.hold&&st.hold[s]||0),cash=Number(st.cash||0),max=side==="BUY"?Math.floor(cash/p):owned;
@@ -106,12 +110,12 @@
       '<button class="btn" id="mr50Submit" style="width:100%;margin-top:8px;color:#041015;background:'+(side==="BUY"?"var(--a)":"var(--r)")+'">'+(side==="BUY"?"BUY":"SELL")+' PAPER ORDER</button></div></div>';
     document.body.appendChild(root);
     const type=root.querySelector("#mr50Type"),lr=root.querySelector("#mr50LimitRow"),lim=root.querySelector("#mr50Limit"),qty=root.querySelector("#mr50Qty"),tot=root.querySelector("#mr50Total"),submit=root.querySelector("#mr50Submit");
-    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p,protect=type.value==="STOP_LOSS"||type.value==="TAKE_PROFIT";lr.style.display=(type.value==="LIMIT"||protect)?"flex":"none";lr.querySelector("label").textContent=protect?(type.value==="STOP_LOSS"?"Stop price":"Target price"):"Limit price";tot.textContent="KSh "+fmt(q*p);const blocked=q>freeMax;submit.disabled=q<1||q>max||blocked||((type.value==="LIMIT"||protect)&&lp<=0);submit.style.opacity=submit.disabled?".45":"1";submit.title=blocked?"Free plan: max 25 shares/order. Upgrade to Pro for unlimited quantities.":""};
+    const update=()=>{const q=Math.floor(Number(qty.value)||0),lp=Number(lim.value)||p,protect=type.value==="STOP_LOSS"||type.value==="TAKE_PROFIT";lr.style.display=(type.value==="LIMIT"||protect)?"flex":"none";lr.querySelector("label").textContent=protect?(type.value==="STOP_LOSS"?"Stop price":"Target price"):"Limit price";tot.textContent="KSh "+fmt(q*p);const blocked=q>freeMax;submit.disabled=q<1||q>max||((type.value==="LIMIT"||protect)&&lp<=0);submit.style.opacity=submit.disabled?".45":"1";submit.title=blocked?"Free plan: max 25 shares/order. Upgrade to Pro for unlimited quantities.":""};
     type.onchange=update;lim.oninput=update;qty.oninput=update;update();
     root.querySelector("#mr50Close").onclick=()=>root.remove();root.firstElementChild.onclick=e=>{if(e.target===root.firstElementChild)root.remove()};
     submit.onclick=()=>{
       const q=Math.floor(Number(qty.value)||0),kind=type.value,lp=Number(lim.value)||0;
-      if(q<1||q>max||(kind==="LIMIT"&&lp<=0))return; const entitlement=checkTradeEntitlement(read(),side,s,q); if(!entitlement.ok){showOrderStatus(entitlement.message,"limit");try{window.MaliRadarEntitlements?.open?.("advancedAssist")}catch(e){} return;}
+      if(q<1||q>max||(kind==="LIMIT"&&lp<=0))return; const entitlement=checkTradeEntitlement(read(),side,s,q); if(!entitlement.ok){showOrderStatus(entitlement.message,"limit");return;}
       const fresh=read();fresh.cash=Number(fresh.cash||0);fresh.hold=fresh.hold||{};fresh.history=Array.isArray(fresh.history)?fresh.history:[];
       if(kind==="LIMIT"||kind==="STOP_LOSS"||kind==="TAKE_PROFIT"){
         fresh.pendingOrders=Array.isArray(fresh.pendingOrders)?fresh.pendingOrders:[];
@@ -132,8 +136,10 @@
   function showOrderStatus(message,kind){
     let n=document.getElementById("mr50OrderStatus");
     if(!n){n=document.createElement("div");n.id="mr50OrderStatus";n.style.cssText="position:fixed;left:12px;right:12px;bottom:78px;z-index:9100;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:#0d1a22;box-shadow:0 10px 30px #0008";document.body.appendChild(n)}
-    n.innerHTML='<b>'+esc(kind==="pending"?"⏳ ORDER PENDING":"✓ ORDER COMPLETED")+'</b><div class="muted" style="margin-top:4px">'+esc(message)+'</div>';
-    clearTimeout(window.__mr50StatusTimer);window.__mr50StatusTimer=setTimeout(()=>n.remove(),5000);
+    const heading=kind==="pending"?"⏳ ORDER PENDING":kind==="limit"?"FREE PLAN LIMIT REACHED":kind==="watchlist"?"FIRST BUY • START HERE":"✓ ORDER COMPLETED";
+    n.style.borderColor=kind==="limit"?"#ffb84d":kind==="watchlist"?"#35d6a0":"var(--line)";
+    n.innerHTML='<b>'+esc(heading)+'</b><div style="margin-top:4px">'+esc(message)+'</div>';
+    clearTimeout(window.__mr50StatusTimer);window.__mr50StatusTimer=setTimeout(()=>n.remove(),7000);
   }
   function renderPending(){
     const p=document.getElementById("portfolio");if(!p)return;
