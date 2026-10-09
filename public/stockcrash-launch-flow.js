@@ -165,8 +165,25 @@
   function boot(){
     hideLegacy();document.documentElement.classList.add('sc-launch-lock');populateSaved();googleConfiguredNote();showAuthMode('signin');
     var mainGraph=$('scGraphMain'),glows=document.querySelectorAll('.sc-graph-glow');if(mainGraph)mainGraph.classList.add('sc-graph-draw');glows.forEach(function(x){x.classList.add('sc-graph-draw')});
+    var savedAuth=auth(),savedAccount=account();
+    var hasSession=!!(savedAuth&&savedAuth.id&&savedAccount&&savedAccount.id===savedAuth.id);
     setTimeout(function(){var logo=$('scIntroLogo');if(logo)logo.classList.add('show')},3100);
-    setTimeout(function(){stage('scAuthStage')},4500);
+    if(hasSession){
+      // Reuse the authenticated local session on this device; never store or replay the password.
+      setTimeout(function(){
+        stage('scOrbStage');
+        setTimeout(function(){
+          root.classList.add('sc-out');
+          setTimeout(function(){
+            hideLegacy();document.documentElement.classList.remove('sc-launch-lock');root.remove();
+            try{var hb=document.querySelector('.tabs button');if(typeof window.nav==='function')window.nav('home',hb);else hb?.click()}catch(e){}
+            injectAccountTools();setTimeout(startGuideOnce,650);
+          },650);
+        },2000);
+      },4500);
+    }else{
+      setTimeout(function(){stage('scAuthStage')},4500);
+    }
   }
   // The script is injected at the end of <body>; boot immediately so the intro is the first visible app surface.
   if(document.body)setTimeout(boot,0);else document.addEventListener('DOMContentLoaded',boot,{once:true});
