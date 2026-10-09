@@ -41,3 +41,24 @@ function derive(q,a,engine){
  const finalLabel=typeof engine?.label==="function"&&evidenceScore>=40?engine.label(score,q):{t:confidence==="QUOTE ONLY"?"WATCH":(score>=65?"POSITIVE SETUP":score<=35?"RISK / WEAK":"WATCH"),c:score>=65?"positive":score<=35?"risk":"watch",conf:confidence};
  return{score,label:finalLabel,trend,momentum,range,vol:v!=null?v.toLocaleString():"—",reasons,evidence:evidenceScore,candles:a.length}
 }
+
+function mountPanel(){
+ const modal=document.getElementById("modal"),body=document.getElementById("mb");
+ if(!modal||!body||!modal.classList.contains("show"))return;
+ const panel=body.querySelector(".mr25-panel");if(!panel)return;
+ const head=panel.querySelector(".row b");const s=local(head?.textContent?.split("•")[0]||"");
+ if(!s)return;
+ const q=window.mr25Intel?.[s]||quoteFor(s);if(!q||num(q.price)==null)return;
+ let card=body.querySelector("#mr30");if(!card){card=document.createElement("section");card.id="mr30";panel.appendChild(card)}
+ const d=derive(q,[],null);
+ card.innerHTML='<div class="h"><div><div class="t">Stock Intelligence</div><div class="sub">Provider evidence summary • '+esc(s)+'</div></div><span class="badge">'+esc(d.label?.t||"WATCH")+'</span></div><div class="grid"><div class="stat"><span>OBSERVED PRICE</span><b>'+esc((q.currency||"KES")+" "+Number(q.price).toLocaleString("en-KE",{maximumFractionDigits:2}))+'</b></div><div class="stat"><span>PROVIDER CHANGE</span><b>'+esc(pct(q)==null?"—":(pct(q)>=0?"+":"")+pct(q).toFixed(2)+"%")+'</b></div><div class="stat"><span>EVIDENCE COVERAGE</span><b>'+d.evidence+'/100 • '+esc(d.label?.conf||"QUOTE ONLY")+'</b></div><div class="stat"><span>HISTORY</span><b>Not loaded by this panel</b></div></div><div class="why">'+esc(d.reasons.join(" "))+' No historical trend or forecast is inferred by this summary.</div>';
+}
+function init(){
+ css();
+ const modal=document.getElementById("modal");
+ if(modal)new MutationObserver(()=>setTimeout(mountPanel,0)).observe(modal,{attributes:true,attributeFilter:["class"],childList:true,subtree:true});
+ setInterval(mountPanel,1800);
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+window.MaliRadarStockIntelligence31={refresh:mountPanel,derive};
+})();
