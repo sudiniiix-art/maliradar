@@ -1,9 +1,9 @@
-/* STOCKCRASH Paper Trade Button Bridge v1.1.0
+/* STOCKCRASH Paper Trade Button Bridge v1.1.1
  * Android WebView-safe stock entry and order-sheet tap handling.
  */
 (function () {
   "use strict";
-  if (window.__stockCrashTradeButtonBridgeV110) return;
+  if (window.__stockCrashTradeButtonBridgeV111) return;
   window.__stockCrashTradeButtonBridgeV110 = true;
 
   var style = document.createElement("style");
@@ -124,5 +124,5 @@
 
   document.addEventListener("click", handle, true);
   document.addEventListener("touchend", onTouchEnd, {capture: true, passive: false});
-  window.StockCrashTradeButtonBridge = { version: "1.1.0", ready: true };
+  window.StockCrashTradeButtonBridge = { version: "1.1.1", ready: true };
 })();
