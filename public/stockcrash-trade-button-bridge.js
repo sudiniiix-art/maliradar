@@ -68,7 +68,7 @@
     if (!side) return;
 
     var sym = symbolFrom(button, side);
-    if (!sym) return;
+    if (!sym) {\n      showMessage("I detected the paper-trade button but could not read its stock symbol. Please open that stock's details and try Paper Buy/Sell again.");\n      return;\n    }
 
     // Stop stale inline buy()/sell() and closeM() handlers from swallowing the tap.
     e.preventDefault();
@@ -94,5 +94,5 @@
 
   // Capture phase wins over brittle inline onclick attributes; delegated for dynamic stock cards.
   document.addEventListener("click", handle, true);
-  window.StockCrashTradeButtonBridge = { version: "1.0.0", ready: true };
+  window.StockCrashTradeButtonBridge = { version: "1.0.1", ready: true };
 })();
