@@ -7,7 +7,7 @@ const pct=q=>num(q?.changePct??q?.change??q?.percentChange);
 const watchSet=()=>{try{return new Set(JSON.parse(localStorage.getItem("maliradar_provider_watchlist_v2")||"[]").map(x=>String(x).toUpperCase().split(".")[0]))}catch(e){return new Set()}};
 const heldSet=()=>{try{const s=JSON.parse(localStorage.getItem("maliradar_v07_state")||"{}"),h=s.hold&&typeof s.hold==="object"?s.hold:{};return new Set(Object.keys(h).filter(k=>(num(h[k])||0)>0).map(k=>String(k).toUpperCase().split(".")[0]))}catch(e){return new Set()}};
 const saHistory=()=>{try{const h=JSON.parse(localStorage.getItem("maliradar_sa2_history_v1")||"[]");return Array.isArray(h)?h:[]}catch(e){return []}};
-function css(){if(document.getElementById("mr82css"))return;const s=document.createElement("style");s.id="mr82css";s.textContent=String.raw\`
+function css(){if(document.getElementById("mr82css"))return;const s=document.createElement("style");s.id="mr82css";s.textContent=String.raw`
 #mr82{margin:0 0 14px;padding:15px;border-radius:18px;background:linear-gradient(145deg,#0b1722,#081017);border:1px solid rgba(90,210,190,.25);box-shadow:0 10px 30px rgba(0,0,0,.16)}
 #mr82 .mr82-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
 #mr82 .mr82-title{font-size:17px;font-weight:900}
@@ -28,7 +28,7 @@ function css(){if(document.getElementById("mr82css"))return;const s=document.cre
 #mr82 button{border:1px solid rgba(90,210,190,.25);background:rgba(90,210,190,.07);color:inherit;border-radius:9px;padding:8px 10px;font-weight:800;font-size:10px}
 #mr82 .mr82-note{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.07)}
 @media(min-width:650px){#mr82 .mr82-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
-\`;document.head.appendChild(s)}
+`;document.head.appendChild(s)}
 function score(q,watched,held,sa){const move=Math.min(45,Math.round(Math.abs(pct(q)||0)*12));const w=watched?20:0;const h=held?20:0;const e=sa?15:0;const quality=String(q?.dataQuality||"").toUpperCase()==="GOOD"?10:5;return Math.min(100,move+w+h+e+quality)}
 function explain(q,watched,held,sa){const p=pct(q),parts=[];if(Math.abs(p||0)>=2)parts.push("large observed price movement");else if(Math.abs(p||0)>=0.5)parts.push("notable observed price movement");else parts.push("movement is currently modest");if(watched)parts.push("it is on your watchlist");if(held)parts.push("you hold a simulated position");if(sa)parts.push("Smart Assist has a recent observation for it");return parts.join(" • ")+". This is a radar-priority explanation, not a buy/sell signal."}
 function openDetails(s){try{if(window.MaliRadarWatch&&typeof window.MaliRadarWatch.open==="function")return window.MaliRadarWatch.open(s);if(typeof window.details==="function")return window.details(s)}catch(e){}}
