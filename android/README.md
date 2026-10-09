@@ -24,6 +24,12 @@ The debug application id is com.maliradar.app.debug.
 The web app/backend already contains the Google Play verification surface. Native Play Billing, native push delivery, signed release configuration, and Play Console product/base-plan setup should be connected before production release.
 
 
+## Latest technical verification build
+
+- Test build: STOCKCRASH v0.4.1 (version code 5)
+- Includes News loading timeout/error handling, repaired Stock Intelligence modules, and updated STOCKCRASH launcher mark.
+- This build is a technical test candidate; live device behavior still needs handset verification.
+
 ## StockCrash account sign-in
 
 The Android shell now uses Credential Manager for Sign in with Google and the web layer supports email/password authentication. Google sign-in requires the same Google web/server client ID to be supplied to the Android build as the Gradle property `GOOGLE_SERVER_CLIENT_ID` and to Render as the `GOOGLE_SERVER_CLIENT_ID` environment variable. Email sign-in works without that Google configuration.
