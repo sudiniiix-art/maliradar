@@ -89,11 +89,16 @@
     if(changed){st.pendingOrders=keep;write(st);refresh()}
   }
   async function ticket(side,s){
+    const st=read();
     if(String(side).toUpperCase()==="BUY"){
-      let watch=[];try{const saved=JSON.parse(localStorage.getItem("maliradar_provider_watchlist_v2")||"[]");watch=Array.isArray(saved)?saved:[]}catch(e){}
-      if(!watch.length){showOrderStatus("Tap Watch first to begin first buy.","watchlist");return;}
+      // Android WebView and older app state can store watchlist entries in different places.
+      // Treat either persisted watchlist as valid so the first-buy hint never blocks a watched user.
+      let providerWatch=[];try{const saved=JSON.parse(localStorage.getItem("maliradar_provider_watchlist_v2")||"[]");providerWatch=Array.isArray(saved)?saved:[]}catch(e){}
+      const stateWatch=Array.isArray(st.watch)?st.watch:[];
+      const hasWatch=providerWatch.length>0||stateWatch.length>0;
+      if(!hasWatch){showOrderStatus("Tap Watch first to begin first buy.","watchlist");return;}
     }
-    const st=read(),x=stock(s),p=await resolvePrice(s);
+    const x=stock(s),p=await resolvePrice(s);
     if(!p)return alert("Verified provider price is currently unavailable for "+s+". Refresh Markets and try again.");
     const owned=Number(st.hold&&st.hold[s]||0),cash=Number(st.cash||0),max=side==="BUY"?Math.floor(cash/p):owned;
     const name=x&&x[1]?x[1]:s, d=delayed(s), freeMax=tradeIsPro()?Infinity:tradeLimits().maxSharesPerOrder;
