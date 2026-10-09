@@ -68,7 +68,10 @@
     if (!side) return;
 
     var sym = symbolFrom(button, side);
-    if (!sym) {\n      showMessage("I detected the paper-trade button but could not read its stock symbol. Please open that stock's details and try Paper Buy/Sell again.");\n      return;\n    }
+    if (!sym) {
+      showMessage("I detected the paper-trade button but could not read its stock symbol. Please open that stock's details and try Paper Buy/Sell again.");
+      return;
+    }
 
     // Stop stale inline buy()/sell() and closeM() handlers from swallowing the tap.
     e.preventDefault();
